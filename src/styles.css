@@ -495,3 +495,115 @@
   }
 }
 
+
+/* --------------------- Cyber Neon Premium (homepage only) ------------------ */
+@utility theme-cyber {
+  --background: #0b1020;
+  --foreground: #f8fafc;
+  --surface: #111827;
+  --surface-2: #172033;
+
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+
+  --primary: #00d9ff;
+  --primary-foreground: #06121f;
+  --violet: #8b5cf6;
+  --cyan: #00d9ff;
+  --orange: #ff2da6;
+
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #f8fafc;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: #cbd5e1;
+  --accent: #ff2da6;
+  --accent-foreground: #f8fafc;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #00d9ff;
+
+  --gradient-arena: linear-gradient(
+    120deg,
+    rgba(0, 217, 255, 0.22),
+    rgba(139, 92, 246, 0.2) 45%,
+    rgba(255, 45, 166, 0.18)
+  );
+  --gradient-text: linear-gradient(100deg, #f8fafc, #00d9ff 45%, #ff2da6);
+  --shadow-lift: 0 24px 60px -28px rgba(0, 0, 0, 0.9);
+  --shadow-glow:
+    0 0 0 1px rgba(0, 217, 255, 0.35), 0 18px 60px -18px rgba(0, 217, 255, 0.35);
+
+  background-color: #0b1020;
+  color: #f8fafc;
+  position: relative;
+  isolation: isolate;
+
+  /* very subtle corner washes */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 45% at 0% 0%, rgba(0, 217, 255, 0.08), transparent 70%),
+      radial-gradient(60% 45% at 100% 100%, rgba(255, 45, 166, 0.08), transparent 70%);
+  }
+
+  /* premium glass cards */
+  .glass,
+  [class*="bg-surface"],
+  [class*="bg-card"] {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px) saturate(140%);
+    transition:
+      transform 0.4s var(--ease-silk),
+      box-shadow 0.4s var(--ease-silk),
+      border-color 0.4s var(--ease-silk);
+  }
+
+  .glass:hover,
+  [class*="bg-surface"]:hover,
+  [class*="bg-card"]:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 50px -26px rgba(0, 217, 255, 0.35);
+    border-color: rgba(0, 217, 255, 0.28);
+  }
+
+  /* primary buttons */
+  [class*="bg-primary"] {
+    background-image: linear-gradient(135deg, #00d9ff, #3b82f6);
+    color: #06121f;
+  }
+
+  [class*="bg-primary"]:hover {
+    box-shadow: 0 0 26px rgba(0, 217, 255, 0.35);
+  }
+
+  /* secondary / glass buttons get a pink hover glow */
+  button[class*="border"]:not([class*="bg-primary"]):hover,
+  a[class*="border"]:not([class*="bg-primary"]):hover {
+    box-shadow: 0 0 24px rgba(255, 45, 166, 0.25);
+    border-color: rgba(255, 45, 166, 0.35);
+  }
+
+  /* icons */
+  svg {
+    color: inherit;
+  }
+
+  .text-cyan,
+  [class*="text-cyan"] {
+    color: #00d9ff;
+  }
+
+  [data-state="active"] svg,
+  [aria-selected="true"] svg,
+  .text-accent {
+    color: #ff2da6;
+  }
+}
