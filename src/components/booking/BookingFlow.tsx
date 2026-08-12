@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
+import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
+import type { LoyaltyCustomer } from "@/lib/loyalty.functions";
 import {
   createBooking,
   getActiveHold,
@@ -423,6 +425,15 @@ export function BookingFlow() {
 
   const sessionAmount =
     startTime && durationMinutes ? rateFor(rates, players, durationMinutes) : 0;
+  /* Loyalty reward: 30 minutes of the console session are free. */
+  const rewardDiscount =
+    useReward && customer && customer.rewardsAvailable > 0 && durationMinutes
+      ? Math.max(
+          0,
+          sessionAmount -
+            (durationMinutes > 30 ? rateFor(rates, players, durationMinutes - 30) : 0),
+        )
+      : 0;
   const selectedExtras = useMemo(
     () =>
       Object.entries(extras)
@@ -449,7 +460,7 @@ export function BookingFlow() {
   const cockpitAmount = extrasAmount + passesAmount;
 
   const foodAmount = cart.reduce((s, l) => s + l.price * l.quantity, 0);
-  const gamingSubtotal = sessionAmount + cockpitAmount;
+  const gamingSubtotal = Math.max(0, sessionAmount - rewardDiscount) + cockpitAmount;
   const subtotal = gamingSubtotal + foodAmount;
 
   /* Category-aware bill: gaming coupon → food coupon → entire-bill coupon →
@@ -483,6 +494,14 @@ export function BookingFlow() {
       amount: l.price * l.quantity,
     })),
   ].filter((l) => l.amount > 0);
+
+  if (rewardDiscount > 0) {
+    gamingLines.push({
+      key: "loyalty-reward",
+      label: "Loyalty reward · 30 minutes free",
+      amount: -rewardDiscount,
+    });
+  }
 
   const foodLines: BillLine[] = cart.map((l) => ({
     key: l.menuItemId,
@@ -687,6 +706,7 @@ export function BookingFlow() {
           cart: cart.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
           couponCode: coupon?.valid ? coupon.code : undefined,
           studentDiscount: studentEligible,
+          useReward: rewardDiscount > 0,
           sessionToken: sessionToken(),
           customer: {
             fullName: form.fullName.trim(),
@@ -766,9 +786,21 @@ export function BookingFlow() {
   
 
 
+  if (!customer) {
+    return (
+      <PhoneGate
+        onReady={(c) => {
+          setCustomer(c);
+          setForm((f) => ({ ...f, fullName: c.name, phone: c.phone }));
+        }}
+      />
+    );
+  }
+
   return (
     <div className="pb-40">
       <StepProgress step={step} skipGaming={skipGaming} />
+      <LoyaltyStrip customer={customer} />
 
       {expiresAt ? (
         <div className="mx-auto mt-6 flex w-fit items-center gap-2 rounded-full border border-cyan/30 bg-cyan/5 px-4 py-2 text-xs font-bold text-cyan animate-[scale-in_0.25s_ease-out]">
@@ -859,6 +891,23 @@ export function BookingFlow() {
               title="Build your session"
               hint="Pick your day, then any experience you like — a console is optional, VR, snooker, the theatre or the lounge on their own are fine too."
             />
+
+            {customer.rewardsAvailable > 0 ? (
+              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-emerald-300/40 bg-emerald-300/5 px-4 py-3.5">
+                <input
+                  type="checkbox"
+                  checked={useReward}
+                  onChange={(e) => setUseReward(e.target.checked)}
+                  className="size-4 accent-emerald-400"
+                />
+                <span className="text-sm font-bold text-emerald-200">
+                  Use my FREE 30 Minute Reward
+                  <span className="ml-2 block text-xs font-medium text-muted-foreground sm:inline">
+                    30 minutes of your gaming session are on us.
+                  </span>
+                </span>
+              </label>
+            ) : null}
 
             <div>
               <FieldLabel>Choose your day</FieldLabel>
