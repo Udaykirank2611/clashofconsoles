@@ -33,7 +33,7 @@ import {
 
 import {
   addMinutes,
-  computeTotals,
+  computeBill,
   formatTime,
   generateSlots,
   inr,
@@ -45,6 +45,8 @@ import {
 } from "@/lib/booking/pricing";
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
 import { ConsoleSelect } from "./ConsoleSelect";
+import type { CouponCategory } from "@/lib/booking/pricing";
+import { BillSummary, type BillLine } from "./BillSummary";
 import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Passes", "Gaming", "Food", "Checkout"] as const;
@@ -462,6 +464,30 @@ export function BookingFlow() {
     taxPercent: branch ? Number(branch.tax_percent) : 0,
   });
   const studentEligible = bill.studentEligible;
+
+  const gamingLines: BillLine[] = [
+    ...(sessionAmount
+      ? [{ key: "session", label: station?.name ?? "Gaming session", amount: sessionAmount }]
+      : []),
+    ...selectedExtras
+      .filter((e) => e.station)
+      .map((e) => ({
+        key: e.station!.id,
+        label: e.station!.name,
+        amount: extraAmountFor(e),
+      })),
+    ...passLines.map((l) => ({
+      key: l.id,
+      label: l.quantity > 1 ? `${l.quantity} × ${l.name}` : l.name,
+      amount: l.price * l.quantity,
+    })),
+  ].filter((l) => l.amount > 0);
+
+  const foodLines: BillLine[] = cart.map((l) => ({
+    key: l.menuItemId,
+    label: `${l.quantity} × ${l.name}`,
+    amount: l.price * l.quantity,
+  }));
 
   const extrasReady = selectedExtras.every((e) => e.startTime && e.durationMinutes);
   /* A console is optional: the visitor may book only VR / snooker / theatre /
@@ -1561,35 +1587,21 @@ export function BookingFlow() {
                     <Row label="Food" value="—" />
                   )}
                 </dl>
-                <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
-                  <Row label="Session" value={inr(totals.session)} strong />
-                  {extrasAmount ? <Row label="Experiences" value={inr(extrasAmount)} strong /> : null}
-                  {passesAmount ? <Row label="Passes & offers" value={inr(passesAmount)} strong /> : null}
-                  {totals.food ? <Row label="Food & drinks" value={inr(totals.food)} strong /> : null}
-                  <Row
-                    label="Coupon discount"
-                    value={couponDiscount ? `− ${inr(couponDiscount)}` : "—"}
-                    strong
+                <div className="mt-5 border-t border-border pt-4">
+                  <BillSummary
+                    gamingLines={gamingLines}
+                    foodLines={foodLines}
+                    bill={bill}
+                    couponCode={coupon?.valid ? (coupon.code ?? null) : null}
+                    couponCategory={coupon?.valid ? ((coupon.category ?? "entire_bill") as CouponCategory) : null}
+                    taxPercent={Number(branch?.tax_percent ?? 0)}
+                    footer={
+                      <p className="flex items-center justify-center gap-1.5 text-[0.65rem] text-muted-foreground">
+                        <ShieldCheck className="size-3.5 text-cyan" /> No payment now — we confirm by phone
+                      </p>
+                    }
                   />
-                  <Row
-                    label="Student discount (20%)"
-                    value={studentDiscount ? `− ${inr(studentDiscount)}` : "—"}
-                    strong
-                  />
-                  <Row label="Subtotal" value={inr(Math.max(0, subtotal - totals.discount))} strong />
-                  <Row label={`Taxes (${branch?.tax_percent ?? 0}%)`} value={inr(totals.tax)} strong />
                 </div>
-                <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3">
-                  <span className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-cyan">
-                    Final total
-                  </span>
-                  <span key={bill.grandTotal} className="text-2xl font-black animate-[scale-in_0.25s_ease-out]">
-                    {inr(bill.grandTotal)}
-                  </span>
-                </div>
-                <p className="mt-3 flex items-center justify-center gap-1.5 text-[0.65rem] text-muted-foreground">
-                  <ShieldCheck className="size-3.5 text-cyan" /> No payment now — we confirm by phone
-                </p>
               </div>
             </aside>
           </section>
