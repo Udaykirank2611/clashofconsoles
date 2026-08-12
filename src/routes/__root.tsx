@@ -100,6 +100,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#090909" },
+      { property: "og:title", content: "Clash of Consoles — Premium Gaming Cafe in Hyderabad" },
+      { name: "twitter:title", content: "Clash of Consoles — Premium Gaming Cafe in Hyderabad" },
+      { property: "og:description", content: "Hyderabad's premium console gaming arena — PlayStation 5 bays, multiplayer battles and snacks." },
+      { name: "twitter:description", content: "Hyderabad's premium console gaming arena — PlayStation 5 bays, multiplayer battles and snacks." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/27f23e47c8acfd0852470bc9c07fad2c/id-preview-0d687785--ab7ada00-a643-423b-b5d6-a7bfffa1764d.lovable.app-1786530534558.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/27f23e47c8acfd0852470bc9c07fad2c/id-preview-0d687785--ab7ada00-a643-423b-b5d6-a7bfffa1764d.lovable.app-1786530534558.png" },
     ],
     links: [
       {
