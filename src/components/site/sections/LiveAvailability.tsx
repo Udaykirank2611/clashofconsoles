@@ -59,6 +59,16 @@ const STATUS: Record<
   },
 };
 
+/** Google Maps link for a branch — known branches use their exact pin. */
+function mapsFor(b: LiveBranchAvailability) {
+  const key = `${b.slug} ${b.name}`.toLowerCase();
+  if (key.includes("vanasthalipuram")) return MAPS_VANASTHALIPURAM;
+  if (key.includes("sheriguda")) return MAPS_SHERIGUDA;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `Clash of Consoles ${b.name} ${b.city}`,
+  )}`;
+}
+
 /**
  * Live, self-updating availability board.
  * Units come from the admin station catalogue (maintenance excluded) and
