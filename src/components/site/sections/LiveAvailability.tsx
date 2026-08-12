@@ -189,13 +189,25 @@ export function LiveAvailability() {
                     </ul>
                   )}
 
-                  <Link
-                    to="/book"
-                    className="relative mt-7 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan/40 bg-cyan/10 px-6 py-3.5 text-sm font-bold uppercase tracking-[0.14em] text-cyan transition-all duration-300 hover:bg-cyan/20 hover:shadow-[0_20px_60px_-30px_var(--cyan)]"
-                  >
-                    Book Now
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
+                  <div className="relative mt-7 grid gap-3 sm:grid-cols-2">
+                    <Link
+                      to="/book"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan/40 bg-cyan/10 px-6 py-3.5 text-sm font-bold uppercase tracking-[0.14em] text-cyan transition-all duration-300 hover:bg-cyan/20 hover:shadow-[0_20px_60px_-30px_var(--cyan)]"
+                    >
+                      Book Now
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                    <a
+                      href={mapsFor(b)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-background/40 px-6 py-3.5 text-sm font-bold uppercase tracking-[0.14em] text-foreground/80 transition-all duration-300 hover:border-cyan/40 hover:text-cyan"
+                    >
+                      <MapPin className="h-4 w-4" aria-hidden="true" />
+                      Get Directions
+                    </a>
+                  </div>
+
                 </article>
               </Reveal>
             );
