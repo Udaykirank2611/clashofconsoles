@@ -487,15 +487,38 @@ export const createBooking = createServerFn({ method: "POST" })
       .select("players, duration_minutes, price")
       .eq("branch_id", data.branchId)
       .eq("is_active", true);
-    const sessionAmount = !hasSlot ? 0 : rateFor(
-      (sessionRows ?? []).map((r) => ({
-        players: r.players ?? 1,
-        duration_minutes: r.duration_minutes,
-        price: Number(r.price),
-      })),
-      data.players,
-      data.durationMinutes ?? 0,
-    );
+    const rateRows = (sessionRows ?? []).map((r) => ({
+      players: r.players ?? 1,
+      duration_minutes: r.duration_minutes,
+      price: Number(r.price),
+    }));
+    const fullSessionAmount = !hasSlot
+      ? 0
+      : rateFor(rateRows, data.players, data.durationMinutes ?? 0);
+
+    /* Loyalty reward: the first 30 minutes of the console session are free,
+       the remaining minutes are charged at the normal rate. */
+    const { normalizePhone, REWARD_MINUTES } = await import("@/lib/loyalty.functions");
+    const loyaltyPhone = normalizePhone(data.customer.phone);
+    let rewardId: string | null = null;
+    let rewardDiscount = 0;
+    if (data.useReward && hasSlot) {
+      const { data: reward } = await db
+        .from("rewards")
+        .select("id")
+        .eq("phone", loyaltyPhone)
+        .eq("status", "available")
+        .is("booking_id", null)
+        .limit(1)
+        .maybeSingle();
+      if (reward) {
+        const remainingMinutes = Math.max(0, (data.durationMinutes ?? 0) - REWARD_MINUTES);
+        const charged = remainingMinutes ? rateFor(rateRows, data.players, remainingMinutes) : 0;
+        rewardDiscount = Math.max(0, Math.round(fullSessionAmount - charged));
+        rewardId = reward.id;
+      }
+    }
+    const sessionAmount = Math.max(0, fullSessionAmount - rewardDiscount);
 
 
     // Tiered experience prices (theatre / cockpit / snooker / lounge) are priced
