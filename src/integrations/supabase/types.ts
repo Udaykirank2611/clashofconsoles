@@ -90,6 +90,7 @@ export type Database = {
       bookings: {
         Row: {
           addons_amount: number
+          bill_discount_amount: number
           booking_date: string
           branch_id: string
           coupon_code: string | null
@@ -101,7 +102,9 @@ export type Database = {
           discount_amount: number
           end_time: string | null
           food_amount: number
+          food_discount_amount: number
           game_title: string | null
+          gaming_discount_amount: number
           id: string
           payment_expires_at: string | null
           payment_note: string | null
@@ -122,6 +125,7 @@ export type Database = {
         }
         Insert: {
           addons_amount?: number
+          bill_discount_amount?: number
           booking_date: string
           branch_id: string
           coupon_code?: string | null
@@ -133,7 +137,9 @@ export type Database = {
           discount_amount?: number
           end_time?: string | null
           food_amount?: number
+          food_discount_amount?: number
           game_title?: string | null
+          gaming_discount_amount?: number
           id?: string
           payment_expires_at?: string | null
           payment_note?: string | null
@@ -154,6 +160,7 @@ export type Database = {
         }
         Update: {
           addons_amount?: number
+          bill_discount_amount?: number
           booking_date?: string
           branch_id?: string
           coupon_code?: string | null
@@ -165,7 +172,9 @@ export type Database = {
           discount_amount?: number
           end_time?: string | null
           food_amount?: number
+          food_discount_amount?: number
           game_title?: string | null
+          gaming_discount_amount?: number
           id?: string
           payment_expires_at?: string | null
           payment_note?: string | null
@@ -271,6 +280,7 @@ export type Database = {
           active_end_time: string | null
           active_start_time: string | null
           branch_id: string
+          category: Database["public"]["Enums"]["coupon_category"]
           code: string
           created_at: string
           description: string | null
@@ -291,6 +301,7 @@ export type Database = {
           active_end_time?: string | null
           active_start_time?: string | null
           branch_id: string
+          category?: Database["public"]["Enums"]["coupon_category"]
           code: string
           created_at?: string
           description?: string | null
@@ -311,6 +322,7 @@ export type Database = {
           active_end_time?: string | null
           active_start_time?: string | null
           branch_id?: string
+          category?: Database["public"]["Enums"]["coupon_category"]
           code?: string
           created_at?: string
           description?: string | null
@@ -1218,6 +1230,7 @@ export type Database = {
         | "expired"
         | "awaiting_payment"
         | "payment_pending"
+      coupon_category: "gaming" | "food" | "entire_bill"
       discount_type: "flat" | "percent"
       station_status: "available" | "maintenance" | "blocked"
       station_type:
@@ -1365,6 +1378,7 @@ export const Constants = {
         "awaiting_payment",
         "payment_pending",
       ],
+      coupon_category: ["gaming", "food", "entire_bill"],
       discount_type: ["flat", "percent"],
       station_status: ["available", "maintenance", "blocked"],
       station_type: [
