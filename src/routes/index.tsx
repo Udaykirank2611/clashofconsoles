@@ -98,7 +98,7 @@ function Index() {
   const content = useSiteContent();
 
   return (
-    <div className="theme-cyber relative">
+    <div className="relative">
       <AmbientBackground />
       <CustomCursor />
       <ScrollProgress />
