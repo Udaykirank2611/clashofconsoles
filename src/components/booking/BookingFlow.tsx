@@ -1,0 +1,1808 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  ChevronDown,
+  Gamepad2,
+  Loader2,
+  MapPin,
+  Minus,
+  Navigation,
+  Plus,
+  ShieldCheck,
+  Timer,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Field, ImagePlaceholder, StatusTag } from "./ui";
+import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
+import {
+  createBooking,
+  getActiveHold,
+  getAvailability,
+  getCatalogue,
+  holdStation,
+  releaseHold,
+  validateCoupon,
+} from "@/lib/booking.functions";
+
+import {
+  addMinutes,
+  computeTotals,
+  formatTime,
+  generateSlots,
+  inr,
+  isRangeBusy,
+  slotPrice,
+  timeToMinutes,
+  toDateKey,
+  upcomingDays,
+} from "@/lib/booking/pricing";
+import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
+import { ConsoleSelect } from "./ConsoleSelect";
+import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
+
+const STEPS = ["Branch", "Passes", "Gaming", "Food", "Checkout"] as const;
+
+/** Shared Google Maps links for each arena, with an address search fallback. */
+const BRANCH_MAPS: Record<string, string> = {
+  sheriguda: "https://maps.app.goo.gl/ncHQsbxFE166EpBeA",
+  shamirpet: "https://maps.app.goo.gl/ncHQsbxFE166EpBeA",
+  vanasthalipuram: "https://maps.app.goo.gl/tThjEhrjVH3k9EgD8",
+};
+
+const directionsUrl = (b: { slug: string; name: string; address: string; map_url?: string | null }) =>
+  b.map_url ||
+  BRANCH_MAPS[b.slug?.toLowerCase()] ||
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.name} ${b.address}`)}`;
+
+type ExtraMap = Record<
+  string,
+  {
+    startTime: string | null;
+    /** Base package length; extra hours are added on top. */
+    durationMinutes: number | null;
+    rateId?: string | null;
+    extraHours?: number;
+  }
+>;
+
+
+const TOKEN_KEY = "coc_booking_token";
+const HOLD_KEY = "coc_booking_hold";
+const TAB_KEY = "coc_booking_tab";
+
+/** Stable per-browser token (localStorage so a refresh — and other tabs — see the same hold). */
+const sessionToken = () => {
+  if (typeof window === "undefined") return "server-token";
+  let t = window.localStorage.getItem(TOKEN_KEY);
+  if (!t) {
+    t = crypto.randomUUID();
+    window.localStorage.setItem(TOKEN_KEY, t);
+  }
+  return t;
+};
+
+interface StoredHold {
+  branchId: string;
+  date: string;
+  stationId: string | null;
+  startTime: string | null;
+  durationMinutes: number | null;
+  players: number;
+  extras: {
+    stationId: string;
+    startTime: string;
+    durationMinutes: number;
+    rateId?: string | null;
+    extraHours?: number;
+  }[];
+  passes: Record<string, number>;
+  expiresAt: number;
+}
+
+const readStoredHold = (): StoredHold | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(HOLD_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredHold;
+    return parsed?.expiresAt ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+/** Indian mobile numbers: 10 digits starting 6-9, optional +91 / 0 prefix. */
+const isValidPhone = (raw: string) => {
+  const digits = raw.replace(/[^\d]/g, "");
+  const local = digits.startsWith("91") && digits.length === 12 ? digits.slice(2) : digits.replace(/^0/, "");
+  return /^[6-9]\d{9}$/.test(local);
+};
+
+
+interface CustomerForm {
+  fullName: string;
+  phone: string;
+  email: string;
+  instructions: string;
+}
+
+export function BookingFlow() {
+  const catalogueFn = useServerFn(getCatalogue);
+  const availabilityFn = useServerFn(getAvailability);
+  const holdFn = useServerFn(holdStation);
+  const releaseFn = useServerFn(releaseHold);
+  const couponFn = useServerFn(validateCoupon);
+  const bookFn = useServerFn(createBooking);
+  const navigate = useNavigate();
+
+
+  const days = useMemo(() => upcomingDays(14), []);
+  const [step, setStep] = useState(0);
+  const [branchId, setBranchId] = useState<string | null>(null);
+  const [date, setDate] = useState(() => toDateKey(new Date()));
+  const [stationId, setStationId] = useState<string | null>(null);
+  const [players, setPlayers] = useState(2);
+  const [startTime, setStartTime] = useState<string | null>(null);
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
+
+  /** Optional timed experiences (racing cockpit, VR, snooker, lounge, theatre). */
+  const [extras, setExtras] = useState<ExtraMap>({});
+  /** Memberships / unlimited pass / combo offers added to this booking. */
+  const [passes, setPasses] = useState<Record<string, number>>({});
+
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<CouponResult | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
+
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState(0);
+  const [form, setForm] = useState<CustomerForm>({
+    fullName: "",
+    phone: "",
+    email: "",
+    instructions: "",
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof CustomerForm, string>>>({});
+  const [submitting, setSubmitting] = useState(false);
+  
+
+  const { data: catalogue, isLoading } = useQuery({
+    queryKey: ["booking-catalogue"],
+    queryFn: () => catalogueFn(),
+    staleTime: 5 * 60_000,
+  });
+
+  const branches = catalogue?.branches ?? [];
+  const branch = branches.find((b) => b.id === branchId) ?? null;
+
+  const { data: busy = [], refetch: refetchAvailability } = useQuery({
+    queryKey: ["booking-availability", branchId, date],
+    enabled: Boolean(branchId),
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
+    queryFn: () =>
+      availabilityFn({ data: { branchId: branchId!, date, sessionToken: sessionToken() } }),
+  });
+
+
+  const stations = useMemo(
+    () => (catalogue?.stations ?? []).filter((s) => s.branch_id === branchId),
+    [catalogue, branchId],
+  );
+  const consoles = useMemo(
+    () => stations.filter((s) => s.station_type === "console"),
+    [stations],
+  );
+  /** Is the console-gaming block switched on? Optional, like every experience. */
+  const [consoleOn, setConsoleOn] = useState(false);
+  const extraStations = useMemo(
+    () => stations.filter((s) => s.station_type !== "console"),
+    [stations],
+  );
+  /**
+   * Every bookable experience presented the same way: one card per admin-defined
+   * group, with a dropdown of the individual stations inside it.
+   */
+  const experienceGroups = useMemo(() => {
+    const groups: { label: string; isConsole: boolean; stations: Station[] }[] = [];
+    if (consoles.length) {
+      groups.push({
+        label: consoles[0]!.group_label?.trim() || "Console Gaming",
+        isConsole: true,
+        stations: [...consoles].sort((a, b) => a.sort_order - b.sort_order),
+      });
+    }
+    const byLabel = new Map<string, Station[]>();
+    for (const s of extraStations) {
+      const key = s.group_label?.trim() || s.station_type.replace(/_/g, " ");
+      const list = byLabel.get(key) ?? [];
+      list.push(s);
+      byLabel.set(key, list);
+    }
+    for (const [label, list] of byLabel) {
+      groups.push({
+        label,
+        isConsole: false,
+        stations: [...list].sort((a, b) => a.sort_order - b.sort_order),
+      });
+    }
+    return groups;
+  }, [consoles, extraStations]);
+  const passOptions = useMemo(
+    () => (catalogue?.passes ?? []).filter((p) => p.branch_id === branchId),
+    [catalogue, branchId],
+  );
+  const station = consoles.find((s) => s.id === stationId) ?? null;
+  const slots = useMemo(() => (branch ? generateSlots(branch) : []), [branch]);
+  /** VR and racing cockpits run on shorter 15-minute start intervals. */
+  const fineSlots = useMemo(
+    () => (branch ? generateSlots({ ...branch, slot_minutes: 15 }) : []),
+    [branch],
+  );
+  const menu = useMemo(
+    () => (catalogue?.menu ?? []).filter((m) => m.branch_id === branchId),
+    [catalogue, branchId],
+  );
+  const sessions = useMemo(
+    () => (catalogue?.sessions ?? []).filter((s) => s.branch_id === branchId),
+    [catalogue, branchId],
+  );
+  /** Admin-managed price tiers per experience station. */
+  const stationRates = useMemo(
+    () => (catalogue?.stationRates ?? []).filter((r) => r.branch_id === branchId),
+    [catalogue, branchId],
+  );
+  /** Admin-managed game list per console. */
+  const stationGames = useMemo(
+    () => (catalogue?.stationGames ?? []).filter((g) => g.branch_id === branchId),
+    [catalogue, branchId],
+  );
+  const gamesFor = useCallback(
+    (id: string) => stationGames.filter((g) => g.station_id === id),
+    [stationGames],
+  );
+  const ratesForStation = useCallback(
+    (id: string | null | undefined) =>
+      stationRates
+        .filter((r) => r.station_id === id)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    [stationRates],
+  );
+
+  /** Base packages exclude the "extra hour" add-on row. */
+  const baseTiersFor = useCallback(
+    (id: string | null | undefined) => ratesForStation(id).filter((r) => !r.is_extra_hour),
+    [ratesForStation],
+  );
+  const extraHourRateFor = useCallback(
+    (id: string | null | undefined) => ratesForStation(id).find((r) => r.is_extra_hour) ?? null,
+    [ratesForStation],
+  );
+  /** Total minutes an experience blocks = base package + every extra hour added. */
+  const totalMinutes = (sel: { durationMinutes: number | null; extraHours?: number }) =>
+    sel.durationMinutes ? sel.durationMinutes + (sel.extraHours ?? 0) * 60 : null;
+
+  const rates = useMemo(
+    () =>
+      sessions.map((s) => ({
+        players: s.players ?? 1,
+        duration_minutes: s.duration_minutes,
+        price: Number(s.price),
+      })),
+    [sessions],
+  );
+  /** Durations come only from this branch's configured session options. */
+  const durations = useMemo(() => {
+    const seen = new Map<number, string>();
+    for (const s of [...sessions].sort((a, b) => a.sort_order - b.sort_order)) {
+      if (!seen.has(s.duration_minutes)) seen.set(s.duration_minutes, s.label);
+    }
+    return [...seen.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([minutes, label]) => ({ minutes, label }));
+  }, [sessions]);
+
+
+  const isToday = date === toDateKey(new Date());
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  const closeMinutes = branch ? timeToMinutes(branch.closes_at) : 24 * 60;
+  /** Grace window: a slot stays bookable for 15 minutes after its start time. */
+  const SLOT_GRACE_MINUTES = 15;
+
+  const slotBlocked = useCallback(
+    (targetId: string, slot: string, minutes: number) => {
+      if (isToday && timeToMinutes(slot) + SLOT_GRACE_MINUTES <= nowMinutes) return true;
+      if (timeToMinutes(slot) + minutes > closeMinutes) return true;
+      return isRangeBusy(busy, targetId, slot, minutes);
+    },
+    [busy, closeMinutes, isToday, nowMinutes],
+  );
+
+
+  useEffect(() => {
+    setStationId(null);
+    setStartTime(null);
+    setDurationMinutes(null);
+    setExtras({});
+  }, [branchId, date]);
+
+  /* ---------------- Multi-tab guard ---------------- */
+  const [tabBlocked, setTabBlocked] = useState(false);
+  const tabIdRef = useRef<string>("");
+  useEffect(() => {
+    if (!tabIdRef.current) tabIdRef.current = crypto.randomUUID();
+    const me = tabIdRef.current;
+    const read = () => {
+      try {
+        return JSON.parse(window.localStorage.getItem(TAB_KEY) ?? "null") as
+          | { id: string; at: number }
+          | null;
+      } catch {
+        return null;
+      }
+    };
+    const claim = () => {
+      const cur = read();
+      const stale = !cur || Date.now() - cur.at > 6000;
+      if (cur && !stale && cur.id !== me) {
+        setTabBlocked(true);
+        return;
+      }
+      setTabBlocked(false);
+      window.localStorage.setItem(TAB_KEY, JSON.stringify({ id: me, at: Date.now() }));
+    };
+    claim();
+    const id = window.setInterval(claim, 2500);
+    return () => {
+      window.clearInterval(id);
+      const cur = read();
+      if (cur?.id === me) window.localStorage.removeItem(TAB_KEY);
+    };
+  }, []);
+
+  /* ---------------- Restore reservation after refresh ---------------- */
+  const pendingRestore = useRef<StoredHold | null>(null);
+  const skipHoldOnce = useRef(false);
+  const restoreFn = useServerFn(getActiveHold);
+
+  useEffect(() => {
+    const stored = readStoredHold();
+    if (!stored) return;
+    window.localStorage.removeItem(HOLD_KEY);
+    if (stored.expiresAt <= Date.now()) {
+      toast.error("Your reservation expired", { description: "Please choose your slot again." });
+      return;
+    }
+    void restoreFn({ data: { sessionToken: sessionToken() } }).then((res) => {
+      if (!res.active || !res.expiresAt) {
+        toast.error("Your reservation expired", { description: "Please choose your slot again." });
+        return;
+      }
+      pendingRestore.current = { ...stored, expiresAt: new Date(res.expiresAt).getTime() };
+      skipHoldOnce.current = true;
+      setBranchId(stored.branchId);
+      setDate(stored.date);
+      setStep(2);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const p = pendingRestore.current;
+    if (!p || branchId !== p.branchId || date !== p.date) return;
+    pendingRestore.current = null;
+    setStationId(p.stationId);
+    setPlayers(p.players);
+    setStartTime(p.startTime);
+    setDurationMinutes(p.durationMinutes);
+    const restored: ExtraMap = {};
+    for (const e of p.extras ?? [])
+      restored[e.stationId] = {
+        startTime: e.startTime,
+        durationMinutes: e.durationMinutes,
+        rateId: e.rateId ?? null,
+        extraHours: e.extraHours ?? 0,
+      };
+    setExtras(restored);
+    setPasses(p.passes ?? {});
+    setExpiresAt(p.expiresAt);
+    toast.success("Reservation restored", { description: "Your slot is still held." });
+  }, [branchId, date]);
+
+
+  const sessionAmount =
+    startTime && durationMinutes ? rateFor(rates, players, durationMinutes) : 0;
+  const selectedExtras = useMemo(
+    () =>
+      Object.entries(extras)
+        .map(([stationId, sel]) => ({
+          station: extraStations.find((s) => s.id === stationId) ?? null,
+          ...sel,
+        }))
+        .filter((e) => e.station),
+    [extras, extraStations],
+  );
+  const extrasAmount = selectedExtras.reduce((sum, e) => {
+    if (!e.startTime || !e.durationMinutes) return sum;
+    const tier = stationRates.find((r) => r.id === e.rateId);
+    const extraHourRate = extraHourRateFor(e.station!.id);
+    const hours = tier && extraHourRate ? (e.extraHours ?? 0) : 0;
+    const base = tier ? Math.round(Number(tier.price)) : Math.round(slotPrice(e.station!, e.durationMinutes));
+    return sum + base + hours * Math.round(Number(extraHourRate?.price ?? 0));
+  }, 0);
+  const passLines = passOptions
+    .filter((p) => (passes[p.id] ?? 0) > 0)
+    .map((p) => ({ ...p, quantity: passes[p.id]! }));
+  const passesAmount = passLines.reduce((s, l) => s + l.price * l.quantity, 0);
+  const cockpitAmount = extrasAmount + passesAmount;
+
+  const foodAmount = cart.reduce((s, l) => s + l.price * l.quantity, 0);
+  const subtotal = sessionAmount + cockpitAmount + foodAmount;
+  const couponDiscount = coupon?.valid ? (coupon.discount ?? 0) : 0;
+  /* Student discount: flat 20% off, only on bills of ₹1000 or more. */
+  const studentEligible = isStudent && subtotal >= 1000;
+  const studentDiscount = studentEligible ? Math.round(subtotal * 0.2) : 0;
+
+  const totals = computeTotals({
+    session: sessionAmount,
+    addons: cockpitAmount,
+    cart,
+    discount: couponDiscount + studentDiscount,
+    taxPercent: branch ? Number(branch.tax_percent) : 0,
+  });
+
+  const extrasReady = selectedExtras.every((e) => e.startTime && e.durationMinutes);
+  /* A console is optional: the visitor may book only VR / snooker / theatre /
+     lounge, or skip gaming entirely when they are buying a pass. Whatever is
+     picked simply has to be complete. */
+  const consoleTouched = Boolean(stationId || startTime || durationMinutes);
+  const consoleReady = Boolean(station && startTime && durationMinutes);
+  const hasPasses = passLines.length > 0;
+  const gamingReady =
+    (!consoleTouched || consoleReady) &&
+    extrasReady &&
+    (consoleReady || selectedExtras.length > 0 || hasPasses);
+
+  /* ---------------- Reservation lock ---------------- */
+  const releasedRef = useRef(false);
+  const holdKey =
+    gamingReady && branch && (consoleReady || selectedExtras.length)
+      ? [
+          branch.id,
+          date,
+          station?.id ?? "-",
+          startTime ?? "-",
+          durationMinutes ?? "-",
+          selectedExtras
+            .filter((e) => e.startTime && e.durationMinutes)
+            .map((e) => `${e.station!.id}|${e.startTime}|${e.durationMinutes}|${e.extraHours ?? 0}`)
+            .sort()
+            .join(","),
+        ].join("~")
+      : null;
+
+  useEffect(() => {
+    if (!holdKey || !branch || step < 2) return;
+    if (skipHoldOnce.current) {
+      skipHoldOnce.current = false;
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const extraHolds = selectedExtras
+        .filter((e) => e.startTime && e.durationMinutes)
+        .map((e) => ({
+          stationId: e.station!.id,
+          startTime: e.startTime!,
+          durationMinutes: totalMinutes(e)!,
+          rateId: e.rateId ?? null,
+          extraHours: e.extraHours ?? 0,
+        }));
+      const holds = [
+        ...(consoleReady
+          ? [{ stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }]
+          : []),
+        ...extraHolds,
+      ];
+      const res = await holdFn({
+        data: { branchId: branch.id, date, sessionToken: sessionToken(), holds },
+      });
+      if (cancelled) return;
+      if (!res.ok) {
+        toast.error(res.message ?? "This slot has just become unavailable. Please choose another available time.");
+        setStartTime(null);
+        setDurationMinutes(null);
+        setExpiresAt(null);
+        setRemaining(0);
+        window.localStorage.removeItem(HOLD_KEY);
+        void refetchAvailability();
+        return;
+      }
+      releasedRef.current = false;
+      const until = new Date(res.expiresAt!).getTime();
+      setExpiresAt(until);
+      const stored: StoredHold = {
+        branchId: branch.id,
+        date,
+        stationId: consoleReady ? station!.id : null,
+        startTime: consoleReady ? startTime : null,
+        durationMinutes: consoleReady ? durationMinutes : null,
+        players,
+        extras: extraHolds,
+        passes,
+        expiresAt: until,
+      };
+      window.localStorage.setItem(HOLD_KEY, JSON.stringify(stored));
+      // The previous hold was released server-side — refresh so the old slot
+      // frees up in the UI instantly instead of waiting for the poll.
+      void refetchAvailability();
+    }, 450);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdKey, step >= 2]);
+
+  /* Selection cleared (station / time / duration / branch removed) — drop the
+     temporary reservation immediately so nobody is blocked by an orphan lock. */
+  const hasHoldRef = useRef(false);
+  hasHoldRef.current = expiresAt != null;
+  useEffect(() => {
+    if (holdKey || !hasHoldRef.current || skipHoldOnce.current) return;
+    setExpiresAt(null);
+    setRemaining(0);
+    window.localStorage.removeItem(HOLD_KEY);
+    releasedRef.current = true;
+    void releaseFn({ data: { sessionToken: sessionToken() } }).then(() => refetchAvailability());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdKey]);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const tick = () => {
+      const left = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+      setRemaining(left);
+      if (left === 0) {
+        setExpiresAt(null);
+        setStartTime(null);
+        setDurationMinutes(null);
+        setExtras({});
+        setStep(1);
+        window.localStorage.removeItem(HOLD_KEY);
+        void refetchAvailability();
+        toast.error("Your reservation expired", { description: "Pick your slot again to continue." });
+      }
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [expiresAt, refetchAvailability]);
+
+
+  const mmss = `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`;
+
+  const applyCoupon = async () => {
+    const gross = totals.session + totals.addons + totals.food;
+    if (!couponInput.trim() || gross <= 0) return;
+    setCouponBusy(true);
+    try {
+      const slotStart = startTime ?? selectedExtras.find((e) => e.startTime)?.startTime ?? null;
+      const res = await couponFn({
+        data: { branchId: branchId!, code: couponInput.trim(), amount: gross, date, startTime: slotStart },
+      });
+
+      setCoupon(res);
+      if (res.valid) toast.success("Coupon applied", { description: res.message });
+      else toast.error(res.message);
+    } finally {
+      setCouponBusy(false);
+    }
+  };
+
+  const submittingRef = useRef(false);
+  const submit = async () => {
+    if (submittingRef.current) return;
+    const next: Partial<Record<keyof CustomerForm, string>> = {};
+    if (form.fullName.trim().length < 2) next.fullName = "Please enter your name";
+    if (!isValidPhone(form.phone)) next.phone = "Enter a valid 10-digit mobile number";
+    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) next.email = "Enter a valid email";
+    setErrors(next);
+    if (Object.keys(next).length || !branch) return;
+    // Only slot-based bookings depend on a live reservation; a pass on its own
+    // blocks nothing, so it needs no hold.
+    const needsHold = consoleReady || selectedExtras.length > 0;
+    if (needsHold && (!expiresAt || expiresAt <= Date.now())) {
+      toast.error("Your reservation expired", { description: "Please choose your slot again." });
+      setStep(2);
+      return;
+    }
+
+    submittingRef.current = true;
+    setSubmitting(true);
+    try {
+      const res = await bookFn({
+        data: {
+          branchId: branch.id,
+          ...(consoleReady
+            ? { stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }
+            : {}),
+          date,
+          players,
+          gameTitle: "",
+          extras: selectedExtras
+            .filter((e) => e.startTime && e.durationMinutes)
+            .map((e) => ({
+              stationId: e.station!.id,
+              startTime: e.startTime!,
+              durationMinutes: e.durationMinutes!,
+              ...(e.rateId ? { rateId: e.rateId, extraHours: e.extraHours ?? 0 } : {}),
+            })),
+          passes: passLines.map((l) => ({ id: l.id, quantity: l.quantity })),
+          cart: cart.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+          couponCode: coupon?.valid ? coupon.code : undefined,
+          studentDiscount: studentEligible,
+          sessionToken: sessionToken(),
+          customer: {
+            fullName: form.fullName.trim(),
+            phone: form.phone.trim(),
+            email: form.email.trim(),
+            instructions: form.instructions.trim(),
+          },
+        },
+      });
+      if (!res.ok || !res.reference) {
+        toast.error(res.message ?? "Could not create your booking. Please try again.");
+        void refetchAvailability();
+        submittingRef.current = false;
+        return;
+      }
+      releasedRef.current = true;
+      setExpiresAt(null);
+      window.localStorage.removeItem(HOLD_KEY);
+      void navigate({ to: "/pay/$reference", params: { reference: res.reference } });
+
+    } catch {
+      toast.error("Network problem — your booking was not created. Please try again.");
+      submittingRef.current = false;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Release the hold when the visitor abandons the flow.
+  useEffect(() => {
+    return () => {
+      if (!releasedRef.current) {
+        releasedRef.current = true;
+        window.localStorage.removeItem(HOLD_KEY);
+        void releaseFn({ data: { sessionToken: sessionToken() } });
+
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+  const setQty = (id: string, name: string, price: number, qty: number) =>
+    setCart((prev) => {
+      const rest = prev.filter((l) => l.menuItemId !== id);
+      return qty > 0 ? [...rest, { menuItemId: id, name, price, quantity: qty }] : rest;
+    });
+  const qtyOf = (id: string) => cart.find((l) => l.menuItemId === id)?.quantity ?? 0;
+
+  // A pass covers the play time, so the gaming step is skipped for pass holders.
+  const skipGaming = hasPasses;
+  const canAdvance = step === 0 ? Boolean(branchId) : step === 2 ? gamingReady : true;
+  const goNext = () =>
+    setStep((s) => Math.min(STEPS.length - 1, s === 1 && skipGaming ? 3 : s + 1));
+  const goBack = () => setStep((s) => Math.max(0, s === 3 && skipGaming ? 1 : s - 1));
+
+  if (isLoading) {
+    return (
+      <div className="grid min-h-[50vh] place-items-center">
+        <Loader2 className="size-6 animate-spin text-cyan" />
+      </div>
+    );
+  }
+
+  if (tabBlocked) {
+    return (
+      <div className="mx-auto max-w-lg rounded-3xl border border-amber-400/30 bg-amber-400/5 p-8 text-center backdrop-blur-2xl">
+        <h2 className="text-xl font-black">Booking already open in another tab</h2>
+        <p className="mt-3 text-sm text-muted-foreground">
+          To keep your reservation safe, only one booking session can run at a time. Finish or close the
+          other tab, then reload this page.
+        </p>
+      </div>
+    );
+  }
+
+  
+
+
+  return (
+    <div className="pb-40">
+      <StepProgress step={step} skipGaming={skipGaming} />
+
+      {expiresAt ? (
+        <div className="mx-auto mt-6 flex w-fit items-center gap-2 rounded-full border border-cyan/30 bg-cyan/5 px-4 py-2 text-xs font-bold text-cyan animate-[scale-in_0.25s_ease-out]">
+          <Timer className="size-3.5" /> Slot reserved · {mmss}
+        </div>
+      ) : null}
+
+      <div key={step} className="mt-8 animate-[step-in_0.55s_cubic-bezier(0.22,1,0.36,1)_both]">
+        {/* ---------------- STEP 1 · BRANCH ---------------- */}
+        {step === 0 ? (
+          <section className="space-y-8">
+            <StepHead
+              title="Choose your arena"
+              hint="Pick the branch closest to you."
+            />
+            <div className="grid gap-5 sm:grid-cols-2">
+              {branches.map((b) => {
+                const selected = b.id === branchId;
+                const count = (catalogue?.stations ?? []).filter((s) => s.branch_id === b.id).length;
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setBranchId(b.id)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "group relative overflow-hidden rounded-3xl border border-border bg-surface/60 p-5 text-left backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      "hover:-translate-y-1.5 hover:border-cyan/40 hover:shadow-[0_28px_70px_-32px_var(--primary)]",
+                      selected &&
+                        "border-transparent shadow-[0_0_0_1px_var(--cyan),0_28px_80px_-30px_var(--primary)]",
+                    )}
+                  >
+                    {b.image_url ? (
+                      <img
+                        src={b.image_url}
+                        alt={b.name}
+                        loading="lazy"
+                        className="aspect-[16/9] w-full rounded-2xl border border-border object-cover"
+                      />
+                    ) : (
+                      <ImagePlaceholder label={`${b.name} photo`} className="aspect-[16/9]" />
+                    )}
+                    <div className="mt-4 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-lg font-extrabold">{b.name}</p>
+                        <p className="mt-1 flex items-start gap-1.5 text-xs leading-relaxed text-muted-foreground">
+                          <MapPin className="mt-0.5 size-3 shrink-0" />
+                          <span className="break-words">{b.address || "Address placeholder"}</span>
+                        </p>
+                      </div>
+                      {selected ? (
+                        <CheckCircle2 className="size-5 shrink-0 text-cyan animate-[scale-in_0.25s_ease-out]" />
+                      ) : null}
+                    </div>
+                    <p className="mt-3 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-cyan">
+                      {count} stations · {formatTime(b.opens_at)}–{formatTime(b.closes_at)}
+                    </p>
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(directionsUrl(b), "_blank", "noopener,noreferrer");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(directionsUrl(b), "_blank", "noopener,noreferrer");
+                        }
+                      }}
+                      className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-full border border-cyan/40 px-4 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-cyan transition-colors hover:bg-cyan/10"
+                    >
+                      <Navigation className="size-3.5" /> Get directions
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+          </section>
+        ) : null}
+
+        {/* ---------------- STEP 3 · GAMING ---------------- */}
+        {step === 2 ? (
+          <section className="space-y-8">
+            <StepHead
+              title="Build your session"
+              hint="Pick your day, then any experience you like — a console is optional, VR, snooker, the theatre or the lounge on their own are fine too."
+            />
+
+            <div>
+              <FieldLabel>Choose your day</FieldLabel>
+              <div className="-mx-1 mt-3 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
+                {days.map((d) => {
+                  const key = toDateKey(d);
+                  const selected = key === date;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setDate(key)}
+                      aria-pressed={selected}
+                      className={cn(
+                        "w-[74px] shrink-0 snap-start rounded-2xl border border-border bg-surface/60 px-2 py-3 text-center backdrop-blur-xl transition-all duration-300",
+                        "hover:-translate-y-1 hover:border-cyan/40",
+                        selected &&
+                          "border-transparent bg-linear-to-b from-primary/25 to-cyan/10 shadow-[0_0_0_1px_var(--cyan)]",
+                      )}
+                    >
+                      <span className="block text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {d.toLocaleDateString("en-IN", { weekday: "short" })}
+                      </span>
+                      <span className="mt-1 block text-lg font-black">{d.getDate()}</span>
+                      <span className="block text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
+                        {d.toLocaleDateString("en-IN", { month: "short" })}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+
+            {consoles.length ? (
+              <ConsoleSelect
+                label={consoles[0]!.group_label?.trim() || "Console Gaming"}
+                description={consoles[0]?.description ?? undefined}
+                consoles={consoles}
+                gamesFor={gamesFor}
+                slots={slots}
+                durations={durations}
+                priceFor={(m) => rateFor(rates, players, m)}
+                players={players}
+                playerOptions={PLAYER_OPTIONS}
+                playerPrice={(p) => rateFor(rates, p, 60)}
+                onPlayers={setPlayers}
+                startTime={startTime}
+                onStartTime={setStartTime}
+                durationMinutes={durationMinutes}
+                onDuration={setDurationMinutes}
+                stationId={stationId}
+                onStation={(id) => {
+                  setStationId(id);
+                  setStartTime(null);
+                  setDurationMinutes(null);
+                }}
+                enabled={consoleOn || Boolean(stationId)}
+                onToggle={() => {
+                  setConsoleOn((v) => {
+                    if (v) {
+                      setStationId(null);
+                      setStartTime(null);
+                      setDurationMinutes(null);
+                    }
+                    return !v;
+                  });
+                }}
+                slotBlocked={slotBlocked}
+                timeBlocked={(slot, minutes) => {
+                  if (isToday && timeToMinutes(slot) + SLOT_GRACE_MINUTES <= nowMinutes) return true;
+                  return timeToMinutes(slot) + minutes > closeMinutes;
+                }}
+              />
+            ) : null}
+
+            <div className="space-y-4">
+              {experienceGroups.filter((g) => !g.isConsole).map((g) => {
+                const isConsole = g.isConsole;
+                const selectedId = isConsole
+                  ? stationId
+                  : (g.stations.find((s) => extras[s.id])?.id ?? null);
+                const on = Boolean(selectedId);
+                const active = g.stations.find((s) => s.id === selectedId) ?? null;
+                const sel = active && !isConsole ? (extras[active.id] ?? null) : null;
+                const curStart = isConsole ? startTime : (sel?.startTime ?? null);
+                const curDuration = isConsole ? durationMinutes : (sel?.durationMinutes ?? null);
+                const bookable = g.stations.filter((s) => s.status === "available");
+
+                const toggle = () => {
+                  if (on) {
+                    if (isConsole) {
+                      setStationId(null);
+                      setStartTime(null);
+                      setDurationMinutes(null);
+                    } else {
+                      setExtras((prev) => {
+                        const next = { ...prev };
+                        delete next[selectedId!];
+                        return next;
+                      });
+                    }
+                    return;
+                  }
+                  const first = bookable[0];
+                  if (!first) return;
+                  if (isConsole) {
+                    setStationId(first.id);
+                    setStartTime(null);
+                    setDurationMinutes(null);
+                  } else {
+                    setExtras((prev) => ({
+                      ...prev,
+                      [first.id]: { startTime: null, durationMinutes: null, rateId: null, extraHours: 0 },
+                    }));
+                  }
+                };
+
+                const pick = (id: string) => {
+                  if (isConsole) {
+                    setStationId(id);
+                    setStartTime(null);
+                    setDurationMinutes(null);
+                  } else {
+                    setExtras((prev) => {
+                      const next = { ...prev };
+                      if (selectedId) delete next[selectedId];
+                      next[id] = { startTime: null, durationMinutes: null, rateId: null, extraHours: 0 };
+                      return next;
+                    });
+                  }
+                };
+
+                const setStart = (slot: string) => {
+                  if (isConsole) setStartTime(slot);
+                  else
+                    setExtras((prev) => ({
+                      ...prev,
+                      [active!.id]: { ...prev[active!.id]!, startTime: slot },
+                    }));
+                };
+                const setDur = (minutes: number) => {
+                  if (isConsole) setDurationMinutes(minutes);
+                  else
+                    setExtras((prev) => ({
+                      ...prev,
+                      [active!.id]: {
+                        ...prev[active!.id]!,
+                        durationMinutes: minutes,
+                        rateId: null,
+                        extraHours: 0,
+                      },
+                    }));
+                };
+                /** Admin-managed price tiers for this experience (empty for consoles). */
+                const tiers = isConsole ? [] : baseTiersFor(active?.id);
+                const extraHourRate = isConsole ? null : extraHourRateFor(active?.id);
+                const currentRateId = sel?.rateId ?? null;
+                const currentTier = tiers.find((t) => t.id === currentRateId) ?? null;
+                const extraHours = sel?.extraHours ?? 0;
+                const setTier = (rateId: string, minutes: number) =>
+                  setExtras((prev) => ({
+                    ...prev,
+                    [active!.id]: { ...prev[active!.id]!, rateId, durationMinutes: minutes, extraHours: 0 },
+                  }));
+                const setExtraHours = (hours: number) =>
+                  setExtras((prev) => ({
+                    ...prev,
+                    [active!.id]: { ...prev[active!.id]!, extraHours: Math.max(0, hours) },
+                  }));
+                /** Minutes this experience will actually block. */
+                const blockedMinutes = currentTier
+                  ? Number(currentTier.duration_minutes) + extraHours * 60
+                  : (curDuration ?? 30);
+                const priceFor = (minutes: number) =>
+                  isConsole
+                    ? rateFor(rates, players, minutes)
+                    : currentTier
+                      ? Math.round(Number(currentTier.price)) +
+                        extraHours * Math.round(Number(extraHourRate?.price ?? 0))
+                      : Math.round(slotPrice(active!, minutes));
+
+                return (
+                  <div
+                    key={g.label}
+                    className={cn(
+                      "overflow-hidden rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl transition-all duration-500",
+                      on && "border-transparent shadow-[0_0_0_1px_var(--cyan)]",
+                      !bookable.length && "opacity-50",
+                    )}
+                  >
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-extrabold">
+                          {g.label}
+                          <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
+                            {g.stations.length} available
+                          </span>
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {bookable.length
+                            ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
+                                isConsole
+                                  ? `From ${inr(rateFor(rates, players, 60))}/hr`
+                                  : (() => {
+                                      const list = baseTiersFor((active ?? g.stations[0])!.id);
+                                      return list.length
+                                        ? `From ${inr(Math.min(...list.map((r) => Number(r.price))))}`
+                                        : `${inr(Number((active ?? g.stations[0])!.hourly_price))}/hr`;
+                                    })()
+                              }`.trim()
+                            : "Currently unavailable"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={on}
+                        disabled={!bookable.length}
+                        aria-label={`Add ${g.label}`}
+                        onClick={toggle}
+                        className={cn(
+                          "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300 disabled:cursor-not-allowed",
+                          on
+                            ? "border-transparent bg-linear-to-r from-primary to-violet"
+                            : "border-border bg-muted/40",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
+                            on ? "left-6" : "left-0.5",
+                          )}
+                        />
+                      </button>
+                    </div>
+
+                    {on && active ? (
+                      <div className="mt-6 space-y-7 animate-[step-in_0.5s_cubic-bezier(0.22,1,0.36,1)_both]">
+                        <div>
+                          <FieldLabel>Choose your {g.label.toLowerCase()}</FieldLabel>
+                          <select
+                            value={active.id}
+                            onChange={(e) => pick(e.target.value)}
+                            className="w-full rounded-2xl border border-border bg-surface/70 px-4 py-3 text-sm font-semibold outline-none focus:border-cyan/50"
+                          >
+                            {g.stations.map((s) => (
+                              <option key={s.id} value={s.id} disabled={s.status !== "available"}>
+                                {s.name}
+                                {s.status !== "available" ? " — unavailable" : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {active.image_url ? (
+                          <img
+                            src={active.image_url}
+                            alt={active.name}
+                            loading="lazy"
+                            className="aspect-[16/9] w-full rounded-2xl border border-border object-cover"
+                          />
+                        ) : null}
+
+                        {active.games.length ? (
+                          <div>
+                            <FieldLabel>Games you can play here</FieldLabel>
+                            <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+                              {active.games.map((title) => (
+                                <GameTile
+                                  key={title}
+                                  game={{
+                                    id: title,
+                                    title,
+                                    cover: title.slice(0, 3).toUpperCase(),
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <div>
+                          <FieldLabel>Available start times</FieldLabel>
+                          <SlotGrid
+                            slots={
+                              active.station_type === "vr" ||
+                              active.station_type === "driving_simulator"
+                                ? fineSlots
+                                : slots
+                            }
+                            value={curStart}
+                            isDisabled={(slot) => slotBlocked(active.id, slot, blockedMinutes)}
+                            onSelect={setStart}
+                          />
+                        </div>
+
+                        {curStart ? (
+                          <div className="animate-[step-in_0.5s_cubic-bezier(0.22,1,0.36,1)_both] space-y-7">
+                            <div>
+                              <FieldLabel>{tiers.length ? "Package" : "Duration"}</FieldLabel>
+                              {tiers.length ? (
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  {tiers.map((t) => {
+                                    const blocked = slotBlocked(active.id, curStart, t.duration_minutes);
+                                    return (
+                                      <button
+                                        key={t.id}
+                                        type="button"
+                                        disabled={blocked}
+                                        onClick={() => setTier(t.id, t.duration_minutes)}
+                                        className={cn(
+                                          "rounded-2xl border border-border bg-surface/60 px-4 py-3 text-left transition-all duration-300",
+                                          "hover:-translate-y-0.5 hover:border-cyan/40 disabled:cursor-not-allowed disabled:opacity-40",
+                                          currentRateId === t.id &&
+                                            "border-transparent shadow-[0_0_0_1px_var(--cyan)]",
+                                        )}
+                                      >
+                                        <span className="flex items-baseline justify-between gap-3">
+                                          <span className="text-sm font-bold">{t.label}</span>
+                                          <span className="text-base font-black text-cyan">
+                                            {inr(Number(t.price))}
+                                          </span>
+                                        </span>
+                                        <span className="mt-1 block text-[0.65rem] text-muted-foreground">
+                                          {t.note ? `${t.note} · ` : ""}
+                                          {t.duration_minutes} mins
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                  {durations.map((d) => (
+                                    <DurationCard
+                                      key={d.minutes}
+                                      label={d.label}
+                                      price={priceFor(d.minutes)}
+                                      selected={curDuration === d.minutes}
+                                      disabled={slotBlocked(active.id, curStart, d.minutes)}
+                                      onClick={() => setDur(d.minutes)}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+
+                              {currentTier && extraHourRate ? (
+                                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/50 px-4 py-3">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-bold">{extraHourRate.label}</p>
+                                    <p className="text-[0.65rem] text-muted-foreground">
+                                      {inr(Number(extraHourRate.price))} per extra hour · your slot is held
+                                      for {Math.round(blockedMinutes / 60)}h
+                                      {blockedMinutes % 60 ? ` ${blockedMinutes % 60}m` : ""}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      type="button"
+                                      aria-label="Remove one extra hour"
+                                      disabled={extraHours === 0}
+                                      onClick={() => setExtraHours(extraHours - 1)}
+                                      className="grid size-9 place-items-center rounded-full border border-border text-lg font-bold transition-colors hover:border-cyan/50 disabled:opacity-30"
+                                    >
+                                      −
+                                    </button>
+                                    <span className="w-6 text-center text-sm font-black">{extraHours}</span>
+                                    <button
+                                      type="button"
+                                      aria-label="Add one extra hour"
+                                      disabled={slotBlocked(active.id, curStart, blockedMinutes + 60)}
+                                      onClick={() => setExtraHours(extraHours + 1)}
+                                      className="grid size-9 place-items-center rounded-full border border-border text-lg font-bold transition-colors hover:border-cyan/50 disabled:opacity-30"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+
+                            {isConsole ? (
+                              <div>
+                                <FieldLabel>Players</FieldLabel>
+                                <div className="flex flex-wrap gap-2">
+                                  {PLAYER_OPTIONS.map((p) => (
+                                    <Chip key={p} selected={players === p} onClick={() => setPlayers(p)}>
+                                      {p} {p === 1 ? "Player" : "Players"}
+                                      <span className="ml-2 text-[0.65rem] font-bold text-muted-foreground">
+                                        {inr(rateFor(rates, p, 60))}/hr
+                                      </span>
+                                    </Chip>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
+
+                            {curDuration ? (
+                              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3 animate-[scale-in_0.3s_ease-out]">
+                                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan">
+                                  {active.name} · {formatTime(curStart)} –{" "}
+                                  {formatTime(addMinutes(curStart, isConsole ? curDuration : blockedMinutes))}
+                                  {isConsole
+                                    ? ` · ${players} ${players === 1 ? "player" : "players"}`
+                                    : ""}
+                                </span>
+                                <span className="text-xl font-black">{inr(priceFor(curDuration))}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {/* ---------------- STEP 2 · PASSES ---------------- */}
+        {step === 1 ? (
+          <section className="space-y-8">
+            <StepHead
+              title="Passes, memberships & offers"
+              hint="Take a membership, the unlimited pass or a combo offer and your play time is covered — we'll skip straight to food. Prefer to pay per session? Just continue."
+            />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {passOptions.map((p) => {
+                const qty = passes[p.id] ?? 0;
+                return (
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "flex flex-col rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      "hover:-translate-y-1 hover:border-violet/40 hover:shadow-[0_24px_60px_-34px_var(--violet)]",
+                      qty > 0 && "border-transparent shadow-[0_0_0_1px_var(--violet)]",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-extrabold">{p.name}</p>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{p.subtitle}</p>
+                      </div>
+                      {p.badge ? (
+                        <span className="shrink-0 rounded-full border border-violet/40 bg-violet/10 px-2.5 py-1 text-[0.55rem] font-bold uppercase tracking-[0.16em] text-violet">
+                          {p.badge}
+                        </span>
+                      ) : null}
+                    </div>
+                    {p.perks.length ? (
+                      <ul className="mt-3 space-y-1.5">
+                        {p.perks.slice(0, 4).map((perk) => (
+                          <li key={perk} className="flex gap-2 text-[0.7rem] text-muted-foreground">
+                            <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-cyan" /> {perk}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <div className="mt-4 flex items-end justify-between gap-3 pt-1">
+                      <span>
+                        <span className="block text-lg font-black text-cyan">{inr(p.price)}</span>
+                        {p.validity ? (
+                          <span className="block text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                            {p.validity}
+                          </span>
+                        ) : null}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label={`Remove one ${p.name}`}
+                          disabled={qty === 0}
+                          onClick={() =>
+                            setPasses((prev) => {
+                              const next = { ...prev };
+                              if ((next[p.id] ?? 0) <= 1) delete next[p.id];
+                              else next[p.id] = next[p.id]! - 1;
+                              return next;
+                            })
+                          }
+                          className="grid size-8 place-items-center rounded-lg border border-border transition-colors hover:border-violet/40 disabled:opacity-30"
+                        >
+                          <Minus className="size-3.5" />
+                        </button>
+                        <span className="w-6 text-center text-sm font-bold">{qty}</span>
+                        <button
+                          type="button"
+                          aria-label={`Add one ${p.name}`}
+                          onClick={() =>
+                            setPasses((prev) => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 }))
+                          }
+                          className="grid size-8 place-items-center rounded-lg border border-violet/30 bg-violet/10 text-violet transition-transform hover:scale-110"
+                        >
+                          <Plus className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {!passOptions.length ? (
+              <p className="text-sm text-muted-foreground">No passes available right now.</p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* ---------------- STEP 4 · FOOD ---------------- */}
+        {step === 3 ? (
+          <section className="space-y-8">
+            <StepHead
+              title="Food & drinks"
+              hint="Optional — everything is served right at your station."
+            />
+            <div className="space-y-8">
+              {Object.entries(
+                menu.reduce<Record<string, typeof menu>>((acc, m) => {
+                  (acc[m.category] ??= []).push(m);
+                  return acc;
+                }, {}),
+              ).map(([cat, items]) => (
+                <div key={cat}>
+                  <h3 className="text-[0.62rem] font-bold uppercase tracking-[0.28em] text-cyan">{cat}</h3>
+                  <ul className="mt-3 divide-y divide-border/60 rounded-3xl border border-border bg-surface/50 backdrop-blur-xl">
+                    {items.map((m) => {
+                      const qty = qtyOf(m.id);
+                      return (
+                        <li
+                          key={m.id}
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-3 transition-colors duration-300",
+                            qty > 0 && "bg-cyan/5",
+                          )}
+                        >
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{m.name}</span>
+                          <span className="shrink-0 text-sm font-black text-cyan">
+                            {inr(Number(m.price))}
+                          </span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Remove one ${m.name}`}
+                              disabled={qty === 0}
+                              onClick={() => setQty(m.id, m.name, Number(m.price), qty - 1)}
+                              className="grid size-8 place-items-center rounded-lg border border-border transition-colors hover:border-cyan/40 disabled:opacity-30"
+                            >
+                              <Minus className="size-3.5" />
+                            </button>
+                            <span className="w-5 text-center text-sm font-bold">{qty}</span>
+                            <button
+                              type="button"
+                              aria-label={`Add one ${m.name}`}
+                              onClick={() => setQty(m.id, m.name, Number(m.price), qty + 1)}
+                              className="grid size-8 place-items-center rounded-lg border border-cyan/30 bg-cyan/10 text-cyan transition-transform hover:scale-110"
+                            >
+                              <Plus className="size-3.5" />
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            {!menu.length ? (
+              <p className="text-sm text-muted-foreground">Menu coming soon.</p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* ---------------- STEP 5 · CHECKOUT ---------------- */}
+        {step === 4 ? (
+          <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="min-w-0 space-y-6">
+              <StepHead title="Your details" hint="No payment now — we confirm everything by phone." />
+              <div className="space-y-3">
+                <Field
+                  label="Full name"
+                  value={form.fullName}
+                  onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
+                  {...(errors.fullName ? { error: errors.fullName } : {})}
+                  required
+                  autoComplete="name"
+                />
+                <Field
+                  label="Phone number"
+                  value={form.phone}
+                  onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+                  type="tel"
+                  {...(errors.phone ? { error: errors.phone } : {})}
+                  required
+                  autoComplete="tel"
+                />
+                <Field
+                  label="Email (optional)"
+                  value={form.email}
+                  onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+                  type="email"
+                  {...(errors.email ? { error: errors.email } : {})}
+                  autoComplete="email"
+                />
+                <Field
+                  label="Special instructions (optional)"
+                  value={form.instructions}
+                  onChange={(v) => setForm((f) => ({ ...f, instructions: v }))}
+                  textarea
+                />
+              </div>
+
+              <div>
+                <FieldLabel>Coupon code</FieldLabel>
+                <div className="flex gap-2">
+                  <input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="Enter coupon"
+                    className="min-w-0 flex-1 rounded-xl border border-border bg-surface/60 px-3 py-2.5 text-sm outline-none transition-colors focus:border-cyan/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={couponBusy || !couponInput.trim()}
+                    className="shrink-0 rounded-xl border border-cyan/30 bg-cyan/10 px-5 text-sm font-bold text-cyan transition-transform hover:scale-[1.03] disabled:opacity-40"
+                  >
+                    {couponBusy ? <Loader2 className="size-4 animate-spin" /> : "Apply coupon"}
+                  </button>
+                </div>
+                {coupon ? (
+                  <p className={cn("mt-2 text-xs", coupon.valid ? "text-emerald-300" : "text-rose-300")}>
+                    {coupon.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-border bg-surface/50 p-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isStudent}
+                    onChange={(e) => setIsStudent(e.target.checked)}
+                    className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]"
+                  />
+                  <span>
+                    <span className="text-sm font-bold">I am a Student (20% OFF)</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Applicable on bills of ₹1,000 and above.
+                    </span>
+                  </span>
+                </label>
+
+                {isStudent && !studentEligible ? (
+                  <p className="mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-200">
+                    Student Discount is applicable only on bills above ₹1000.
+                  </p>
+                ) : null}
+
+                <div className="mt-3 rounded-xl border border-amber-300/30 bg-amber-300/8 p-3.5">
+                  <p className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-amber-200">
+                    <AlertTriangle className="size-3.5" /> Student Discount Terms
+                  </p>
+                  <ul className="mt-2 space-y-1 text-xs text-amber-100/85">
+                    <li>• Valid Student ID is mandatory.</li>
+                    <li>• Student ID will be verified at the café before your gaming session.</li>
+                    <li>
+                      • If a valid Student ID is not produced during check-in, the discount will be
+                      removed and the remaining amount must be paid before the booking starts.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+
+            <aside className="lg:sticky lg:top-6 lg:h-fit">
+              <div className="relative overflow-hidden rounded-3xl border border-border bg-surface/70 p-5 backdrop-blur-2xl shadow-[0_40px_100px_-50px_var(--primary)]">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan to-transparent"
+                />
+                <h2 className="text-sm font-extrabold uppercase tracking-[0.2em]">Booking summary</h2>
+                <dl className="mt-5 space-y-2.5 text-sm">
+                  <Row label="Branch" value={branch?.name ?? "—"} />
+                  <Row
+                    label="Date"
+                    value={new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  />
+                  <Row label="PlayStation" value={station?.name ?? "—"} />
+                  <Row
+                    label="Duration"
+                    value={
+                      startTime && durationMinutes
+                        ? `${formatTime(startTime)} – ${formatTime(addMinutes(startTime, durationMinutes))}`
+                        : "—"
+                    }
+                  />
+                  <Row label="Players" value={String(players)} />
+                  {selectedExtras.map((e) => (
+                    <Row
+                      key={e.station!.id}
+                      label={e.station!.name}
+                      value={
+                        e.startTime && e.durationMinutes
+                          ? `${formatTime(e.startTime)} – ${formatTime(addMinutes(e.startTime, totalMinutes(e)!))}`
+                          : "—"
+                      }
+                    />
+                  ))}
+                  {passLines.map((l) => (
+                    <Row key={l.id} label={l.name} value={`× ${l.quantity}`} />
+                  ))}
+                  {cart.length ? (
+                    cart.map((l) => (
+                      <Row
+                        key={l.menuItemId}
+                        label={`${l.quantity} × ${l.name}`}
+                        value={inr(l.price * l.quantity)}
+                      />
+                    ))
+                  ) : (
+                    <Row label="Food" value="—" />
+                  )}
+                </dl>
+                <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
+                  <Row label="Session" value={inr(totals.session)} strong />
+                  {extrasAmount ? <Row label="Experiences" value={inr(extrasAmount)} strong /> : null}
+                  {passesAmount ? <Row label="Passes & offers" value={inr(passesAmount)} strong /> : null}
+                  {totals.food ? <Row label="Food & drinks" value={inr(totals.food)} strong /> : null}
+                  <Row
+                    label="Coupon discount"
+                    value={couponDiscount ? `− ${inr(couponDiscount)}` : "—"}
+                    strong
+                  />
+                  <Row
+                    label="Student discount (20%)"
+                    value={studentDiscount ? `− ${inr(studentDiscount)}` : "—"}
+                    strong
+                  />
+                  <Row label="Subtotal" value={inr(Math.max(0, subtotal - totals.discount))} strong />
+                  <Row label={`Taxes (${branch?.tax_percent ?? 0}%)`} value={inr(totals.tax)} strong />
+                </div>
+                <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3">
+                  <span className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-cyan">
+                    Final total
+                  </span>
+                  <span key={totals.total} className="text-2xl font-black animate-[scale-in_0.25s_ease-out]">
+                    {inr(totals.total)}
+                  </span>
+                </div>
+                <p className="mt-3 flex items-center justify-center gap-1.5 text-[0.65rem] text-muted-foreground">
+                  <ShieldCheck className="size-3.5 text-cyan" /> No payment now — we confirm by phone
+                </p>
+              </div>
+            </aside>
+          </section>
+        ) : null}
+      </div>
+
+      {/* ---------------- STICKY SUMMARY BAR ---------------- */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-2xl">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              {[
+                branch?.name,
+                station?.name,
+                startTime && durationMinutes
+                  ? `${formatTime(startTime)} · ${durationMinutes / 60 >= 1 ? `${durationMinutes / 60}h` : "30m"}`
+                  : null,
+                selectedExtras.length ? `+ ${selectedExtras.length} experience(s)` : null,
+                passLines.length ? `${passLines.reduce((s, l) => s + l.quantity, 0)} pass(es)` : null,
+                cart.length ? `${cart.reduce((s, l) => s + l.quantity, 0)} food items` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Start by choosing a branch"}
+            </p>
+            <p className="mt-0.5 flex items-baseline gap-2">
+              <span className="text-[0.62rem] uppercase tracking-[0.18em] text-cyan">Estimated total</span>
+              <span key={totals.total} className="text-xl font-black animate-[scale-in_0.25s_ease-out]">
+                {inr(totals.total)}
+              </span>
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {step > 0 ? (
+              <button
+                type="button"
+                onClick={goBack}
+                className="inline-flex items-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40"
+              >
+                <ArrowLeft className="size-3.5" /> Back
+              </button>
+            ) : null}
+            {step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canAdvance}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300",
+                  canAdvance
+                    ? "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] hover:scale-[1.03] active:scale-[0.99]"
+                    : "cursor-not-allowed border border-border bg-muted/30 text-muted-foreground",
+                )}
+              >
+                Next <ArrowRight className="size-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={submit}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
+              >
+                {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
+                Proceed to Payment
+              </button>
+
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepProgress({ step, skipGaming }: { step: number; skipGaming?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      {STEPS.map((label, i) => {
+        const done = i < step;
+        const active = i === step;
+        const skipped = Boolean(skipGaming) && label === "Gaming";
+        return (
+          <div
+            key={label}
+            className={cn("flex min-w-0 flex-1 items-center gap-2", skipped && "opacity-40")}
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "grid size-6 shrink-0 place-items-center rounded-full border text-[0.6rem] font-black transition-all duration-500",
+                    done && "border-transparent bg-cyan text-background",
+                    active && "border-cyan bg-cyan/15 text-cyan",
+                    !done && !active && "border-border text-muted-foreground",
+                  )}
+                >
+                  {done ? <CheckCircle2 className="size-3.5" /> : i + 1}
+                </span>
+                <span
+                  className={cn(
+                    "truncate text-[0.62rem] font-bold uppercase tracking-[0.2em] transition-colors",
+                    active ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {label}
+                </span>
+              </div>
+              <span
+                className={cn(
+                  "mt-2 block h-0.5 w-full rounded-full transition-all duration-700",
+                  done || active
+                    ? "bg-linear-to-r from-primary via-cyan to-violet"
+                    : "bg-border",
+                )}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StepHead({ title, hint }: { title: string; hint: string }) {
+  return (
+    <div>
+      <h2 className="text-2xl font-black sm:text-3xl">{title}</h2>
+      <p className="mt-2 max-w-xl text-sm text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+function FieldLabel({ children, tone = "cyan" }: { children: React.ReactNode; tone?: "cyan" | "violet" }) {
+  return (
+    <p
+      className={cn(
+        "mb-3 text-[0.62rem] font-semibold uppercase tracking-[0.24em]",
+        tone === "cyan" ? "text-cyan" : "text-violet",
+      )}
+    >
+      {children}
+    </p>
+  );
+}
+
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
+      <dt className="truncate text-xs text-muted-foreground">{label}</dt>
+      <dd className={cn("truncate text-right", strong ? "font-bold" : "font-semibold")}>{value}</dd>
+    </div>
+  );
+}
+
+function ConsoleCard({
+  station,
+  expanded,
+  fullyBooked,
+  onToggle,
+  children,
+}: {
+  station: Station;
+  expanded: boolean;
+  fullyBooked: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  const status =
+    station.status !== "available" ? "maintenance" : fullyBooked ? "booked" : "available";
+  const disabled = station.status !== "available";
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-3xl border border-border bg-surface/60 backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        !disabled && "hover:border-cyan/40 hover:shadow-[0_28px_70px_-34px_var(--primary)]",
+        expanded && "border-transparent shadow-[0_0_0_1px_var(--cyan),0_36px_90px_-40px_var(--primary)]",
+        disabled && "opacity-50",
+      )}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="grid w-full grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-4 p-4 text-left disabled:cursor-not-allowed"
+      >
+        <ImagePlaceholder label="Station" className="aspect-square w-22" />
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 truncate text-base font-extrabold">
+            <Gamepad2 className="size-4 shrink-0 text-cyan" />
+            {station.name}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {station.description ?? "Premium station placeholder description"}
+          </p>
+          <span className="mt-2 inline-block">
+            <StatusTag
+              tone={status}
+              label={
+                status === "available" ? "Available" : status === "booked" ? "Fully booked" : "Maintenance"
+              }
+            />
+          </span>
+        </div>
+        <ChevronDown
+          className={cn(
+            "size-5 shrink-0 text-muted-foreground transition-transform duration-500",
+            expanded && "rotate-180 text-cyan",
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          "grid transition-all duration-600 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-border px-4 pb-6">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
