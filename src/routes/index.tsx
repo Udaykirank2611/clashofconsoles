@@ -12,6 +12,7 @@ import { LiveAvailability } from "@/components/site/sections/LiveAvailability";
 import { Experiences } from "@/components/site/sections/Experiences";
 import { Memberships } from "@/components/site/sections/Memberships";
 import { ComboOffer } from "@/components/site/sections/ComboOffer";
+import { LoyaltyOffer } from "@/components/site/sections/LoyaltyOffer";
 import { RateCard } from "@/components/site/sections/RateCard";
 import { UnlimitedPass } from "@/components/site/sections/UnlimitedPass";
 import { StudentOffer } from "@/components/site/sections/StudentOffer";
@@ -113,6 +114,7 @@ function Index() {
         <SectionDivider variant="angled" />
         <Memberships plans={content.plans} />
         <ComboOffer offer={content.comboOffer} />
+        <LoyaltyOffer />
         <SectionDivider variant="glow" />
         <RateCard experiences={content.experiences} rates={content.rates} branches={content.branches} />
         <UnlimitedPass offer={content.unlimitedPass} />
