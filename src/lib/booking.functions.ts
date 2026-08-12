@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { addMinutes, isRangeBusy, slotPrice } from "@/lib/booking/pricing";
+import { addMinutes, computeBill, isRangeBusy, slotPrice } from "@/lib/booking/pricing";
+import type { CouponCategory } from "@/lib/booking/pricing";
+
 import { rateFor } from "@/lib/booking/config";
 import type {
   AvailabilityEntry,
