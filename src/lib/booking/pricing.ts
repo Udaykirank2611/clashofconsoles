@@ -87,6 +87,90 @@ export function computeTotals(opts: {
   };
 }
 
+export type CouponCategory = "gaming" | "food" | "entire_bill";
+
+export const COUPON_CATEGORY_LABELS: Record<CouponCategory, string> = {
+  gaming: "Gaming Only",
+  food: "Food Only",
+  entire_bill: "Entire Bill",
+};
+
+export interface Bill {
+  gamingSubtotal: number;
+  gamingDiscount: number;
+  gamingTotal: number;
+  foodSubtotal: number;
+  foodDiscount: number;
+  foodTotal: number;
+  combined: number;
+  billDiscount: number;
+  studentEligible: boolean;
+  studentDiscount: number;
+  taxable: number;
+  tax: number;
+  grandTotal: number;
+  /** Sum of every discount, for the stored booking record. */
+  totalDiscount: number;
+}
+
+/** Minimum gaming spend required for the student discount. */
+export const STUDENT_MIN_GAMING = 1000;
+export const STUDENT_RATE = 0.2;
+
+/**
+ * Category-aware bill. Order is fixed:
+ * gaming subtotal → gaming coupon → food subtotal → food coupon →
+ * combine → entire-bill coupon → student discount (gaming portion only).
+ */
+export function computeBill(opts: {
+  gamingSubtotal: number;
+  foodSubtotal: number;
+  coupon?: { category: CouponCategory; discount: number } | null;
+  isStudent?: boolean;
+  taxPercent?: number;
+}): Bill {
+  const gamingSubtotal = Math.max(0, Math.round(opts.gamingSubtotal));
+  const foodSubtotal = Math.max(0, Math.round(opts.foodSubtotal));
+  const c = opts.coupon ?? null;
+  const raw = c ? Math.max(0, Math.round(c.discount)) : 0;
+
+  const gamingDiscount = c?.category === "gaming" ? Math.min(raw, gamingSubtotal) : 0;
+  const gamingTotal = gamingSubtotal - gamingDiscount;
+
+  const foodDiscount = c?.category === "food" ? Math.min(raw, foodSubtotal) : 0;
+  const foodTotal = foodSubtotal - foodDiscount;
+
+  const combined = gamingTotal + foodTotal;
+  const billDiscount = c?.category === "entire_bill" ? Math.min(raw, combined) : 0;
+
+  // Student discount is calculated on gaming only, never on food.
+  const studentEligible = Boolean(opts.isStudent) && gamingTotal >= STUDENT_MIN_GAMING;
+  const studentDiscount = studentEligible
+    ? Math.min(Math.round(gamingTotal * STUDENT_RATE), combined - billDiscount)
+    : 0;
+
+  const taxable = Math.max(0, combined - billDiscount - studentDiscount);
+  const tax = (taxable * (opts.taxPercent ?? 0)) / 100;
+
+  return {
+    gamingSubtotal,
+    gamingDiscount,
+    gamingTotal,
+    foodSubtotal,
+    foodDiscount,
+    foodTotal,
+    combined,
+    billDiscount,
+    studentEligible,
+    studentDiscount,
+    taxable,
+    tax,
+    grandTotal: taxable + tax,
+    totalDiscount: gamingDiscount + foodDiscount + billDiscount + studentDiscount,
+  };
+}
+
+
 /** "HH:MM(:SS)" -> minutes from midnight. */
 export function timeToMinutes(t: string) {
   const [h = "0", m = "0"] = t.split(":");

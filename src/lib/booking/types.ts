@@ -125,6 +125,8 @@ export interface CouponResult {
   message: string;
   code?: string;
   couponId?: string;
+  /** Which part of the bill the coupon applies to. */
+  category?: "gaming" | "food" | "entire_bill";
   discount?: number;
 }
 
@@ -176,6 +178,9 @@ export interface BookingSummary {
   addons_amount: number;
   food_amount: number;
   discount_amount: number;
+  gaming_discount_amount?: number;
+  food_discount_amount?: number;
+  bill_discount_amount?: number;
   student_discount_amount?: number;
   tax_amount: number;
   total_amount: number;

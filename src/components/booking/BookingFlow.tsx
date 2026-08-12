@@ -33,7 +33,7 @@ import {
 
 import {
   addMinutes,
-  computeTotals,
+  computeBill,
   formatTime,
   generateSlots,
   inr,
@@ -45,6 +45,8 @@ import {
 } from "@/lib/booking/pricing";
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
 import { ConsoleSelect } from "./ConsoleSelect";
+import type { CouponCategory } from "@/lib/booking/pricing";
+import { BillSummary, type BillLine } from "./BillSummary";
 import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Passes", "Gaming", "Food", "Checkout"] as const;
@@ -431,14 +433,15 @@ export function BookingFlow() {
         .filter((e) => e.station),
     [extras, extraStations],
   );
-  const extrasAmount = selectedExtras.reduce((sum, e) => {
-    if (!e.startTime || !e.durationMinutes) return sum;
+  const extraAmountFor = (e: (typeof selectedExtras)[number]) => {
+    if (!e.startTime || !e.durationMinutes) return 0;
     const tier = stationRates.find((r) => r.id === e.rateId);
     const extraHourRate = extraHourRateFor(e.station!.id);
     const hours = tier && extraHourRate ? (e.extraHours ?? 0) : 0;
     const base = tier ? Math.round(Number(tier.price)) : Math.round(slotPrice(e.station!, e.durationMinutes));
-    return sum + base + hours * Math.round(Number(extraHourRate?.price ?? 0));
-  }, 0);
+    return base + hours * Math.round(Number(extraHourRate?.price ?? 0));
+  };
+  const extrasAmount = selectedExtras.reduce((sum, e) => sum + extraAmountFor(e), 0);
   const passLines = passOptions
     .filter((p) => (passes[p.id] ?? 0) > 0)
     .map((p) => ({ ...p, quantity: passes[p.id]! }));
@@ -446,19 +449,46 @@ export function BookingFlow() {
   const cockpitAmount = extrasAmount + passesAmount;
 
   const foodAmount = cart.reduce((s, l) => s + l.price * l.quantity, 0);
-  const subtotal = sessionAmount + cockpitAmount + foodAmount;
-  const couponDiscount = coupon?.valid ? (coupon.discount ?? 0) : 0;
-  /* Student discount: flat 20% off, only on bills of ₹1000 or more. */
-  const studentEligible = isStudent && subtotal >= 1000;
-  const studentDiscount = studentEligible ? Math.round(subtotal * 0.2) : 0;
+  const gamingSubtotal = sessionAmount + cockpitAmount;
+  const subtotal = gamingSubtotal + foodAmount;
 
-  const totals = computeTotals({
-    session: sessionAmount,
-    addons: cockpitAmount,
-    cart,
-    discount: couponDiscount + studentDiscount,
+  /* Category-aware bill: gaming coupon → food coupon → entire-bill coupon →
+     student discount (20% of gaming only, min ₹1000 of gaming). */
+  const bill = computeBill({
+    gamingSubtotal,
+    foodSubtotal: foodAmount,
+    coupon:
+      coupon?.valid && coupon.discount
+        ? { category: (coupon.category ?? "entire_bill") as CouponCategory, discount: coupon.discount }
+        : null,
+    isStudent,
     taxPercent: branch ? Number(branch.tax_percent) : 0,
   });
+  const studentEligible = bill.studentEligible;
+
+  const gamingLines: BillLine[] = [
+    ...(sessionAmount
+      ? [{ key: "session", label: station?.name ?? "Gaming session", amount: sessionAmount }]
+      : []),
+    ...selectedExtras
+      .filter((e) => e.station)
+      .map((e) => ({
+        key: e.station!.id,
+        label: e.station!.name,
+        amount: extraAmountFor(e),
+      })),
+    ...passLines.map((l) => ({
+      key: l.id,
+      label: l.quantity > 1 ? `${l.quantity} × ${l.name}` : l.name,
+      amount: l.price * l.quantity,
+    })),
+  ].filter((l) => l.amount > 0);
+
+  const foodLines: BillLine[] = cart.map((l) => ({
+    key: l.menuItemId,
+    label: `${l.quantity} × ${l.name}`,
+    amount: l.price * l.quantity,
+  }));
 
   const extrasReady = selectedExtras.every((e) => e.startTime && e.durationMinutes);
   /* A console is optional: the visitor may book only VR / snooker / theatre /
@@ -592,13 +622,19 @@ export function BookingFlow() {
   const mmss = `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`;
 
   const applyCoupon = async () => {
-    const gross = totals.session + totals.addons + totals.food;
-    if (!couponInput.trim() || gross <= 0) return;
+    if (!couponInput.trim() || subtotal <= 0) return;
     setCouponBusy(true);
     try {
       const slotStart = startTime ?? selectedExtras.find((e) => e.startTime)?.startTime ?? null;
       const res = await couponFn({
-        data: { branchId: branchId!, code: couponInput.trim(), amount: gross, date, startTime: slotStart },
+        data: {
+          branchId: branchId!,
+          code: couponInput.trim(),
+          gamingAmount: gamingSubtotal,
+          foodAmount,
+          date,
+          startTime: slotStart,
+        },
       });
 
       setCoupon(res);
@@ -1478,7 +1514,7 @@ export function BookingFlow() {
 
                 {isStudent && !studentEligible ? (
                   <p className="mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-200">
-                    Student Discount is applicable only on bills above ₹1000.
+                    Student Discount applies to gaming charges only, on gaming totals above ₹1000.
                   </p>
                 ) : null}
 
@@ -1552,35 +1588,21 @@ export function BookingFlow() {
                     <Row label="Food" value="—" />
                   )}
                 </dl>
-                <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
-                  <Row label="Session" value={inr(totals.session)} strong />
-                  {extrasAmount ? <Row label="Experiences" value={inr(extrasAmount)} strong /> : null}
-                  {passesAmount ? <Row label="Passes & offers" value={inr(passesAmount)} strong /> : null}
-                  {totals.food ? <Row label="Food & drinks" value={inr(totals.food)} strong /> : null}
-                  <Row
-                    label="Coupon discount"
-                    value={couponDiscount ? `− ${inr(couponDiscount)}` : "—"}
-                    strong
+                <div className="mt-5 border-t border-border pt-4">
+                  <BillSummary
+                    gamingLines={gamingLines}
+                    foodLines={foodLines}
+                    bill={bill}
+                    couponCode={coupon?.valid ? (coupon.code ?? null) : null}
+                    couponCategory={coupon?.valid ? ((coupon.category ?? "entire_bill") as CouponCategory) : null}
+                    taxPercent={Number(branch?.tax_percent ?? 0)}
+                    footer={
+                      <p className="flex items-center justify-center gap-1.5 text-[0.65rem] text-muted-foreground">
+                        <ShieldCheck className="size-3.5 text-cyan" /> No payment now — we confirm by phone
+                      </p>
+                    }
                   />
-                  <Row
-                    label="Student discount (20%)"
-                    value={studentDiscount ? `− ${inr(studentDiscount)}` : "—"}
-                    strong
-                  />
-                  <Row label="Subtotal" value={inr(Math.max(0, subtotal - totals.discount))} strong />
-                  <Row label={`Taxes (${branch?.tax_percent ?? 0}%)`} value={inr(totals.tax)} strong />
                 </div>
-                <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3">
-                  <span className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-cyan">
-                    Final total
-                  </span>
-                  <span key={totals.total} className="text-2xl font-black animate-[scale-in_0.25s_ease-out]">
-                    {inr(totals.total)}
-                  </span>
-                </div>
-                <p className="mt-3 flex items-center justify-center gap-1.5 text-[0.65rem] text-muted-foreground">
-                  <ShieldCheck className="size-3.5 text-cyan" /> No payment now — we confirm by phone
-                </p>
               </div>
             </aside>
           </section>
@@ -1607,8 +1629,8 @@ export function BookingFlow() {
             </p>
             <p className="mt-0.5 flex items-baseline gap-2">
               <span className="text-[0.62rem] uppercase tracking-[0.18em] text-cyan">Estimated total</span>
-              <span key={totals.total} className="text-xl font-black animate-[scale-in_0.25s_ease-out]">
-                {inr(totals.total)}
+              <span key={bill.grandTotal} className="text-xl font-black animate-[scale-in_0.25s_ease-out]">
+                {inr(bill.grandTotal)}
               </span>
             </p>
           </div>

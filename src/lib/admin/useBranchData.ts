@@ -77,6 +77,9 @@ export interface AdminCoupon {
   code: string;
   description: string | null;
   discount_type: "flat" | "percent";
+  /** Which part of the bill the coupon discounts. */
+  category: "gaming" | "food" | "entire_bill";
+
   value: number;
   min_order_amount: number;
   is_active: boolean;

@@ -5,6 +5,7 @@ import { AdminButton, AdminInput, Panel, Pill } from "./primitives";
 import type { AdminCoupon } from "@/lib/admin/useBranchData";
 import { Trash2 } from "lucide-react";
 import { DAY_LABELS, daysLabel, windowLabel } from "@/lib/booking/coupon-schedule";
+import { COUPON_CATEGORY_LABELS, type CouponCategory } from "@/lib/booking/pricing";
 
 export function CouponsPanel({
   coupons,
@@ -21,6 +22,7 @@ export function CouponsPanel({
   const [value, setValue] = useState("10");
   const [type, setType] = useState<"percent" | "flat">("percent");
   const [minOrder, setMinOrder] = useState("0");
+  const [category, setCategory] = useState<CouponCategory>("entire_bill");
   const [busy, setBusy] = useState(false);
   const [days, setDays] = useState<number[]>([]);
   const [from, setFrom] = useState("");
@@ -40,6 +42,7 @@ export function CouponsPanel({
       branch_id: branchId,
       code: trimmed,
       discount_type: type,
+      category,
       value: Number(value) || 0,
       min_order_amount: Number(minOrder) || 0,
       is_active: true,
@@ -54,6 +57,7 @@ export function CouponsPanel({
       return;
     }
     setCode("");
+    setCategory("entire_bill");
     setDays([]);
     setFrom("");
     setTo("");
@@ -79,7 +83,7 @@ export function CouponsPanel({
   return (
     <div className="space-y-6">
       <Panel title="New coupon">
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-5">
           <AdminInput label="Code" value={code} onChange={(v) => setCode(v.toUpperCase())} placeholder="CLASH10" />
           <label className="block">
             <span className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
@@ -96,7 +100,26 @@ export function CouponsPanel({
           </label>
           <AdminInput label="Value" value={value} onChange={(v) => setValue(v.replace(/[^0-9]/g, ""))} />
           <AdminInput label="Min order ₹" value={minOrder} onChange={(v) => setMinOrder(v.replace(/[^0-9]/g, ""))} />
+          <label className="block">
+            <span className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              Applies to
+            </span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as CouponCategory)}
+              className="w-full rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
+            >
+              {(Object.keys(COUPON_CATEGORY_LABELS) as CouponCategory[]).map((k) => (
+                <option key={k} value={k}>
+                  {COUPON_CATEGORY_LABELS[k]}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
+        <p className="mt-2 text-[0.65rem] text-muted-foreground">
+          Gaming-only coupons never discount food, and food-only coupons never discount gaming.
+        </p>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
@@ -169,6 +192,9 @@ export function CouponsPanel({
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm font-bold tracking-wider">{c.code}</span>
                     {c.is_active ? <Pill tone="good">Active</Pill> : <Pill tone="muted">Disabled</Pill>}
+                    <Pill tone="muted">
+                      {COUPON_CATEGORY_LABELS[(c.category ?? "entire_bill") as CouponCategory]}
+                    </Pill>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Used {c.used_count} times · min order ₹{Math.round(Number(c.min_order_amount))} ·{" "}
@@ -215,6 +241,17 @@ export function CouponsPanel({
                   </div>
                 </div>
                 <label className="flex items-center gap-2">
+                  <select
+                    value={(c.category ?? "entire_bill") as CouponCategory}
+                    onChange={(e) => void update(c, { category: e.target.value as CouponCategory })}
+                    className="rounded-xl border border-border bg-surface/70 px-2.5 py-1.5 text-xs outline-none focus:border-cyan/50"
+                  >
+                    {(Object.keys(COUPON_CATEGORY_LABELS) as CouponCategory[]).map((k) => (
+                      <option key={k} value={k}>
+                        {COUPON_CATEGORY_LABELS[k]}
+                      </option>
+                    ))}
+                  </select>
                   <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">
                     {c.discount_type === "percent" ? "% off" : "₹ off"}
                   </span>
