@@ -15,6 +15,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Reveal, SectionHeading } from "../primitives";
 import { supabase } from "@/integrations/supabase/client";
 import { prettyTime } from "@/lib/site-content";
+import { MAPS_SHERIGUDA, MAPS_VANASTHALIPURAM } from "@/lib/contact";
+
 import {
   getLiveAvailability,
   type LiveBranchAvailability,
