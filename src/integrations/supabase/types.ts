@@ -378,6 +378,24 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          name: string
+          phone: string
+          total_visits: number
+        }
+        Insert: {
+          name: string
+          phone: string
+          total_visits?: number
+        }
+        Update: {
+          name?: string
+          phone?: string
+          total_visits?: number
+        }
+        Relationships: []
+      }
       experience_rates: {
         Row: {
           branch_id: string
@@ -959,6 +977,42 @@ export type Database = {
           },
         ]
       }
+      rewards: {
+        Row: {
+          booking_id: string | null
+          id: string
+          phone: string
+          status: Database["public"]["Enums"]["reward_status"]
+        }
+        Insert: {
+          booking_id?: string | null
+          id?: string
+          phone: string
+          status?: Database["public"]["Enums"]["reward_status"]
+        }
+        Update: {
+          booking_id?: string | null
+          id?: string
+          phone?: string
+          status?: Database["public"]["Enums"]["reward_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_phone_fkey"
+            columns: ["phone"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["phone"]
+          },
+        ]
+      }
       session_options: {
         Row: {
           branch_id: string
@@ -1232,6 +1286,7 @@ export type Database = {
         | "payment_pending"
       coupon_category: "gaming" | "food" | "entire_bill"
       discount_type: "flat" | "percent"
+      reward_status: "available" | "used"
       station_status: "available" | "maintenance" | "blocked"
       station_type:
         | "console"
@@ -1380,6 +1435,7 @@ export const Constants = {
       ],
       coupon_category: ["gaming", "food", "entire_bill"],
       discount_type: ["flat", "percent"],
+      reward_status: ["available", "used"],
       station_status: ["available", "maintenance", "blocked"],
       station_type: [
         "console",
