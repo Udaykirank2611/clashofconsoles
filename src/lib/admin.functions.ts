@@ -171,3 +171,33 @@ export const updateBookingExtraHours = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/** Admin > Customers: read-only loyalty roster. */
+export const listCustomers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+    }): Promise<{ phone: string; name: string; totalVisits: number; rewardsAvailable: number }[]> => {
+      const { data: role } = await context.supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (!role) return [];
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const [{ data: customers }, { data: rewards }] = await Promise.all([
+        supabaseAdmin.from("customers").select("phone, name, total_visits").order("total_visits", { ascending: false }),
+        supabaseAdmin.from("rewards").select("phone").eq("status", "available"),
+      ]);
+      const counts = new Map<string, number>();
+      for (const r of rewards ?? []) counts.set(r.phone, (counts.get(r.phone) ?? 0) + 1);
+      return (customers ?? []).map((c) => ({
+        phone: c.phone,
+        name: c.name,
+        totalVisits: Number(c.total_visits ?? 0),
+        rewardsAvailable: counts.get(c.phone) ?? 0,
+      }));
+    },
+  );

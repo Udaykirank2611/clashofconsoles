@@ -3,6 +3,7 @@ import { useAdminSession } from "@/lib/admin/useAdminSession";
 import { useBranchData } from "@/lib/admin/useBranchData";
 import { AdminButton, Panel, StatCard, money } from "./primitives";
 import { BookingsPanel, StatusPill } from "./BookingsPanel";
+import { CustomersPanel } from "./CustomersPanel";
 import { StationsPanel } from "./StationsPanel";
 import { PricingPanel } from "./PricingPanel";
 import { CouponsPanel } from "./CouponsPanel";
@@ -20,6 +21,7 @@ import { LogOut } from "lucide-react";
 const BRANCH_TABS = [
   "Dashboard",
   "Bookings",
+  "Customers",
   "Stations",
   "Sessions & Pricing",
   "Menu",
@@ -165,6 +167,8 @@ export function AdminDashboard() {
         {tab === "Bookings" ? (
           <BookingsPanel bookings={data.bookings} stations={data.stations} onChanged={data.refresh} />
         ) : null}
+
+        {tab === "Customers" ? <CustomersPanel /> : null}
 
         {tab === "Menu" ? (
           <MenuPanel

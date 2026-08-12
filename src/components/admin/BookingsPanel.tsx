@@ -127,7 +127,7 @@ export function BookingsPanel({
   };
 
 
-  const setStatus = async (booking: AdminBooking, status: "confirmed" | "cancelled") => {
+  const setStatus = async (booking: AdminBooking, status: "confirmed" | "cancelled" | "completed") => {
     setBusy(booking.id);
     const { error } = await supabase.from("bookings").update({ status }).eq("id", booking.id);
     setBusy(null);
@@ -135,7 +135,13 @@ export function BookingsPanel({
       toast.error("Could not update this booking.");
       return;
     }
-    toast.success(status === "confirmed" ? "Booking confirmed." : "Booking rejected — slot released.");
+    toast.success(
+      status === "confirmed"
+        ? "Booking confirmed."
+        : status === "completed"
+          ? "Marked completed — loyalty visit counted."
+          : "Booking rejected — slot released.",
+    );
     onChanged();
   };
 
@@ -259,6 +265,13 @@ export function BookingsPanel({
                       <>
                         <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
                           <Copy className="size-3.5" /> Copy confirmation
+                        </AdminButton>
+                        <AdminButton
+                          variant="success"
+                          disabled={busy === b.id}
+                          onClick={() => void setStatus(b, "completed")}
+                        >
+                          Mark completed
                         </AdminButton>
                         <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void setStatus(b, "cancelled")}>
                           Reject
