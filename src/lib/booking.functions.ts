@@ -259,7 +259,10 @@ export const validateCoupon = createServerFn({ method: "POST" })
       .object({
         branchId: uuid,
         code: z.string().trim().min(2).max(32),
-        amount: z.number().min(0),
+        /** Kept for older callers — treated as the gaming portion. */
+        amount: z.number().min(0).optional(),
+        gamingAmount: z.number().min(0).optional(),
+        foodAmount: z.number().min(0).optional(),
         date: dateStr,
         startTime: timeStr.nullable().optional(),
       })
@@ -278,16 +281,35 @@ export const validateCoupon = createServerFn({ method: "POST" })
     if (!coupon) return { valid: false, message: "This coupon code isn't valid at this branch." };
 
     const now = Date.now();
+    if (!coupon.is_active) return { valid: false, message: "This coupon is no longer active." };
     if (coupon.starts_at && new Date(coupon.starts_at).getTime() > now)
       return { valid: false, message: "This coupon isn't active yet." };
     if (coupon.ends_at && new Date(coupon.ends_at).getTime() < now)
       return { valid: false, message: "This coupon has expired." };
     if (coupon.usage_limit != null && coupon.used_count >= coupon.usage_limit)
       return { valid: false, message: "This coupon has been fully redeemed." };
-    if (data.amount < Number(coupon.min_order_amount))
+
+    const category = (coupon.category ?? "entire_bill") as CouponCategory;
+    const gaming = Math.round(data.gamingAmount ?? data.amount ?? 0);
+    const food = Math.round(data.foodAmount ?? 0);
+    const base = category === "gaming" ? gaming : category === "food" ? food : gaming + food;
+
+    if (base <= 0)
       return {
         valid: false,
-        message: `Minimum order of ₹${Number(coupon.min_order_amount)} required.`,
+        message:
+          category === "gaming"
+            ? "This coupon applies to gaming charges only — add a gaming session first."
+            : category === "food"
+              ? "This coupon applies to food & drinks only — add something from the menu first."
+              : "Add something to your booking first.",
+      };
+    if (base < Number(coupon.min_order_amount))
+      return {
+        valid: false,
+        message: `Minimum ${
+          category === "gaming" ? "gaming" : category === "food" ? "food" : "order"
+        } amount of ₹${Number(coupon.min_order_amount)} required.`,
       };
 
     const schedule = checkCouponSchedule(
@@ -301,19 +323,26 @@ export const validateCoupon = createServerFn({ method: "POST" })
     );
     if (!schedule.ok) return { valid: false, message: schedule.message };
 
-
     let discount =
       coupon.discount_type === "percent"
-        ? (data.amount * Number(coupon.value)) / 100
+        ? (base * Number(coupon.value)) / 100
         : Number(coupon.value);
     if (coupon.max_discount != null) discount = Math.min(discount, Number(coupon.max_discount));
-    discount = Math.min(discount, data.amount);
+    discount = Math.min(discount, base);
+
+    const scope =
+      category === "gaming"
+        ? "gaming charges"
+        : category === "food"
+          ? "food & drinks"
+          : "the entire bill";
 
     return {
       valid: true,
-      message: coupon.description ?? "Coupon applied",
+      message: coupon.description ?? `Coupon applied to ${scope}`,
       code: coupon.code,
       couponId: coupon.id,
+      category,
       discount: Math.round(discount),
     };
   });
@@ -584,10 +613,11 @@ export const createBooking = createServerFn({ method: "POST" })
       }
     }
 
-    const gross = sessionAmount + addonsAmount + foodAmount;
-    let discount = 0;
+    const gamingAmount = sessionAmount + addonsAmount;
     let couponId: string | null = null;
     let couponCode: string | null = null;
+    let couponCategory: CouponCategory = "entire_bill";
+    let couponDiscount = 0;
     if (data.couponCode) {
       const { data: coupon } = await db
         .from("coupons")
@@ -611,26 +641,37 @@ export const createBooking = createServerFn({ method: "POST" })
           )
         : { ok: false as const, message: "" };
 
-      if (coupon && schedule.ok && gross >= Number(coupon.min_order_amount)) {
-        discount =
+      const category = (coupon?.category ?? "entire_bill") as CouponCategory;
+      const base =
+        category === "gaming" ? gamingAmount : category === "food" ? foodAmount : gamingAmount + foodAmount;
+
+      if (coupon && schedule.ok && base > 0 && base >= Number(coupon.min_order_amount)) {
+        let d =
           coupon.discount_type === "percent"
-            ? (gross * Number(coupon.value)) / 100
+            ? (base * Number(coupon.value)) / 100
             : Number(coupon.value);
-        if (coupon.max_discount != null) discount = Math.min(discount, Number(coupon.max_discount));
-        discount = Math.min(Math.round(discount), gross);
+        if (coupon.max_discount != null) d = Math.min(d, Number(coupon.max_discount));
+        couponDiscount = Math.min(Math.round(d), base);
+        couponCategory = category;
         couponId = coupon.id;
         couponCode = coupon.code;
       }
-
     }
-    /* Student discount: flat 20% off the pre-tax subtotal, only on bills of
-       ₹1000 or more. Verified with a student ID at the cafe. */
-    const studentEligible = Boolean(data.studentDiscount) && gross >= 1000;
-    const studentDiscount = studentEligible ? Math.round(gross * 0.2) : 0;
-    discount = Math.min(discount + studentDiscount, gross);
-    const taxable = gross - discount;
-    const tax = Math.round((taxable * Number(branch.tax_percent)) / 100);
-    const total = taxable + tax;
+
+    /* Category-aware bill: gaming coupon → food coupon → entire-bill coupon →
+       student discount (20% of the gaming portion only, min ₹1000 gaming). */
+    const bill = computeBill({
+      gamingSubtotal: gamingAmount,
+      foodSubtotal: foodAmount,
+      coupon: couponId ? { category: couponCategory, discount: couponDiscount } : null,
+      isStudent: Boolean(data.studentDiscount),
+      taxPercent: Number(branch.tax_percent),
+    });
+    const studentEligible = bill.studentEligible;
+    const studentDiscount = bill.studentDiscount;
+    const discount = bill.totalDiscount;
+    const tax = Math.round(bill.tax);
+    const total = Math.round(bill.taxable) + tax;
 
     // Manual-UPI flow: the booking is created immediately in "awaiting payment"
     // and holds its slot until it expires (admin-configurable, default 10 min).
@@ -666,6 +707,9 @@ export const createBooking = createServerFn({ method: "POST" })
         addons_amount: addonsAmount,
         food_amount: foodAmount,
         discount_amount: discount,
+        gaming_discount_amount: bill.gamingDiscount,
+        food_discount_amount: bill.foodDiscount,
+        bill_discount_amount: bill.billDiscount,
         student_discount: studentEligible,
         student_discount_amount: studentDiscount,
         tax_amount: tax,
