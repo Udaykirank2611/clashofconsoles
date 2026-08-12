@@ -972,7 +972,11 @@ export const getBooking = createServerFn({ method: "POST" })
       addons_amount: Number(row["addons_amount"]),
       food_amount: Number(row["food_amount"]),
       discount_amount: Number(row["discount_amount"]),
+      gaming_discount_amount: Number(row["gaming_discount_amount"] ?? 0),
+      food_discount_amount: Number(row["food_discount_amount"] ?? 0),
+      bill_discount_amount: Number(row["bill_discount_amount"] ?? 0),
       student_discount_amount: Number(row["student_discount_amount"] ?? 0),
+
       tax_amount: Number(row["tax_amount"]),
       total_amount: Number(row["total_amount"]),
       items: (row["booking_items"] ?? []).map((i: any) => ({
