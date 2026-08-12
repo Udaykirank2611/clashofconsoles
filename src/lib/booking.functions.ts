@@ -382,6 +382,8 @@ export const createBooking = createServerFn({ method: "POST" })
         cart: z.array(z.object({ menuItemId: uuid, quantity: z.number().int().min(1).max(20) })),
         couponCode: z.string().trim().max(32).optional(),
         studentDiscount: z.boolean().optional(),
+        /** Redeem an available loyalty reward: first 30 minutes of the console session free. */
+        useReward: z.boolean().optional(),
         sessionToken: z.string().min(8).max(64),
         customer: z.object({
           fullName: z.string().trim().min(2).max(80),
