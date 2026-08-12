@@ -1514,7 +1514,7 @@ export function BookingFlow() {
 
                 {isStudent && !studentEligible ? (
                   <p className="mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-200">
-                    Student Discount is applicable only on bills above ₹1000.
+                    Student Discount applies to gaming charges only, on gaming totals above ₹1000.
                   </p>
                 ) : null}
 
