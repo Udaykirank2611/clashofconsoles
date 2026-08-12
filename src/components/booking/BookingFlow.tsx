@@ -149,6 +149,8 @@ export function BookingFlow() {
 
   const days = useMemo(() => upcomingDays(14), []);
   const [step, setStep] = useState(0);
+  const [customer, setCustomer] = useState<LoyaltyCustomer | null>(null);
+  const [useReward, setUseReward] = useState(false);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [date, setDate] = useState(() => toDateKey(new Date()));
   const [stationId, setStationId] = useState<string | null>(null);
