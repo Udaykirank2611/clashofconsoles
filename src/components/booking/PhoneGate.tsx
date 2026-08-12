@@ -86,13 +86,13 @@ export function PhoneGate({ onReady }: { onReady: (customer: LoyaltyCustomer) =>
 
         <div className="mt-6 space-y-4">
           {needsName ? (
-            <Field label="Full name" value={name} onChange={setName} placeholder="Your name" />
+            <Field label="Full name" value={name} onChange={setName} />
           ) : (
             <Field
               label="Mobile number"
               value={phone}
               onChange={(v) => setPhone(v.replace(/[^\d+\s]/g, ""))}
-              placeholder="98XXXXXXXX"
+             
             />
           )}
           {error ? <p className="text-xs font-semibold text-rose-300">{error}</p> : null}
