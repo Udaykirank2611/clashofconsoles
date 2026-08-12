@@ -8,6 +8,8 @@ import {
   Glasses,
   Car,
   ArrowRight,
+  MapPin,
+
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Reveal, SectionHeading } from "../primitives";
