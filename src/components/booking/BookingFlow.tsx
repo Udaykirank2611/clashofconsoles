@@ -433,14 +433,15 @@ export function BookingFlow() {
         .filter((e) => e.station),
     [extras, extraStations],
   );
-  const extrasAmount = selectedExtras.reduce((sum, e) => {
-    if (!e.startTime || !e.durationMinutes) return sum;
+  const extraAmountFor = (e: (typeof selectedExtras)[number]) => {
+    if (!e.startTime || !e.durationMinutes) return 0;
     const tier = stationRates.find((r) => r.id === e.rateId);
     const extraHourRate = extraHourRateFor(e.station!.id);
     const hours = tier && extraHourRate ? (e.extraHours ?? 0) : 0;
     const base = tier ? Math.round(Number(tier.price)) : Math.round(slotPrice(e.station!, e.durationMinutes));
-    return sum + base + hours * Math.round(Number(extraHourRate?.price ?? 0));
-  }, 0);
+    return base + hours * Math.round(Number(extraHourRate?.price ?? 0));
+  };
+  const extrasAmount = selectedExtras.reduce((sum, e) => sum + extraAmountFor(e), 0);
   const passLines = passOptions
     .filter((p) => (passes[p.id] ?? 0) > 0)
     .map((p) => ({ ...p, quantity: passes[p.id]! }));
