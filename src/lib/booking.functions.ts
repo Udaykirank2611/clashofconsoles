@@ -807,6 +807,14 @@ export const createBooking = createServerFn({ method: "POST" })
         return { ok: false, message: "Could not save the complete order. Please try again." };
       }
     }
+    // Attach the redeemed reward — it is only marked "used" once the booking completes.
+    if (rewardId) {
+      await db
+        .from("rewards")
+        .update({ booking_id: booking.id })
+        .eq("id", rewardId)
+        .eq("status", "available");
+    }
     if (couponId) {
       const { data: c } = await db
         .from("coupons")
