@@ -977,12 +977,25 @@ export function BookingFlow() {
             />
 
             {passOptions.length ? (
-              <div className="relative overflow-hidden rounded-[2rem] border border-violet/40 bg-linear-to-br from-violet/15 via-surface/70 to-cyan/10 p-5 shadow-[0_30px_90px_-45px_var(--violet)] backdrop-blur-xl sm:p-6">
+              <div
+                className={cn(
+                  "relative overflow-hidden rounded-[2rem] border border-violet/40 bg-linear-to-br from-violet/15 via-surface/70 to-cyan/10 p-5 shadow-[0_30px_90px_-45px_var(--violet)] backdrop-blur-xl transition-all duration-500 sm:p-6",
+                  passesOn && "border-transparent shadow-[0_0_0_2px_var(--violet),0_30px_90px_-45px_var(--violet)]",
+                )}
+              >
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_15%_0%,color-mix(in_oklab,var(--violet)_28%,transparent),transparent_60%)]"
                 />
-                <div className="relative flex flex-wrap items-center justify-between gap-3">
+                <div
+                  onClick={() =>
+                    setPassesOn((v) => {
+                      if (v) setPasses({});
+                      return !v;
+                    })
+                  }
+                  className="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
+                >
                   <div className="min-w-0">
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-violet/50 bg-violet/15 px-3 py-1 text-[0.55rem] font-black uppercase tracking-[0.22em] text-violet">
                       <Sparkles className="size-3" aria-hidden="true" /> Best value
@@ -991,102 +1004,113 @@ export function BookingFlow() {
                       Memberships &amp; Combos
                     </h3>
                     <p className="mt-1 max-w-xl text-xs text-muted-foreground sm:text-sm">
-                      Tap to add — your play time is covered, the smartest way to book.
+                      Turn on to see every membership and combo — your play time is covered.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={passesOn}
+                    aria-label="Show memberships and combos"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPassesOn((v) => {
+                        if (v) setPasses({});
+                        return !v;
+                      });
+                    }}
+                    className={cn(
+                      "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300",
+                      passesOn
+                        ? "border-transparent bg-linear-to-r from-primary to-violet"
+                        : "border-border bg-muted/40",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
+                        passesOn ? "left-6" : "left-0.5",
+                      )}
+                    />
+                  </button>
                 </div>
 
-                <div className="relative mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {passOptions.map((p) => {
-                    const qty = passes[p.id] ?? 0;
-                    const on = qty > 0;
-                    const togglePass = () =>
-                      setPasses((prev) => {
-                        const next = { ...prev };
-                        if (next[p.id]) delete next[p.id];
-                        else next[p.id] = 1;
-                        return next;
-                      });
-                    return (
-                      <div
-                        key={p.id}
-                        role="button"
-                        tabIndex={0}
-                        aria-pressed={on}
-                        onClick={togglePass}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            togglePass();
-                          }
-                        }}
-                        className={cn(
-                          "flex cursor-pointer flex-col rounded-3xl border border-border bg-background/60 p-5 text-left backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                          "hover:-translate-y-1 hover:border-violet/50 hover:shadow-[0_24px_60px_-34px_var(--violet)]",
-                          on && "border-transparent shadow-[0_0_0_2px_var(--violet)]",
-                        )}
-                      >
-
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-extrabold">{p.name}</p>
-                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                              {p.subtitle}
-                            </p>
-                          </div>
-                          {p.badge ? (
-                            <span className="shrink-0 rounded-full border border-violet/40 bg-violet/10 px-2.5 py-1 text-[0.55rem] font-bold uppercase tracking-[0.16em] text-violet">
-                              {p.badge}
-                            </span>
-                          ) : null}
-                        </div>
-                        {p.perks.length ? (
-                          <ul className="mt-3 space-y-1.5">
-                            {p.perks.slice(0, 4).map((perk) => (
-                              <li key={perk} className="flex gap-2 text-[0.7rem] text-muted-foreground">
-                                <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-cyan" /> {perk}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                        <div className="mt-4 flex items-end justify-between gap-3 pt-1">
-                          <span>
-                            <span className="block text-lg font-black text-cyan">{inr(p.price)}</span>
-                            {p.validity ? (
-                              <span className="block text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
-                                {p.validity}
+                {passesOn ? (
+                  <div className="relative mt-6 grid animate-[step-in_0.5s_cubic-bezier(0.22,1,0.36,1)_both] gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {passOptions.map((p) => {
+                      const qty = passes[p.id] ?? 0;
+                      const setQty = (n: number) =>
+                        setPasses((prev) => {
+                          const next = { ...prev };
+                          if (n <= 0) delete next[p.id];
+                          else next[p.id] = n;
+                          return next;
+                        });
+                      return (
+                        <div
+                          key={p.id}
+                          className={cn(
+                            "flex flex-col rounded-3xl border border-border bg-background/60 p-5 text-left backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                            qty > 0 && "border-transparent shadow-[0_0_0_2px_var(--violet)]",
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-extrabold">{p.name}</p>
+                              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                                {p.subtitle}
+                              </p>
+                            </div>
+                            {p.badge ? (
+                              <span className="shrink-0 rounded-full border border-violet/40 bg-violet/10 px-2.5 py-1 text-[0.55rem] font-bold uppercase tracking-[0.16em] text-violet">
+                                {p.badge}
                               </span>
                             ) : null}
-                          </span>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={on}
-                            aria-label={`Add ${p.name}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              togglePass();
-                            }}
-                            className={cn(
-                              "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300",
-                              on
-                                ? "border-transparent bg-linear-to-r from-primary to-violet"
-                                : "border-border bg-muted/40",
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
-                                on ? "left-6" : "left-0.5",
-                              )}
-                            />
-                          </button>
-
+                          </div>
+                          {p.perks.length ? (
+                            <ul className="mt-3 space-y-1.5">
+                              {p.perks.slice(0, 4).map((perk) => (
+                                <li key={perk} className="flex gap-2 text-[0.7rem] text-muted-foreground">
+                                  <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-cyan" /> {perk}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
+                          <div className="mt-4 flex items-end justify-between gap-3 pt-1">
+                            <span>
+                              <span className="block text-lg font-black text-cyan">{inr(p.price)}</span>
+                              {p.validity ? (
+                                <span className="block text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                                  {p.validity}
+                                </span>
+                              ) : null}
+                            </span>
+                            <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface/70 p-1">
+                              <button
+                                type="button"
+                                aria-label={`Remove one ${p.name}`}
+                                disabled={qty === 0}
+                                onClick={() => setQty(qty - 1)}
+                                className="grid size-8 place-items-center rounded-full border border-border transition-colors hover:border-violet/50 disabled:opacity-40"
+                              >
+                                <Minus className="size-3.5" />
+                              </button>
+                              <span className="w-5 text-center text-sm font-black">{qty}</span>
+                              <button
+                                type="button"
+                                aria-label={`Add one ${p.name}`}
+                                onClick={() => setQty(qty + 1)}
+                                className="grid size-8 place-items-center rounded-full border border-border transition-colors hover:border-violet/50"
+                              >
+                                <Plus className="size-3.5" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
