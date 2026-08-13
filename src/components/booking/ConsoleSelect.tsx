@@ -248,7 +248,10 @@ export function ConsoleSelect({
           aria-checked={enabled}
           disabled={!bookable.length}
           aria-label={`Add ${label}`}
-          onClick={onToggle}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
           className={cn(
             "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300 disabled:cursor-not-allowed",
             enabled
