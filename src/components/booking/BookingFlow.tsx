@@ -758,9 +758,8 @@ export function BookingFlow() {
     });
   const qtyOf = (id: string) => cart.find((l) => l.menuItemId === id)?.quantity ?? 0;
 
-  /* Gaming is optional; food becomes mandatory only when nothing gaming was picked. */
-  const hasGaming = consoleReady || selectedExtras.length > 0 || hasPasses;
-  const gamingComplete = (!consoleTouched || consoleReady) && extrasReady;
+  /* Food becomes mandatory only when nothing gaming was picked. */
+
   const canAdvance =
     step === 0
       ? Boolean(branchId)
