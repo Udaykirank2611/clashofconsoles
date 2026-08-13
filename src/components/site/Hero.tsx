@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { ChevronDown, Gamepad2 } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
+import logoAsset from "@/assets/coc-logo.png.asset.json";
 import { MagneticButton } from "./primitives";
-import { TiltCard } from "./TiltCard";
+
 
 const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
   left: `${(i * 7.3 + 5) % 96}%`,
@@ -87,50 +88,28 @@ export function Hero() {
       />
 
       <div className="mx-auto w-full max-w-7xl px-6 pb-28 [perspective:1400px]">
-        <TiltCard max={5} glare={false} className="max-w-4xl" contentClassName="group/tilt">
-          <p
-            className="text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-cyan [transform:translateZ(40px)]"
-            style={{ animation: "coc-rise .9s .1s both" }}
-          >
-            Hyderabad's Premium Console Arena
-          </p>
-          <h1 className="mt-6 text-balance text-4xl font-extrabold leading-[1.02] [transform:translateZ(70px)] sm:text-6xl lg:text-8xl">
-            <span className="block" style={{ animation: "coc-rise 1s .2s both" }}>
-              Level Up Your
-            </span>
-            <span
-              className="text-gradient block"
-              style={{ animation: "coc-rise 1s .35s both" }}
-            >
-              Gaming Experience
-            </span>
-          </h1>
-          <p
-            className="mt-7 max-w-xl text-base leading-relaxed text-muted-foreground [transform:translateZ(30px)] sm:text-lg"
-            style={{ animation: "coc-rise 1s .5s both" }}
-          >
-            Experience premium console gaming, thrilling multiplayer battles, delicious
-            snacks and unforgettable moments with your friends.
-          </p>
-          <p
-            className="mt-5 text-[0.72rem] font-bold uppercase tracking-[0.34em] [transform:translateZ(30px)]"
-            style={{ animation: "coc-rise 1s .58s both" }}
-          >
-            <span className="text-foreground">Play.</span>{" "}
-            <span className="text-cyan">Compete.</span>{" "}
-            <span className="text-violet">Create Memories.</span>
-          </p>
+        <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+          <img
+            src={logoAsset.url}
+            alt="Clash of Consoles"
+            width={520}
+            height={520}
+            fetchPriority="high"
+            className="w-[min(78vw,30rem)] object-contain drop-shadow-[0_0_60px_rgba(0,200,255,0.35)]"
+            style={{ animation: "coc-rise 1s .15s both" }}
+          />
           <div
-            className="mt-10 flex flex-wrap items-center gap-3 [transform:translateZ(50px)]"
-            style={{ animation: "coc-rise 1s .65s both" }}
+            className="mt-10 flex flex-wrap items-center justify-center gap-3"
+            style={{ animation: "coc-rise 1s .45s both" }}
           >
             <MagneticButton href="/book">Book Your Session</MagneticButton>
             <MagneticButton href="#experiences" variant="ghost">
               Explore Experiences
             </MagneticButton>
           </div>
-        </TiltCard>
+        </div>
       </div>
+
 
       <a
         href="#about"

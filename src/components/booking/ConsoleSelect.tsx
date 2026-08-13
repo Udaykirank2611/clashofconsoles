@@ -223,7 +223,12 @@ export function ConsoleSelect({
         !bookable.length && "opacity-50",
       )}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+      <div
+        onClick={() => {
+          if (bookable.length) onToggle();
+        }}
+        className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
+      >
         <div className="min-w-0">
           <p className="truncate text-sm font-extrabold">
             {label}
@@ -243,7 +248,10 @@ export function ConsoleSelect({
           aria-checked={enabled}
           disabled={!bookable.length}
           aria-label={`Add ${label}`}
-          onClick={onToggle}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
           className={cn(
             "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300 disabled:cursor-not-allowed",
             enabled
