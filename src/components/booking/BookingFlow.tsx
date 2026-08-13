@@ -1340,13 +1340,29 @@ export function BookingFlow() {
         ) : null}
 
 
-        {/* ---------------- STEP 4 · FOOD ---------------- */}
-        {step === 3 ? (
+        {/* ---------------- STEP 3 · FOOD ---------------- */}
+        {step === 2 ? (
           <section className="space-y-8">
-            <StepHead
-              title="Food & drinks"
-              hint="Optional — everything is served right at your station."
-            />
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <StepHead
+                title="Food & drinks"
+                hint={
+                  hasGaming
+                    ? "Optional — everything is served right at your station. You can skip this step."
+                    : "You haven't picked any gaming, so please add at least one item to continue."
+                }
+              />
+              {hasGaming ? (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40 hover:text-cyan"
+                >
+                  Skip food <ArrowRight className="size-3.5" />
+                </button>
+              ) : null}
+            </div>
+
             <div className="space-y-8">
               {Object.entries(
                 menu.reduce<Record<string, typeof menu>>((acc, m) => {
