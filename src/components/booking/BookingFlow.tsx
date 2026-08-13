@@ -893,13 +893,115 @@ export function BookingFlow() {
           </section>
         ) : null}
 
-        {/* ---------------- STEP 3 · GAMING ---------------- */}
+        {/* ---------------- STEP 2 · GAMING (passes first) ---------------- */}
         {step === 1 ? (
           <section className="space-y-8">
             <StepHead
               title="Build your session"
-              hint="Pick your day, then any experience you like — a console is optional, VR, snooker, the theatre or the lounge on their own are fine too."
+              hint="Start with a pass for the best value, or pick your day and any experience you like — gaming is optional."
             />
+
+            {passOptions.length ? (
+              <div className="relative overflow-hidden rounded-[2rem] border border-violet/40 bg-linear-to-br from-violet/15 via-surface/70 to-cyan/10 p-5 shadow-[0_30px_90px_-45px_var(--violet)] backdrop-blur-xl sm:p-6">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_15%_0%,color-mix(in_oklab,var(--violet)_28%,transparent),transparent_60%)]"
+                />
+                <div className="relative flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet/50 bg-violet/15 px-3 py-1 text-[0.55rem] font-black uppercase tracking-[0.22em] text-violet">
+                      <Sparkles className="size-3" aria-hidden="true" /> Best value
+                    </span>
+                    <h3 className="mt-3 text-xl font-black sm:text-2xl">
+                      Memberships, unlimited passes &amp; combos
+                    </h3>
+                    <p className="mt-1 max-w-xl text-xs text-muted-foreground sm:text-sm">
+                      Add a pass and your play time is covered — the smartest way to book.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {passOptions.map((p) => {
+                    const qty = passes[p.id] ?? 0;
+                    return (
+                      <div
+                        key={p.id}
+                        className={cn(
+                          "flex flex-col rounded-3xl border border-border bg-background/60 p-5 backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                          "hover:-translate-y-1 hover:border-violet/50 hover:shadow-[0_24px_60px_-34px_var(--violet)]",
+                          qty > 0 && "border-transparent shadow-[0_0_0_2px_var(--violet)]",
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-extrabold">{p.name}</p>
+                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                              {p.subtitle}
+                            </p>
+                          </div>
+                          {p.badge ? (
+                            <span className="shrink-0 rounded-full border border-violet/40 bg-violet/10 px-2.5 py-1 text-[0.55rem] font-bold uppercase tracking-[0.16em] text-violet">
+                              {p.badge}
+                            </span>
+                          ) : null}
+                        </div>
+                        {p.perks.length ? (
+                          <ul className="mt-3 space-y-1.5">
+                            {p.perks.slice(0, 4).map((perk) => (
+                              <li key={perk} className="flex gap-2 text-[0.7rem] text-muted-foreground">
+                                <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-cyan" /> {perk}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        <div className="mt-4 flex items-end justify-between gap-3 pt-1">
+                          <span>
+                            <span className="block text-lg font-black text-cyan">{inr(p.price)}</span>
+                            {p.validity ? (
+                              <span className="block text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                                {p.validity}
+                              </span>
+                            ) : null}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Remove one ${p.name}`}
+                              disabled={qty === 0}
+                              onClick={() =>
+                                setPasses((prev) => {
+                                  const next = { ...prev };
+                                  if ((next[p.id] ?? 0) <= 1) delete next[p.id];
+                                  else next[p.id] = next[p.id]! - 1;
+                                  return next;
+                                })
+                              }
+                              className="grid size-8 place-items-center rounded-lg border border-border transition-colors hover:border-violet/40 disabled:opacity-30"
+                            >
+                              <Minus className="size-3.5" />
+                            </button>
+                            <span className="w-6 text-center text-sm font-bold">{qty}</span>
+                            <button
+                              type="button"
+                              aria-label={`Add one ${p.name}`}
+                              onClick={() =>
+                                setPasses((prev) => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 }))
+                              }
+                              className="grid size-8 place-items-center rounded-lg border border-violet/30 bg-violet/10 text-violet transition-transform hover:scale-110"
+                            >
+                              <Plus className="size-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+
 
             {customer.rewardsAvailable > 0 ? (
               <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-emerald-300/40 bg-emerald-300/5 px-4 py-3.5">
