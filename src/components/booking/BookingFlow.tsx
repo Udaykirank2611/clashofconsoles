@@ -397,7 +397,7 @@ export function BookingFlow() {
       skipHoldOnce.current = true;
       setBranchId(stored.branchId);
       setDate(stored.date);
-      setStep(2);
+      setStep(1);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -680,7 +680,7 @@ export function BookingFlow() {
     const needsHold = consoleReady || selectedExtras.length > 0;
     if (needsHold && (!expiresAt || expiresAt <= Date.now())) {
       toast.error("Your reservation expired", { description: "Please choose your slot again." });
-      setStep(2);
+      setStep(1);
       return;
     }
 
