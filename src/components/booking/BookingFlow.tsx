@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  CalendarDays,
   CheckCircle2,
   ChevronDown,
   Gamepad2,
@@ -20,9 +21,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
+
 import type { LoyaltyCustomer } from "@/lib/loyalty.functions";
 import {
   createBooking,
