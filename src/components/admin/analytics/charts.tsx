@@ -52,7 +52,7 @@ export function RevenueChart({ data }: { data: { label: string; gaming: number; 
   );
 }
 
-export function BookingTrendChart({ data }: { data: { label: string } & Record<string, unknown> extends never ? never : { label: string; completed: number; cancelled: number; pending: number }[] }) {
+export function BookingTrendChart({ data }: { data: { label: string; completed: number; cancelled: number; pending: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} margin={{ left: -16, right: 8, top: 8 }}>
