@@ -1037,35 +1037,16 @@ export function BookingFlow() {
 
             <div>
               <FieldLabel>Choose your day</FieldLabel>
-              <div className="-mx-1 mt-3 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
-                {days.map((d) => {
-                  const key = toDateKey(d);
-                  const selected = key === date;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setDate(key)}
-                      aria-pressed={selected}
-                      className={cn(
-                        "w-[74px] shrink-0 snap-start rounded-2xl border border-border bg-surface/60 px-2 py-3 text-center backdrop-blur-xl transition-all duration-300",
-                        "hover:-translate-y-1 hover:border-cyan/40",
-                        selected &&
-                          "border-transparent bg-linear-to-b from-primary/25 to-cyan/10 shadow-[0_0_0_1px_var(--cyan)]",
-                      )}
-                    >
-                      <span className="block text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        {d.toLocaleDateString("en-IN", { weekday: "short" })}
-                      </span>
-                      <span className="mt-1 block text-lg font-black">{d.getDate()}</span>
-                      <span className="block text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
-                        {d.toLocaleDateString("en-IN", { month: "short" })}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="mt-3">
+                <DatePickerChip
+                  value={date}
+                  onChange={setDate}
+                  min={days[0]!}
+                  max={days[days.length - 1]!}
+                />
               </div>
             </div>
+
 
 
             {consoles.length ? (
