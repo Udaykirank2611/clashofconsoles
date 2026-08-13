@@ -148,12 +148,6 @@ export function Navbar() {
             <MagneticButton href="/book" className="mt-2 w-full">
               Book Now
             </MagneticButton>
-            <a
-              href="/admin/login"
-              className="mt-2 flex items-center justify-center gap-1.5 rounded-2xl border border-border/70 px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-cyan"
-            >
-              <Lock className="size-3" aria-hidden="true" /> Admin Login
-            </a>
 
           </div>
         </div>
