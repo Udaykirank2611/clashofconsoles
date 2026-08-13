@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, AdminInput, Panel, Pill } from "./primitives";
 import type { AdminCoupon } from "@/lib/admin/useBranchData";
-import { Trash2 } from "lucide-react";
+import { History, Trash2 } from "lucide-react";
+import { useEffect } from "react";
 import { DAY_LABELS, daysLabel, windowLabel } from "@/lib/booking/coupon-schedule";
 import { COUPON_CATEGORY_LABELS, type CouponCategory } from "@/lib/booking/pricing";
 
@@ -27,6 +28,9 @@ export function CouponsPanel({
   const [days, setDays] = useState<number[]>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [maxUses, setMaxUses] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [historyFor, setHistoryFor] = useState<AdminCoupon | null>(null);
 
   const toggleDay = (d: number) =>
     setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)));
@@ -49,6 +53,8 @@ export function CouponsPanel({
       active_days: days,
       active_start_time: from && to ? from : null,
       active_end_time: from && to ? to : null,
+      usage_limit: maxUses.trim() ? Number(maxUses) : null,
+      ends_at: expiry ? new Date(`${expiry}T23:59:59`).toISOString() : null,
     });
 
     setBusy(false);
@@ -61,6 +67,8 @@ export function CouponsPanel({
     setDays([]);
     setFrom("");
     setTo("");
+    setMaxUses("");
+    setExpiry("");
     toast.success("Coupon created.");
     onChanged();
   };
@@ -115,6 +123,25 @@ export function CouponsPanel({
                 </option>
               ))}
             </select>
+          </label>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <AdminInput
+            label="Max uses (blank = unlimited)"
+            value={maxUses}
+            onChange={(v) => setMaxUses(v.replace(/[^0-9]/g, ""))}
+            placeholder="e.g. 100"
+          />
+          <label className="block">
+            <span className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              Expiry date
+            </span>
+            <input
+              type="date"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+              className="w-full rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
+            />
           </label>
         </div>
         <p className="mt-2 text-[0.65rem] text-muted-foreground">
@@ -197,9 +224,47 @@ export function CouponsPanel({
                     </Pill>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Used {c.used_count} times · min order ₹{Math.round(Number(c.min_order_amount))} ·{" "}
-                    {daysLabel(c.active_days)} · {windowLabel(c.active_start_time, c.active_end_time)}
+                    Used {c.used_count} ·{" "}
+                    {c.usage_limit == null
+                      ? "unlimited left"
+                      : `${Math.max(0, c.usage_limit - c.used_count)} left`}{" "}
+                    · min order ₹{Math.round(Number(c.min_order_amount))} ·{" "}
+                    {c.ends_at
+                      ? `expires ${new Date(c.ends_at).toLocaleDateString("en-IN")}`
+                      : "no expiry"}{" "}
+                    · {daysLabel(c.active_days)} · {windowLabel(c.active_start_time, c.active_end_time)}
                   </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <label className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                      Max uses
+                      <input
+                        defaultValue={c.usage_limit == null ? "" : String(c.usage_limit)}
+                        inputMode="numeric"
+                        placeholder="∞"
+                        onBlur={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, "");
+                          const next = raw ? Number(raw) : null;
+                          if (next !== c.usage_limit) void update(c, { usage_limit: next });
+                        }}
+                        className="w-16 rounded-xl border border-border bg-surface/70 px-2 py-1 text-center text-xs outline-none focus:border-cyan/50"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                      Expires
+                      <input
+                        type="date"
+                        defaultValue={c.ends_at ? c.ends_at.slice(0, 10) : ""}
+                        onBlur={(e) =>
+                          void update(c, {
+                            ends_at: e.target.value
+                              ? new Date(`${e.target.value}T23:59:59`).toISOString()
+                              : null,
+                          })
+                        }
+                        className="rounded-xl border border-border bg-surface/70 px-2 py-1 text-xs outline-none focus:border-cyan/50"
+                      />
+                    </label>
+                  </div>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {DAY_LABELS.map((label, i) => {
                       const on = (c.active_days ?? []).includes(i);
@@ -268,6 +333,9 @@ export function CouponsPanel({
                 <AdminButton onClick={() => void update(c, { is_active: !c.is_active })}>
                   {c.is_active ? "Disable" : "Enable"}
                 </AdminButton>
+                <AdminButton onClick={() => setHistoryFor(historyFor?.id === c.id ? null : c)}>
+                  <History className="size-3.5" /> Usage
+                </AdminButton>
                 <AdminButton variant="danger" onClick={() => void remove(c)}>
                   <Trash2 className="size-3.5" /> Delete
                 </AdminButton>
@@ -276,6 +344,78 @@ export function CouponsPanel({
           </div>
         )}
       </Panel>
+
+      {historyFor ? (
+        <RedemptionHistory coupon={historyFor} onClose={() => setHistoryFor(null)} />
+      ) : null}
     </div>
+  );
+}
+
+interface Redemption {
+  id: string;
+  customer_phone: string;
+  discount_amount: number;
+  created_at: string;
+  bookings: { reference: string } | null;
+}
+
+/** Redemptions are written only when a booking is marked completed. */
+function RedemptionHistory({ coupon, onClose }: { coupon: AdminCoupon; onClose: () => void }) {
+  const [rows, setRows] = useState<Redemption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("coupon_redemptions")
+        .select("id, customer_phone, discount_amount, created_at, bookings(reference)")
+        .eq("coupon_id", coupon.id)
+        .order("created_at", { ascending: false });
+      if (alive) {
+        setRows((data ?? []) as unknown as Redemption[]);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [coupon.id]);
+
+  return (
+    <Panel title={`${coupon.code} · redemption history`}>
+      <div className="mb-3 flex justify-end">
+        <AdminButton onClick={onClose}>Close</AdminButton>
+      </div>
+      {loading ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">Loading…</p>
+      ) : rows.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          No redemptions yet — a coupon counts as used only after the booking is completed.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {rows.map((r) => (
+            <li
+              key={r.id}
+              className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3 text-sm"
+            >
+              <span className="font-semibold">{r.customer_phone}</span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {r.bookings?.reference ?? "—"}
+              </span>
+              <span className="ml-auto font-bold text-emerald-300">
+                − ₹{Math.round(Number(r.discount_amount)).toLocaleString("en-IN")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(r.created_at).toLocaleString("en-IN")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
