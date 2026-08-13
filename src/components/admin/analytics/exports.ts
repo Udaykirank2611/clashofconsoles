@@ -57,5 +57,5 @@ export async function exportXlsx(rows: ReportRow[], filename: string) {
       ),
     ),
   ];
-  await writeXlsxFile(data as never, { fileName: `${filename}.xlsx` });
+  await writeXlsxFile(data as never, { fontFamily: "Arial", fontSize: 11 }).toFile(`${filename}.xlsx`);
 }
