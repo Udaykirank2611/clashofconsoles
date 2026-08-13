@@ -120,7 +120,7 @@ export function AnalyticsView({
             <Panel title="Console utilisation">
               <Bars
                 rows={data.utilization.map((u) => ({
-                  label: `${u.name}${u.status !== "available" ? " (out of service)" : ""}`,
+                  label: `${u.name}${u.branch && !scope.branchId ? ` · ${u.branch}` : ""}${u.status !== "available" ? " (out of service)" : ""}`,
                   value: u.utilization,
                   display: `${u.utilization}%`,
                 }))}
@@ -300,8 +300,8 @@ function Bars({
   const max = Math.max(...rows.map((r) => r.value), 1);
   return (
     <ul className="space-y-2.5">
-      {rows.map((r) => (
-        <li key={r.label} className="grid grid-cols-[minmax(96px,34%)_1fr_auto] items-center gap-3">
+      {rows.map((r, i) => (
+        <li key={`${r.label}-${i}`} className="grid grid-cols-[minmax(96px,34%)_1fr_auto] items-center gap-3">
           <span className="truncate text-xs text-muted-foreground">{r.label}</span>
           <span className="h-2.5 overflow-hidden rounded-full bg-muted/50">
             <span
