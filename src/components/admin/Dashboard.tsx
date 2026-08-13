@@ -17,6 +17,7 @@ import { OffersPanel } from "./OffersPanel";
 import { formatTime } from "@/lib/booking/pricing";
 import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 const BRANCH_TABS = [
   "Dashboard",
@@ -38,6 +39,7 @@ type Tab = (typeof BRANCH_TABS)[number] | (typeof OWNER_TABS)[number];
 export function AdminDashboard() {
   const { loading, branches, branchId, setBranchId, isOwner, signOut, session } = useAdminSession();
   const [tab, setTab] = useState<Tab>("Dashboard");
+  const [focusReference, setFocusReference] = useState<string | null>(null);
   const data = useBranchData(branchId);
   const branch = branches.find((b) => b.id === branchId);
 
@@ -94,6 +96,15 @@ export function AdminDashboard() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {branchId ? (
+            <NotificationBell
+              branchId={branchId}
+              onOpenBooking={(reference) => {
+                setFocusReference(reference);
+                setTab("Bookings");
+              }}
+            />
+          ) : null}
           {branches.length > 1 ? (
             <select
               value={branchId ?? ""}
@@ -165,7 +176,12 @@ export function AdminDashboard() {
         ) : null}
 
         {tab === "Bookings" ? (
-          <BookingsPanel bookings={data.bookings} stations={data.stations} onChanged={data.refresh} />
+          <BookingsPanel
+            bookings={data.bookings}
+            stations={data.stations}
+            onChanged={data.refresh}
+            focusReference={focusReference}
+          />
         ) : null}
 
         {tab === "Customers" ? <CustomersPanel /> : null}
