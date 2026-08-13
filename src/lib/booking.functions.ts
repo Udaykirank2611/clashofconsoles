@@ -345,7 +345,14 @@ export const validateCoupon = createServerFn({ method: "POST" })
       code: coupon.code,
       couponId: coupon.id,
       category,
+      timesUsed: Number(coupon.used_count ?? 0),
+      remainingUses:
+        coupon.usage_limit == null
+          ? null
+          : Math.max(0, Number(coupon.usage_limit) - Number(coupon.used_count ?? 0)),
+      expiresAt: coupon.ends_at ?? null,
       discount: Math.round(discount),
+
     };
   });
 
