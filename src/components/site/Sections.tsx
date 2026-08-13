@@ -403,8 +403,9 @@ export function Reviews() {
 export function Location() {
   return (
     <section id="contact" className="relative py-24 sm:py-32">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2">
+      <div className="mx-auto max-w-3xl px-6">
         <div>
+
           <SectionHeading
             align="left"
             eyebrow="Find Us"
