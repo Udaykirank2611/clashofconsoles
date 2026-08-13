@@ -494,6 +494,7 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
       expired: bookings.filter((b) => b.status === "expired").length,
       utrSubmitted: bookings.filter((b) => !!b.payment_utr).length,
     },
+    branchComparison,
   };
 }
 
