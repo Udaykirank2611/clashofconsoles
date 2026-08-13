@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  CalendarDays,
   CheckCircle2,
   ChevronDown,
   Gamepad2,
@@ -20,9 +21,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
+
 import type { LoyaltyCustomer } from "@/lib/loyalty.functions";
 import {
   createBooking,
@@ -53,6 +57,70 @@ import { BillSummary, type BillLine } from "./BillSummary";
 import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
+
+/** Compact date chip that opens a calendar popover. */
+function DatePickerChip({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: string;
+  onChange: (key: string) => void;
+  min: Date;
+  max: Date;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = new Date(`${value}T00:00:00`);
+  const minKey = toDateKey(min);
+  const maxKey = toDateKey(max);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="group inline-flex w-full max-w-sm items-center gap-4 rounded-3xl border border-border bg-surface/70 px-4 py-3.5 text-left backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan/50 hover:shadow-[0_24px_60px_-34px_var(--primary)]"
+        >
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-cyan/40 bg-linear-to-br from-primary/30 to-cyan/15 text-cyan shadow-[0_0_0_1px_var(--cyan)]">
+            <CalendarDays className="size-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+              Select date
+            </span>
+            <span className="mt-0.5 block truncate text-lg font-black">
+              {selected.toLocaleDateString("en-IN", {
+                weekday: "short",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto p-0">
+        <Calendar
+          mode="single"
+          selected={selected}
+          defaultMonth={selected}
+          onSelect={(d) => {
+            if (!d) return;
+            onChange(toDateKey(d));
+            setOpen(false);
+          }}
+          disabled={(d) => {
+            const key = toDateKey(d);
+            return key < minKey || key > maxKey;
+          }}
+          initialFocus
+          className={cn("pointer-events-auto p-3")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 /** Shared Google Maps links for each arena, with an address search fallback. */
 const BRANCH_MAPS: Record<string, string> = {
@@ -834,7 +902,11 @@ export function BookingFlow() {
                   <button
                     key={b.id}
                     type="button"
-                    onClick={() => setBranchId(b.id)}
+                    onClick={() => {
+                      setBranchId(b.id);
+                      setStep(1);
+                    }}
+
                     aria-pressed={selected}
                     className={cn(
                       "group relative overflow-hidden rounded-3xl border border-border bg-surface/60 p-5 text-left backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -914,10 +986,10 @@ export function BookingFlow() {
                       <Sparkles className="size-3" aria-hidden="true" /> Best value
                     </span>
                     <h3 className="mt-3 text-xl font-black sm:text-2xl">
-                      Memberships, unlimited passes &amp; combos
+                      Memberships &amp; Combos
                     </h3>
                     <p className="mt-1 max-w-xl text-xs text-muted-foreground sm:text-sm">
-                      Add a pass and your play time is covered — the smartest way to book.
+                      Tap to add — your play time is covered, the smartest way to book.
                     </p>
                   </div>
                 </div>
@@ -925,15 +997,34 @@ export function BookingFlow() {
                 <div className="relative mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {passOptions.map((p) => {
                     const qty = passes[p.id] ?? 0;
+                    const on = qty > 0;
+                    const togglePass = () =>
+                      setPasses((prev) => {
+                        const next = { ...prev };
+                        if (next[p.id]) delete next[p.id];
+                        else next[p.id] = 1;
+                        return next;
+                      });
                     return (
                       <div
                         key={p.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={on}
+                        onClick={togglePass}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            togglePass();
+                          }
+                        }}
                         className={cn(
-                          "flex flex-col rounded-3xl border border-border bg-background/60 p-5 backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                          "flex cursor-pointer flex-col rounded-3xl border border-border bg-background/60 p-5 text-left backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                           "hover:-translate-y-1 hover:border-violet/50 hover:shadow-[0_24px_60px_-34px_var(--violet)]",
-                          qty > 0 && "border-transparent shadow-[0_0_0_2px_var(--violet)]",
+                          on && "border-transparent shadow-[0_0_0_2px_var(--violet)]",
                         )}
                       >
+
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate text-sm font-extrabold">{p.name}</p>
@@ -965,35 +1056,30 @@ export function BookingFlow() {
                               </span>
                             ) : null}
                           </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              aria-label={`Remove one ${p.name}`}
-                              disabled={qty === 0}
-                              onClick={() =>
-                                setPasses((prev) => {
-                                  const next = { ...prev };
-                                  if ((next[p.id] ?? 0) <= 1) delete next[p.id];
-                                  else next[p.id] = next[p.id]! - 1;
-                                  return next;
-                                })
-                              }
-                              className="grid size-8 place-items-center rounded-lg border border-border transition-colors hover:border-violet/40 disabled:opacity-30"
-                            >
-                              <Minus className="size-3.5" />
-                            </button>
-                            <span className="w-6 text-center text-sm font-bold">{qty}</span>
-                            <button
-                              type="button"
-                              aria-label={`Add one ${p.name}`}
-                              onClick={() =>
-                                setPasses((prev) => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 }))
-                              }
-                              className="grid size-8 place-items-center rounded-lg border border-violet/30 bg-violet/10 text-violet transition-transform hover:scale-110"
-                            >
-                              <Plus className="size-3.5" />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={on}
+                            aria-label={`Add ${p.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePass();
+                            }}
+                            className={cn(
+                              "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300",
+                              on
+                                ? "border-transparent bg-linear-to-r from-primary to-violet"
+                                : "border-border bg-muted/40",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
+                                on ? "left-6" : "left-0.5",
+                              )}
+                            />
+                          </button>
+
                         </div>
                       </div>
                     );
@@ -1023,35 +1109,16 @@ export function BookingFlow() {
 
             <div>
               <FieldLabel>Choose your day</FieldLabel>
-              <div className="-mx-1 mt-3 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
-                {days.map((d) => {
-                  const key = toDateKey(d);
-                  const selected = key === date;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setDate(key)}
-                      aria-pressed={selected}
-                      className={cn(
-                        "w-[74px] shrink-0 snap-start rounded-2xl border border-border bg-surface/60 px-2 py-3 text-center backdrop-blur-xl transition-all duration-300",
-                        "hover:-translate-y-1 hover:border-cyan/40",
-                        selected &&
-                          "border-transparent bg-linear-to-b from-primary/25 to-cyan/10 shadow-[0_0_0_1px_var(--cyan)]",
-                      )}
-                    >
-                      <span className="block text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        {d.toLocaleDateString("en-IN", { weekday: "short" })}
-                      </span>
-                      <span className="mt-1 block text-lg font-black">{d.getDate()}</span>
-                      <span className="block text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
-                        {d.toLocaleDateString("en-IN", { month: "short" })}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="mt-3">
+                <DatePickerChip
+                  value={date}
+                  onChange={setDate}
+                  min={days[0]!}
+                  max={days[days.length - 1]!}
+                />
               </div>
             </div>
+
 
 
             {consoles.length ? (
@@ -1742,7 +1809,7 @@ export function BookingFlow() {
                 <ArrowLeft className="size-3.5" /> Back
               </button>
             ) : null}
-            {step < STEPS.length - 1 ? (
+            {step === 0 ? null : step < STEPS.length - 1 ? (
               <button
                 type="button"
                 onClick={goNext}

@@ -403,8 +403,9 @@ export function Reviews() {
 export function Location() {
   return (
     <section id="contact" className="relative py-24 sm:py-32">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2">
+      <div className="mx-auto max-w-3xl px-6">
         <div>
+
           <SectionHeading
             align="left"
             eyebrow="Find Us"
@@ -451,18 +452,6 @@ export function Location() {
             </div>
           </Reveal>
         </div>
-
-        <Reveal delay={120}>
-          <div className="relative overflow-hidden rounded-4xl border border-border bg-surface">
-            <iframe
-              title="Map showing Clash of Consoles in Hyderabad"
-              src="https://www.google.com/maps?q=Hyderabad&output=embed"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="h-[420px] w-full grayscale-[0.6] contrast-125 transition-[filter] duration-700 hover:grayscale-0"
-            />
-          </div>
-        </Reveal>
       </div>
     </section>
   );
