@@ -18,11 +18,16 @@ import { formatTime } from "@/lib/booking/pricing";
 import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
+import { AnalyticsView } from "./analytics/AnalyticsView";
+import { ReportsView } from "./analytics/ReportsView";
+import { TodayPanel } from "./analytics/TodayPanel";
 
 const BRANCH_TABS = [
   "Dashboard",
   "Bookings",
   "Customers",
+  "Analytics",
+  "Reports",
   "Stations",
   "Sessions & Pricing",
   "Menu",
@@ -158,6 +163,8 @@ export function AdminDashboard() {
               />
             </div>
 
+            <TodayPanel branchId={branch.id} bookings={data.bookings} stations={data.stations} />
+
             <Panel title="Today's schedule">
               <TodayList bookings={data.bookings} />
             </Panel>
@@ -185,6 +192,14 @@ export function AdminDashboard() {
         ) : null}
 
         {tab === "Customers" ? <CustomersPanel /> : null}
+
+        {tab === "Analytics" ? (
+          <AnalyticsView branches={branches} isOwner={isOwner} defaultBranchId={branch.id} />
+        ) : null}
+
+        {tab === "Reports" ? (
+          <ReportsView branches={branches} isOwner={isOwner} defaultBranchId={branch.id} />
+        ) : null}
 
         {tab === "Menu" ? (
           <MenuPanel
