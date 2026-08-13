@@ -758,12 +758,20 @@ export function BookingFlow() {
     });
   const qtyOf = (id: string) => cart.find((l) => l.menuItemId === id)?.quantity ?? 0;
 
-  // A pass covers the play time, so the gaming step is skipped for pass holders.
-  const skipGaming = hasPasses;
-  const canAdvance = step === 0 ? Boolean(branchId) : step === 2 ? gamingReady : true;
-  const goNext = () =>
-    setStep((s) => Math.min(STEPS.length - 1, s === 1 && skipGaming ? 3 : s + 1));
-  const goBack = () => setStep((s) => Math.max(0, s === 3 && skipGaming ? 1 : s - 1));
+  /* Gaming is optional; food becomes mandatory only when nothing gaming was picked. */
+  const hasGaming = consoleReady || selectedExtras.length > 0 || hasPasses;
+  const gamingComplete = (!consoleTouched || consoleReady) && extrasReady;
+  const canAdvance =
+    step === 0
+      ? Boolean(branchId)
+      : step === 1
+        ? gamingComplete
+        : step === 2
+          ? hasGaming || cart.length > 0
+          : true;
+  const goNext = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
+  const goBack = () => setStep((s) => Math.max(0, s - 1));
+
 
   if (isLoading) {
     return (
