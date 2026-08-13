@@ -518,10 +518,10 @@ export function BookingFlow() {
   const consoleTouched = Boolean(stationId || startTime || durationMinutes);
   const consoleReady = Boolean(station && startTime && durationMinutes);
   const hasPasses = passLines.length > 0;
-  const gamingReady =
-    (!consoleTouched || consoleReady) &&
-    extrasReady &&
-    (consoleReady || selectedExtras.length > 0 || hasPasses);
+  /* Gaming is optional; whatever is picked simply has to be complete. */
+  const gamingComplete = (!consoleTouched || consoleReady) && extrasReady;
+  const hasGaming = consoleReady || selectedExtras.length > 0 || hasPasses;
+
 
   /* ---------------- Reservation lock ---------------- */
   const releasedRef = useRef(false);
