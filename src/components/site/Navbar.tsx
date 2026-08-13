@@ -103,15 +103,10 @@ export function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
-          <a
-            href="/admin/login"
-            className="hidden items-center gap-1.5 rounded-full border border-border/70 px-3 py-1.5 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-cyan/40 hover:text-cyan sm:inline-flex"
-          >
-            <Lock className="size-3" aria-hidden="true" /> Admin Login
-          </a>
           <MagneticButton href="/book" className="hidden px-6 py-2.5 sm:inline-flex">
             Book Now
           </MagneticButton>
+
 
           <button
             type="button"
