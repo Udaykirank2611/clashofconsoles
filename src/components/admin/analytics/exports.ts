@@ -46,17 +46,16 @@ export function exportCsv(rows: ReportRow[], filename: string) {
 }
 
 export async function exportXlsx(rows: ReportRow[], filename: string) {
-  const writeXlsxFile = (await import("write-excel-file")).default;
+  const writeXlsxFile = (await import("write-excel-file/browser")).default;
   const data = [
     HEADERS.map((h) => ({ value: h, fontWeight: "bold" as const })),
     ...rows.map((r) =>
       values(r).map((v) =>
-        typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) },
+        typeof v === "number"
+          ? { type: Number, value: v }
+          : { type: String, value: String(v) },
       ),
     ),
   ];
-  const blob = await writeXlsxFile(data as never, { buffer: true }).then(
-    (buffer: ArrayBuffer) => new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-  );
-  download(blob, `${filename}.xlsx`);
+  await writeXlsxFile(data as never, { fileName: `${filename}.xlsx` });
 }
