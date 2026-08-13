@@ -231,6 +231,8 @@ export function BookingFlow() {
   const [extras, setExtras] = useState<ExtraMap>({});
   /** Memberships / unlimited pass / combo offers added to this booking. */
   const [passes, setPasses] = useState<Record<string, number>>({});
+  /** Whether the Memberships & Combos group is expanded. */
+  const [passesOn, setPassesOn] = useState(false);
 
   const [cart, setCart] = useState<CartLine[]>([]);
   const [couponInput, setCouponInput] = useState("");
