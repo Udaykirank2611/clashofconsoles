@@ -491,6 +491,7 @@ export function BookingFlow() {
       };
     setExtras(restored);
     setPasses(p.passes ?? {});
+    setPassesOn(Object.keys(p.passes ?? {}).length > 0);
     setExpiresAt(p.expiresAt);
     toast.success("Reservation restored", { description: "Your slot is still held." });
   }, [branchId, date]);
