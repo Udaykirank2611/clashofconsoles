@@ -679,7 +679,16 @@ export const createBooking = createServerFn({ method: "POST" })
       const base =
         category === "gaming" ? gamingAmount : category === "food" ? foodAmount : gamingAmount + foodAmount;
 
-      if (coupon && schedule.ok && base > 0 && base >= Number(coupon.min_order_amount)) {
+      // Expired or fully redeemed coupons are ignored server-side.
+      const nowMs = Date.now();
+      const usable =
+        !!coupon &&
+        !(coupon.starts_at && new Date(coupon.starts_at).getTime() > nowMs) &&
+        !(coupon.ends_at && new Date(coupon.ends_at).getTime() < nowMs) &&
+        !(coupon.usage_limit != null && Number(coupon.used_count) >= Number(coupon.usage_limit));
+
+      if (coupon && usable && schedule.ok && base > 0 && base >= Number(coupon.min_order_amount)) {
+
         let d =
           coupon.discount_type === "percent"
             ? (base * Number(coupon.value)) / 100
