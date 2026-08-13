@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Menu, X, Lock } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "./primitives";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
