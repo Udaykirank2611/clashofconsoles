@@ -91,16 +91,28 @@ export function BookingsPanel({
   bookings,
   stations,
   onChanged,
+  focusReference,
 }: {
   bookings: AdminBooking[];
   stations: AdminStation[];
   onChanged: () => void;
+  /** Booking reference to open automatically (e.g. from a notification). */
+  focusReference?: string | null;
 }) {
   const [filter, setFilter] = useState<Filter>("payment_pending");
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const editHours = useServerFn(updateBookingExtraHours);
+
+  useEffect(() => {
+    if (!focusReference) return;
+    const match = bookings.find((b) => b.reference === focusReference);
+    if (!match) return;
+    setFilter("all");
+    setOpenId(match.id);
+  }, [focusReference, bookings]);
+
 
   /** Staff can trim or extend the extra hours before accepting — freed hours unblock instantly. */
   const changeHours = async (booking: AdminBooking, item: AdminBookingItem, extraHours: number) => {
