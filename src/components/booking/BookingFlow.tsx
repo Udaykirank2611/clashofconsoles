@@ -1682,10 +1682,26 @@ export function BookingFlow() {
                   </button>
                 </div>
                 {coupon ? (
-                  <p className={cn("mt-2 text-xs", coupon.valid ? "text-emerald-300" : "text-rose-300")}>
-                    {coupon.message}
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className={cn("text-xs", coupon.valid ? "text-emerald-300" : "text-rose-300")}>
+                      {coupon.valid && coupon.discount
+                        ? `Coupon Applied · − ${inr(coupon.discount)}`
+                        : coupon.message}
+                    </p>
+                    {coupon.valid ? (
+                      <p className="text-[0.65rem] text-muted-foreground">
+                        {coupon.code} · Active · Used {coupon.timesUsed ?? 0} times ·{" "}
+                        {coupon.remainingUses == null
+                          ? "Unlimited uses left"
+                          : `${coupon.remainingUses} uses left`}
+                        {coupon.expiresAt
+                          ? ` · Expires ${new Date(coupon.expiresAt).toLocaleDateString("en-IN")}`
+                          : ""}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
+
               </div>
 
               <div className="rounded-2xl border border-border bg-surface/50 p-4">

@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          amount: number | null
+          body: string
+          booking_id: string | null
+          booking_reference: string | null
+          branch_id: string
+          created_at: string
+          customer_phone: string | null
+          id: string
+          read_at: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          amount?: number | null
+          body?: string
+          booking_id?: string | null
+          booking_reference?: string | null
+          branch_id: string
+          created_at?: string
+          customer_phone?: string | null
+          id?: string
+          read_at?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          amount?: number | null
+          body?: string
+          booking_id?: string | null
+          booking_reference?: string | null
+          branch_id?: string
+          created_at?: string
+          customer_phone?: string | null
+          id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_notifications_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_items: {
         Row: {
           booking_id: string
@@ -273,6 +330,61 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      coupon_redemptions: {
+        Row: {
+          booking_id: string
+          branch_id: string
+          coupon_code: string
+          coupon_id: string
+          created_at: string
+          customer_phone: string
+          discount_amount: number
+          id: string
+        }
+        Insert: {
+          booking_id: string
+          branch_id: string
+          coupon_code: string
+          coupon_id: string
+          created_at?: string
+          customer_phone: string
+          discount_amount?: number
+          id?: string
+        }
+        Update: {
+          booking_id?: string
+          branch_id?: string
+          coupon_code?: string
+          coupon_id?: string
+          created_at?: string
+          customer_phone?: string
+          discount_amount?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupons: {
         Row: {
