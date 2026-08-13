@@ -1101,7 +1101,12 @@ export function BookingFlow() {
                       !bookable.length && "opacity-50",
                     )}
                   >
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                    <div
+                      onClick={() => {
+                        if (bookable.length) toggle();
+                      }}
+                      className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
+                    >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-extrabold">
                           {g.label}
