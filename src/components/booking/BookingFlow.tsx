@@ -1135,7 +1135,10 @@ export function BookingFlow() {
                         aria-checked={on}
                         disabled={!bookable.length}
                         aria-label={`Add ${g.label}`}
-                        onClick={toggle}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggle();
+                        }}
                         className={cn(
                           "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300 disabled:cursor-not-allowed",
                           on
