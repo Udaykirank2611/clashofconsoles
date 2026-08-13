@@ -17,6 +17,7 @@ import {
   Plus,
   ShieldCheck,
   Timer,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Field, ImagePlaceholder, StatusTag } from "./ui";
