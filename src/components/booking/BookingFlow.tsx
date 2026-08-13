@@ -58,6 +58,70 @@ import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
 
+/** Compact date chip that opens a calendar popover. */
+function DatePickerChip({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: string;
+  onChange: (key: string) => void;
+  min: Date;
+  max: Date;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = new Date(`${value}T00:00:00`);
+  const minKey = toDateKey(min);
+  const maxKey = toDateKey(max);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="group inline-flex w-full max-w-sm items-center gap-4 rounded-3xl border border-border bg-surface/70 px-4 py-3.5 text-left backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan/50 hover:shadow-[0_24px_60px_-34px_var(--primary)]"
+        >
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-cyan/40 bg-linear-to-br from-primary/30 to-cyan/15 text-cyan shadow-[0_0_0_1px_var(--cyan)]">
+            <CalendarDays className="size-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+              Select date
+            </span>
+            <span className="mt-0.5 block truncate text-lg font-black">
+              {selected.toLocaleDateString("en-IN", {
+                weekday: "short",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto p-0">
+        <Calendar
+          mode="single"
+          selected={selected}
+          defaultMonth={selected}
+          onSelect={(d) => {
+            if (!d) return;
+            onChange(toDateKey(d));
+            setOpen(false);
+          }}
+          disabled={(d) => {
+            const key = toDateKey(d);
+            return key < minKey || key > maxKey;
+          }}
+          initialFocus
+          className={cn("pointer-events-auto p-3")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 /** Shared Google Maps links for each arena, with an address search fallback. */
 const BRANCH_MAPS: Record<string, string> = {
   sheriguda: "https://maps.app.goo.gl/ncHQsbxFE166EpBeA",
