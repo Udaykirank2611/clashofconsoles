@@ -914,10 +914,10 @@ export function BookingFlow() {
                       <Sparkles className="size-3" aria-hidden="true" /> Best value
                     </span>
                     <h3 className="mt-3 text-xl font-black sm:text-2xl">
-                      Memberships, unlimited passes &amp; combos
+                      Memberships &amp; Combos
                     </h3>
                     <p className="mt-1 max-w-xl text-xs text-muted-foreground sm:text-sm">
-                      Add a pass and your play time is covered — the smartest way to book.
+                      Tap to add — your play time is covered, the smartest way to book.
                     </p>
                   </div>
                 </div>
@@ -925,15 +925,34 @@ export function BookingFlow() {
                 <div className="relative mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {passOptions.map((p) => {
                     const qty = passes[p.id] ?? 0;
+                    const on = qty > 0;
+                    const togglePass = () =>
+                      setPasses((prev) => {
+                        const next = { ...prev };
+                        if (next[p.id]) delete next[p.id];
+                        else next[p.id] = 1;
+                        return next;
+                      });
                     return (
                       <div
                         key={p.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={on}
+                        onClick={togglePass}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            togglePass();
+                          }
+                        }}
                         className={cn(
-                          "flex flex-col rounded-3xl border border-border bg-background/60 p-5 backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                          "flex cursor-pointer flex-col rounded-3xl border border-border bg-background/60 p-5 text-left backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                           "hover:-translate-y-1 hover:border-violet/50 hover:shadow-[0_24px_60px_-34px_var(--violet)]",
-                          qty > 0 && "border-transparent shadow-[0_0_0_2px_var(--violet)]",
+                          on && "border-transparent shadow-[0_0_0_2px_var(--violet)]",
                         )}
                       >
+
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate text-sm font-extrabold">{p.name}</p>
