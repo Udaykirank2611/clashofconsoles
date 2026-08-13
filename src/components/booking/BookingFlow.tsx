@@ -1809,7 +1809,7 @@ export function BookingFlow() {
                 <ArrowLeft className="size-3.5" /> Back
               </button>
             ) : null}
-            {step > 0 && step < STEPS.length - 1 ? (
+            {step === 0 ? null : step < STEPS.length - 1 ? (
               <button
                 type="button"
                 onClick={goNext}
