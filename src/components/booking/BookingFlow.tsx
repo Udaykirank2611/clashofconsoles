@@ -902,7 +902,11 @@ export function BookingFlow() {
                   <button
                     key={b.id}
                     type="button"
-                    onClick={() => setBranchId(b.id)}
+                    onClick={() => {
+                      setBranchId(b.id);
+                      setStep(1);
+                    }}
+
                     aria-pressed={selected}
                     className={cn(
                       "group relative overflow-hidden rounded-3xl border border-border bg-surface/60 p-5 text-left backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
