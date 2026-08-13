@@ -51,7 +51,7 @@ import type { CouponCategory } from "@/lib/booking/pricing";
 import { BillSummary, type BillLine } from "./BillSummary";
 import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
 
-const STEPS = ["Branch", "Passes", "Gaming", "Food", "Checkout"] as const;
+const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
 
 /** Shared Google Maps links for each arena, with an address search fallback. */
 const BRANCH_MAPS: Record<string, string> = {
@@ -526,7 +526,7 @@ export function BookingFlow() {
   /* ---------------- Reservation lock ---------------- */
   const releasedRef = useRef(false);
   const holdKey =
-    gamingReady && branch && (consoleReady || selectedExtras.length)
+    gamingComplete && branch && (consoleReady || selectedExtras.length)
       ? [
           branch.id,
           date,
@@ -542,7 +542,7 @@ export function BookingFlow() {
       : null;
 
   useEffect(() => {
-    if (!holdKey || !branch || step < 2) return;
+    if (!holdKey || !branch || step < 1) return;
     if (skipHoldOnce.current) {
       skipHoldOnce.current = false;
       return;
@@ -602,7 +602,7 @@ export function BookingFlow() {
       window.clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [holdKey, step >= 2]);
+  }, [holdKey, step >= 1]);
 
   /* Selection cleared (station / time / duration / branch removed) — drop the
      temporary reservation immediately so nobody is blocked by an orphan lock. */
@@ -809,7 +809,7 @@ export function BookingFlow() {
 
   return (
     <div className="pb-40">
-      <StepProgress step={step} skipGaming={skipGaming} />
+      <StepProgress step={step} />
       <LoyaltyStrip customer={customer} />
 
       {expiresAt ? (
@@ -895,7 +895,7 @@ export function BookingFlow() {
         ) : null}
 
         {/* ---------------- STEP 3 · GAMING ---------------- */}
-        {step === 2 ? (
+        {step === 1 ? (
           <section className="space-y-8">
             <StepHead
               title="Build your session"
@@ -1429,7 +1429,7 @@ export function BookingFlow() {
         ) : null}
 
         {/* ---------------- STEP 5 · CHECKOUT ---------------- */}
-        {step === 4 ? (
+        {step === 3 ? (
           <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div className="min-w-0 space-y-6">
               <StepHead title="Your details" hint="No payment now — we confirm everything by phone." />
@@ -1662,7 +1662,7 @@ export function BookingFlow() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-                Proceed to Payment
+                Confirm Booking
               </button>
 
             )}
@@ -1673,17 +1673,16 @@ export function BookingFlow() {
   );
 }
 
-function StepProgress({ step, skipGaming }: { step: number; skipGaming?: boolean }) {
+function StepProgress({ step }: { step: number }) {
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       {STEPS.map((label, i) => {
         const done = i < step;
         const active = i === step;
-        const skipped = Boolean(skipGaming) && label === "Gaming";
         return (
           <div
             key={label}
-            className={cn("flex min-w-0 flex-1 items-center gap-2", skipped && "opacity-40")}
+            className="flex min-w-0 flex-1 items-center gap-2"
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
