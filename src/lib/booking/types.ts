@@ -128,7 +128,14 @@ export interface CouponResult {
   /** Which part of the bill the coupon applies to. */
   category?: "gaming" | "food" | "entire_bill";
   discount?: number;
+  /** Redemptions recorded so far (completed bookings only). */
+  timesUsed?: number;
+  /** Null when the coupon has no usage cap. */
+  remainingUses?: number | null;
+  /** ISO expiry date, when the coupon has one. */
+  expiresAt?: string | null;
 }
+
 
 export interface CartLine {
   menuItemId: string;
