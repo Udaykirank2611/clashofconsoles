@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { ChevronDown, Gamepad2 } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
+import logoAsset from "@/assets/coc-logo.png.asset.json";
 import { MagneticButton } from "./primitives";
-import { TiltCard } from "./TiltCard";
+
 
 const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
   left: `${(i * 7.3 + 5) % 96}%`,
