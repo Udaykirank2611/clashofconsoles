@@ -984,35 +984,30 @@ export function BookingFlow() {
                               </span>
                             ) : null}
                           </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              aria-label={`Remove one ${p.name}`}
-                              disabled={qty === 0}
-                              onClick={() =>
-                                setPasses((prev) => {
-                                  const next = { ...prev };
-                                  if ((next[p.id] ?? 0) <= 1) delete next[p.id];
-                                  else next[p.id] = next[p.id]! - 1;
-                                  return next;
-                                })
-                              }
-                              className="grid size-8 place-items-center rounded-lg border border-border transition-colors hover:border-violet/40 disabled:opacity-30"
-                            >
-                              <Minus className="size-3.5" />
-                            </button>
-                            <span className="w-6 text-center text-sm font-bold">{qty}</span>
-                            <button
-                              type="button"
-                              aria-label={`Add one ${p.name}`}
-                              onClick={() =>
-                                setPasses((prev) => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 }))
-                              }
-                              className="grid size-8 place-items-center rounded-lg border border-violet/30 bg-violet/10 text-violet transition-transform hover:scale-110"
-                            >
-                              <Plus className="size-3.5" />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={on}
+                            aria-label={`Add ${p.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePass();
+                            }}
+                            className={cn(
+                              "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300",
+                              on
+                                ? "border-transparent bg-linear-to-r from-primary to-violet"
+                                : "border-border bg-muted/40",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
+                                on ? "left-6" : "left-0.5",
+                              )}
+                            />
+                          </button>
+
                         </div>
                       </div>
                     );
