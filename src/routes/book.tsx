@@ -30,10 +30,11 @@ function BookPage() {
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-4 pt-8 sm:px-6">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:text-cyan"
+          className="inline-flex items-center gap-2.5 rounded-2xl border border-border bg-surface/60 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.2em] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-cyan/50 hover:text-cyan sm:text-base"
         >
-          <ArrowLeft className="size-3.5" /> Home
+          <ArrowLeft className="size-5" /> Home
         </Link>
+
         <div className="flex items-center gap-3">
           <Link
             to="/status"
