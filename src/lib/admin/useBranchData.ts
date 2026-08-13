@@ -84,12 +84,17 @@ export interface AdminCoupon {
   min_order_amount: number;
   is_active: boolean;
   used_count: number;
+  /** Null when the coupon has no usage cap. */
+  usage_limit: number | null;
+  /** ISO expiry timestamp, or null for no expiry. */
+  ends_at: string | null;
   /** Weekdays (0 = Sunday) the coupon is valid on. Empty = every day. */
   active_days: number[];
   /** Happy-hour window checked against the booked slot time. */
   active_start_time: string | null;
   active_end_time: string | null;
 }
+
 
 /** A branch-owned session duration + price row. */
 export interface AdminSessionOption {
