@@ -585,10 +585,10 @@ export const createBooking = createServerFn({ method: "POST" })
         .select("id, minutes")
         .eq("phone", loyaltyPhone)
         .eq("status", "available")
-        .is("booking_id", null)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
       if (reward) {
         rewardId = reward.id;
         rewardMinutes = Number(reward.minutes ?? 30);
@@ -1058,6 +1058,8 @@ export const getPaymentDetails = createServerFn({ method: "POST" })
         start_time: string | null;
         end_time: string | null;
         players: number;
+        reward_minutes: number;
+
         customer_name: string;
         customer_phone: string;
         total_amount: number;
@@ -1111,6 +1113,8 @@ export const getPaymentDetails = createServerFn({ method: "POST" })
           start_time: row["start_time"],
           end_time: row["end_time"],
           players: row["players"],
+          reward_minutes: Number(row["reward_minutes"] ?? 0),
+
           customer_name: row["customer_name"],
           customer_phone: row["customer_phone"],
           total_amount: Number(row["total_amount"]),
