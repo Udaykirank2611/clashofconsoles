@@ -144,6 +144,63 @@ export type Database = {
           },
         ]
       }
+      booking_transactions: {
+        Row: {
+          admin_notes: string
+          booking_id: string
+          booking_source: string
+          branch_id: string
+          cash_amount: number
+          created_at: string
+          id: string
+          transaction_status: string
+          updated_at: string
+          upi_amount: number
+          upi_provider: string | null
+        }
+        Insert: {
+          admin_notes?: string
+          booking_id: string
+          booking_source?: string
+          branch_id: string
+          cash_amount?: number
+          created_at?: string
+          id?: string
+          transaction_status?: string
+          updated_at?: string
+          upi_amount?: number
+          upi_provider?: string | null
+        }
+        Update: {
+          admin_notes?: string
+          booking_id?: string
+          booking_source?: string
+          branch_id?: string
+          cash_amount?: number
+          created_at?: string
+          id?: string
+          transaction_status?: string
+          updated_at?: string
+          upi_amount?: number
+          upi_provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_transactions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           addons_amount: number
@@ -609,6 +666,94 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "daily_closing_reports_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_expenses: {
+        Row: {
+          amount: number
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          name: string
+          paid_at: string
+          paid_from: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date: string
+          id?: string
+          name: string
+          paid_at?: string
+          paid_from?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          name?: string
+          paid_at?: string
+          paid_from?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_expenses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_opening_balances: {
+        Row: {
+          balance_date: string
+          branch_id: string
+          created_at: string
+          id: string
+          opening_bank: number
+          opening_cash: number
+          updated_at: string
+        }
+        Insert: {
+          balance_date: string
+          branch_id: string
+          created_at?: string
+          id?: string
+          opening_bank?: number
+          opening_cash?: number
+          updated_at?: string
+        }
+        Update: {
+          balance_date?: string
+          branch_id?: string
+          created_at?: string
+          id?: string
+          opening_bank?: number
+          opening_cash?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_opening_balances_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
