@@ -1118,6 +1118,8 @@ export function BookingFlow() {
               {...(initialPassCode ? { initialCode: initialPassCode } : {})}
               onApply={(a) => {
                 setAppliedPass(a);
+                setPlayers(1);
+                setExtras({});
                 setBookingType("single");
                 setPasses({});
                 setPassesOn(false);
