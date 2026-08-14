@@ -209,6 +209,11 @@ export function AdminDashboard() {
           <DailyClosingView branches={branches} defaultBranchId={branch.id} />
         ) : null}
 
+        {tab === "Transactions" ? (
+          <TransactionsView branches={branches} defaultBranchId={branch.id} />
+        ) : null}
+
+
         {tab === "Customers" ? <CustomersPanel /> : null}
 
         {tab === "Memberships" ? <MembershipPassesPanel branchId={branch.id} /> : null}
