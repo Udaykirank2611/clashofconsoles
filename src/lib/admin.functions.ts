@@ -178,7 +178,17 @@ export const listCustomers = createServerFn({ method: "GET" })
   .handler(
     async ({
       context,
-    }): Promise<{ phone: string; name: string; totalVisits: number; rewardsAvailable: number }[]> => {
+    }): Promise<
+      {
+        phone: string;
+        name: string;
+        totalVisits: number;
+        rewardsAvailable: number;
+        rewardMinutes: number | null;
+        rewardStatus: "available" | "none";
+        rewardExpiresAtVisit: number | null;
+      }[]
+    > => {
       const { data: role } = await context.supabase
         .from("user_roles")
         .select("id")
@@ -189,15 +199,31 @@ export const listCustomers = createServerFn({ method: "GET" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const [{ data: customers }, { data: rewards }] = await Promise.all([
         supabaseAdmin.from("customers").select("phone, name, total_visits").order("total_visits", { ascending: false }),
-        supabaseAdmin.from("rewards").select("phone").eq("status", "available"),
+        supabaseAdmin
+          .from("rewards")
+          .select("phone, minutes, expires_at_visit")
+          .eq("status", "available"),
       ]);
-      const counts = new Map<string, number>();
-      for (const r of rewards ?? []) counts.set(r.phone, (counts.get(r.phone) ?? 0) + 1);
-      return (customers ?? []).map((c) => ({
-        phone: c.phone,
-        name: c.name,
-        totalVisits: Number(c.total_visits ?? 0),
-        rewardsAvailable: counts.get(c.phone) ?? 0,
-      }));
+      // A customer never holds more than one milestone reward.
+      const active = new Map<string, { minutes: number; expiresAtVisit: number | null }>();
+      for (const r of rewards ?? [])
+        active.set(r.phone, {
+          minutes: Number(r.minutes ?? 30),
+          expiresAtVisit: r.expires_at_visit === null ? null : Number(r.expires_at_visit),
+        });
+      return (customers ?? []).map((c) => {
+        const reward = active.get(c.phone) ?? null;
+        const visits = Number(c.total_visits ?? 0);
+        return {
+          phone: c.phone,
+          name: c.name,
+          totalVisits: visits,
+          rewardsAvailable: reward ? 1 : 0,
+          rewardMinutes: reward?.minutes ?? null,
+          rewardStatus: (reward ? "available" : "none") as "available" | "none",
+          rewardExpiresAtVisit:
+            reward?.expiresAtVisit ?? (reward ? visits + (5 - (visits % 5)) : null),
+        };
+      });
     },
   );

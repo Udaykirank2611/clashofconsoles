@@ -21,12 +21,27 @@ export function LoyaltyOffer() {
                   Loyalty Reward
                 </p>
                 <h2 className="mt-2 text-balance text-2xl font-black leading-tight sm:text-3xl">
-                  Play 5 Gaming Sessions and Get{" "}
-                  <span className="text-gradient">30 Minutes FREE.</span>
+                  Play more, <span className="text-gradient">play free.</span>
                 </h2>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {[
+                    { visit: "5th Completed Visit", reward: "30 Minutes FREE" },
+                    { visit: "10th Completed Visit", reward: "1 Hour FREE" },
+                  ].map((m) => (
+                    <li
+                      key={m.visit}
+                      className="rounded-2xl border border-border bg-background/40 px-4 py-3"
+                    >
+                      <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {m.visit}
+                      </p>
+                      <p className="mt-1 text-sm font-black text-gradient">→ {m.reward}</p>
+                    </li>
+                  ))}
+                </ul>
                 <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <Smartphone className="size-3.5 shrink-0 text-cyan" aria-hidden="true" />
-                  Your progress is automatically tracked using your phone number.
+                  Progress is automatically tracked using your phone number.
                 </p>
               </div>
             </div>
