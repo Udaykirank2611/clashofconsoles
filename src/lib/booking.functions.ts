@@ -11,6 +11,7 @@ import type {
   CouponResult,
   MenuItem,
   PassOption,
+  GroupPassRate,
   SessionOption,
   Station,
   StationRate,
@@ -30,13 +31,14 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
     stations: Station[];
     menu: MenuItem[];
     sessions: SessionOption[];
+    groupRates: GroupPassRate[];
     stationRates: StationRate[];
     stationGames: StationGame[];
     passes: PassOption[];
   }> => {
     const { publicClient } = await import("@/lib/booking/repository.server");
     const db = publicClient();
-    const [branches, stations, menu, sessions, stationRates, stationGames, plans, offers] =
+    const [branches, stations, menu, sessions, groupRates, stationRates, stationGames, plans, offers] =
       await Promise.all([
         db.from("branches").select("*").eq("is_active", true).order("sort_order"),
         db.from("gaming_stations").select("*").order("sort_order"),
@@ -44,6 +46,11 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
         db
           .from("session_options")
           .select("id, branch_id, label, duration_minutes, players, price, sort_order")
+          .eq("is_active", true)
+          .order("sort_order"),
+        db
+          .from("group_pass_rates")
+          .select("id, branch_id, label, duration_minutes, price, sort_order")
           .eq("is_active", true)
           .order("sort_order"),
         db.from("station_rates").select("*").eq("is_active", true).order("sort_order"),
@@ -85,6 +92,7 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
       stations: (stations.data ?? []) as unknown as Station[],
       menu: (menu.data ?? []) as unknown as MenuItem[],
       sessions: (sessions.data ?? []) as unknown as SessionOption[],
+      groupRates: (groupRates.data ?? []) as unknown as GroupPassRate[],
       stationRates: (stationRates.data ?? []) as unknown as StationRate[],
       stationGames: (stationGames.data ?? []) as unknown as StationGame[],
       passes,
@@ -150,7 +158,7 @@ export const holdStation = createServerFn({ method: "POST" })
         holds: z
           .array(z.object({ stationId: uuid, startTime: timeStr, durationMinutes: duration }))
           .min(1)
-          .max(6),
+          .max(40),
       })
       .parse(i),
   )
