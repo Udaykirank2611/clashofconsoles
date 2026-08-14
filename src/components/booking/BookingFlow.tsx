@@ -2171,8 +2171,9 @@ export function BookingFlow() {
                   : null,
                 isGroup ? null : station?.name,
                 !isGroup && startTime && durationMinutes
-                  ? `${formatTime(startTime)} · ${durationMinutes / 60 >= 1 ? `${durationMinutes / 60}h` : "30m"}`
+                  ? `${formatTime(startTime)} · ${durationLabel(durationMinutes + (rewardApplied ? rewardMinutes : 0))}`
                   : null,
+
                 !isGroup && selectedExtras.length ? `+ ${selectedExtras.length} experience(s)` : null,
                 passLines.length ? `${passLines.reduce((s, l) => s + l.quantity, 0)} pass(es)` : null,
                 cart.length ? `${cart.reduce((s, l) => s + l.quantity, 0)} food items` : null,
