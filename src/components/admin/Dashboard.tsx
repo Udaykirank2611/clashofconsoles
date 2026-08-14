@@ -25,11 +25,14 @@ import { TodayPanel } from "./analytics/TodayPanel";
 
 const BRANCH_TABS = [
   "Dashboard",
+  "Booking Calendar",
   "Bookings",
   "Customers",
   "Memberships",
+  "Daily Closing",
   "Analytics",
   "Reports",
+
   "Stations",
   "Sessions & Pricing",
   "Menu",
