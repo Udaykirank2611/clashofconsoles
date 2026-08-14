@@ -829,7 +829,7 @@ export function BookingFlow() {
     if (Object.keys(next).length || !branch) return;
     // Only slot-based bookings depend on a live reservation; a pass on its own
     // blocks nothing, so it needs no hold.
-    const needsHold = consoleReady || selectedExtras.length > 0;
+    const needsHold = isGroup ? groupReady : consoleReady || selectedExtras.length > 0;
     if (needsHold && (!expiresAt || expiresAt <= Date.now())) {
       toast.error("Your reservation expired", { description: "Please choose your slot again." });
       setStep(1);
@@ -842,13 +842,18 @@ export function BookingFlow() {
       const res = await bookFn({
         data: {
           branchId: branch.id,
-          ...(consoleReady
-            ? { stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }
-            : {}),
+          bookingType,
+          ...(isGroup
+            ? { startTime: groupStart!, groupRateId: groupRate!.id, groupMembers }
+            : consoleReady
+              ? { stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }
+              : {}),
           date,
           players,
           gameTitle: "",
-          extras: selectedExtras
+          extras: isGroup
+            ? []
+            : selectedExtras
             .filter((e) => e.startTime && e.durationMinutes)
             .map((e) => ({
               stationId: e.station!.id,
