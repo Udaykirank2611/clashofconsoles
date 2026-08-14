@@ -77,3 +77,55 @@ export interface TransactionsPayload {
   cashBank: CashBankSummary;
   totalExpenses: number;
 }
+
+export type ReconciliationIssueKind =
+  | "missing_ledger"
+  | "amount_mismatch"
+  | "unrecorded_payment"
+  | "mode_mismatch"
+  | "status_mismatch";
+
+export interface ReconciliationIssue {
+  bookingId: string;
+  reference: string;
+  date: string;
+  branch: string;
+  customer: string;
+  bookingAmount: number;
+  ledgerAmount: number;
+  difference: number;
+  kind: ReconciliationIssueKind;
+  detail: string;
+}
+
+export interface ReconciliationTotals {
+  bookingsCount: number;
+  matchedCount: number;
+  issueCount: number;
+  missingLedgerCount: number;
+  bookingsTotal: number;
+  ledgerTotal: number;
+  variance: number;
+  ledgerCash: number;
+  ledgerUpi: number;
+}
+
+export interface ReconciliationCash {
+  openingCash: number;
+  openingBank: number;
+  cashReceived: number;
+  upiReceived: number;
+  expensesCash: number;
+  expensesBank: number;
+  expectedClosingCash: number;
+  expectedClosingBank: number;
+}
+
+export interface ReconciliationPayload {
+  from: string;
+  to: string;
+  branchName: string;
+  totals: ReconciliationTotals;
+  cash: ReconciliationCash;
+  issues: ReconciliationIssue[];
+}

@@ -25,12 +25,14 @@ import { TodayPanel } from "./analytics/TodayPanel";
 import { BookingCalendar } from "./calendar/BookingCalendar";
 import { DailyClosingView } from "./closing/DailyClosingView";
 import { TransactionsView } from "./transactions/TransactionsView";
+import { ReconciliationView } from "./transactions/ReconciliationView";
 
 const BRANCH_TABS = [
   "Dashboard",
   "Booking Calendar",
   "Bookings",
   "Transactions",
+  "Reconciliation",
   "Customers",
   "Memberships",
   "Daily Closing",
@@ -213,6 +215,10 @@ export function AdminDashboard() {
           <TransactionsView branches={branches} defaultBranchId={branch.id} />
         ) : null}
 
+
+        {tab === "Reconciliation" ? (
+          <ReconciliationView branches={branches} defaultBranchId={branch.id} />
+        ) : null}
 
         {tab === "Customers" ? <CustomersPanel /> : null}
 

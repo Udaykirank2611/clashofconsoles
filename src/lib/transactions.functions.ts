@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { loadTransactions } from "./transactions/load.server";
-import type { TransactionsPayload } from "./transactions/types";
+import { loadReconciliation } from "./transactions/reconcile.server";
+import type { ReconciliationPayload, TransactionsPayload } from "./transactions/types";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -124,3 +125,19 @@ export const setOpeningBalance = createServerFn({ method: "POST" })
     if (error) return { ok: false, message: error.message };
     return { ok: true };
   });
+
+/** Reconciles confirmed bookings against the ledger and the cash/bank summary. */
+export const getReconciliation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        branchId: z.string().uuid().nullable(),
+        from: z.string().regex(DATE),
+        to: z.string().regex(DATE),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<ReconciliationPayload> =>
+    loadReconciliation(context.supabase, data),
+  );
