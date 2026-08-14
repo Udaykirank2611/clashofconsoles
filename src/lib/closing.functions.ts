@@ -53,7 +53,7 @@ export const closeBusinessDay = createServerFn({ method: "POST" })
         cash_revenue: t.cashRevenue,
         upi_revenue: t.upiRevenue,
         total_revenue: t.totalRevenue,
-        snapshot: summary as unknown as Record<string, unknown>,
+        snapshot: JSON.parse(JSON.stringify(summary)),
       },
       { onConflict: "branch_id,report_date" },
     );
