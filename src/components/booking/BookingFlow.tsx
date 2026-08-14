@@ -1486,7 +1486,9 @@ export function BookingFlow() {
                   if (isToday && timeToMinutes(slot) + SLOT_GRACE_MINUTES <= nowMinutes) return true;
                   return timeToMinutes(slot) + minutes > closeMinutes;
                 }}
+                extraMinutes={useReward && rewardDurationOk ? rewardMinutes : 0}
               />
+
             ) : null}
 
             <div className="space-y-4">
