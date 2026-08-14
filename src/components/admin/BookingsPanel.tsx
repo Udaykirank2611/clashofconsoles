@@ -266,7 +266,7 @@ export function BookingsPanel({
                   </div>
 
                   <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                    {b.status === "payment_pending" || b.status === "pending" ? (
+                    {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
                       <>
                         <AdminButton
                           variant="success"
@@ -283,9 +283,10 @@ export function BookingsPanel({
                           disabled={busy === b.id}
                           onClick={() => void setStatus(b, "cancelled")}
                         >
-                          Decline
+                          {b.status === "awaiting_payment" ? "Cancel" : "Decline"}
                         </AdminButton>
                       </>
+
                     ) : b.status === "confirmed" ? (
                       <>
                         <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
@@ -302,11 +303,8 @@ export function BookingsPanel({
                           Reject
                         </AdminButton>
                       </>
-                    ) : b.status === "awaiting_payment" ? (
-                      <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void setStatus(b, "cancelled")}>
-                        Cancel
-                      </AdminButton>
                     ) : null}
+
                     <AdminButton onClick={() => setOpenId(open ? null : b.id)}>
                       Details <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
                     </AdminButton>
