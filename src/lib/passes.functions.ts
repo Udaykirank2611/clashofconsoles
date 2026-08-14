@@ -1,0 +1,117 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isConsoleOnlyPass, UNLIMITED_MAX_MINUTES, type PassInfo, type PassKind } from "@/lib/passes";
+
+const codeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .min(6)
+  .max(24)
+  .regex(/^[A-Z0-9-]+$/, "Enter a valid Pass ID");
+
+export interface PassLookup {
+  found: boolean;
+  valid: boolean;
+  message: string;
+  pass?: PassInfo;
+  /** Booking rules the flow must enforce for this pass. */
+  rules?: { consoleOnly: boolean; maxMinutes: number | null; oneUseOnly: boolean };
+}
+
+/**
+ * Look up a membership / combo / unlimited pass by its Pass ID and validate it
+ * for redemption. Public: guests redeem their own pass on the booking page and
+ * staff use the same lookup inside the admin panel.
+ */
+export const lookupPass = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ code: codeSchema }).parse(i))
+  .handler(async ({ data }): Promise<PassLookup> => {
+    const { adminClient } = await import("@/lib/booking/repository.server");
+    const db = await adminClient();
+    await db.rpc("expire_membership_passes");
+
+    const { data: row } = await db
+      .from("membership_passes")
+      .select("*, branches(name)")
+      .eq("code", data.code)
+      .maybeSingle();
+
+    if (!row) return { found: false, valid: false, message: "No pass found with that Pass ID." };
+
+    const passType = row.pass_type as PassKind;
+    const pass: PassInfo = {
+      id: row.id,
+      code: row.code,
+      branchId: row.branch_id,
+      branchName: (row as unknown as { branches?: { name?: string } }).branches?.name ?? "",
+      customerName: row.customer_name,
+      phone: row.phone,
+      passType,
+      planName: row.plan_name,
+      purchasedAt: row.purchased_at,
+      expiresOn: row.expires_on,
+      remainingMinutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
+      totalMinutes: row.total_minutes === null ? null : Number(row.total_minutes),
+      remainingUses: row.remaining_uses === null ? null : Number(row.remaining_uses),
+      status: row.status as PassInfo["status"],
+    };
+
+    const today = new Date().toISOString().slice(0, 10);
+    let message = "";
+    if (pass.status === "used") message = "This pass has already been fully used.";
+    else if (pass.status === "expired" || pass.expiresOn < today) message = "This pass has expired.";
+    else if (pass.remainingMinutes !== null && pass.remainingMinutes <= 0)
+      message = "This pass has no remaining hours.";
+    else if (pass.remainingUses !== null && pass.remainingUses <= 0)
+      message = "This pass has no remaining uses.";
+
+    return {
+      found: true,
+      valid: !message,
+      message: message || "Pass verified.",
+      pass,
+      rules: {
+        consoleOnly: isConsoleOnlyPass(passType),
+        maxMinutes:
+          passType === "unlimited"
+            ? UNLIMITED_MAX_MINUTES
+            : pass.remainingMinutes === null
+              ? null
+              : pass.remainingMinutes,
+        oneUseOnly: passType === "combo",
+      },
+    };
+  });
+
+/** Admin: every pass issued for a branch, newest first. */
+export const listPasses = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ branchId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<PassInfo[]> => {
+    await context.supabase.rpc("expire_membership_passes");
+    const { data: rows } = await context.supabase
+      .from("membership_passes")
+      .select("*, branches(name)")
+      .eq("branch_id", data.branchId)
+      .order("purchased_at", { ascending: false })
+      .limit(500);
+
+    return (rows ?? []).map((row) => ({
+      id: row.id,
+      code: row.code,
+      branchId: row.branch_id,
+      branchName: (row as unknown as { branches?: { name?: string } }).branches?.name ?? "",
+      customerName: row.customer_name,
+      phone: row.phone,
+      passType: row.pass_type as PassKind,
+      planName: row.plan_name,
+      purchasedAt: row.purchased_at,
+      expiresOn: row.expires_on,
+      remainingMinutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
+      totalMinutes: row.total_minutes === null ? null : Number(row.total_minutes),
+      remainingUses: row.remaining_uses === null ? null : Number(row.remaining_uses),
+      status: row.status as PassInfo["status"],
+    }));
+  });

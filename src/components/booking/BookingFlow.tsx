@@ -26,6 +26,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
+import { PassRedeem, type AppliedPass } from "./PassRedeem";
+import { PASS_TYPE_LABELS } from "@/lib/passes";
+
 
 import {
   REWARD_MIN_BOOKING_MINUTES,
@@ -251,6 +254,16 @@ export function BookingFlow() {
   /* Booking type: Single Pass is always the default. A Group Pass books the
      entire café, so it replaces the per-console selection. */
   const [bookingType, setBookingType] = useState<BookingType>("single");
+  /** A verified membership / combo / unlimited pass covering the gaming session. */
+  const [appliedPass, setAppliedPass] = useState<AppliedPass | null>(null);
+  /** Pass ID handed over by a "?pass=" link (e.g. from the admin panel). */
+  const [initialPassCode, setInitialPassCode] = useState("");
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("pass");
+    if (c) setInitialPassCode(c.trim().toUpperCase());
+  }, []);
+
+
   const [groupMembers, setGroupMembers] = useState(4);
   const [groupRateId, setGroupRateId] = useState<string | null>(null);
   const [groupStart, setGroupStart] = useState<string | null>(null);
@@ -409,16 +422,20 @@ export function BookingFlow() {
       })),
     [sessions],
   );
-  /** Durations come only from this branch's configured session options. */
+  /** Durations come only from this branch's configured session options.
+      A redeemed pass can cap how long a single booking may run. */
   const durations = useMemo(() => {
     const seen = new Map<number, string>();
     for (const s of [...sessions].sort((a, b) => a.sort_order - b.sort_order)) {
       if (!seen.has(s.duration_minutes)) seen.set(s.duration_minutes, s.label);
     }
+    const cap = appliedPass?.rules.maxMinutes ?? null;
     return [...seen.entries()]
       .sort((a, b) => a[0] - b[0])
+      .filter(([minutes]) => cap === null || minutes <= cap)
       .map(([minutes, label]) => ({ minutes, label }));
-  }, [sessions]);
+  }, [sessions, appliedPass]);
+
 
 
   const isToday = date === toDateKey(new Date());
@@ -559,11 +576,15 @@ export function BookingFlow() {
 
 
   const groupAmount = isGroup && groupStart && groupRate ? Math.round(Number(groupRate.price)) : 0;
-  const sessionAmount = isGroup
+  /** A redeemed pass funds the console session, so it is never charged. */
+  const passCoversSession = Boolean(appliedPass) && !isGroup;
+  const fullSessionAmount = isGroup
     ? groupAmount
     : startTime && durationMinutes
       ? rateFor(rates, players, durationMinutes)
       : 0;
+  const sessionAmount = passCoversSession ? 0 : fullSessionAmount;
+
   /* Loyalty reward: free play time added on top of the booked session.
      It never reduces the bill — the guest pays for the duration they booked. */
   const rewardMinutes = customer?.reward?.minutes ?? 0;
@@ -619,31 +640,47 @@ export function BookingFlow() {
   });
   const studentEligible = bill.studentEligible;
 
-  const gamingLines: BillLine[] = [
-    ...(sessionAmount
+  const passSessionLine: BillLine[] =
+    passCoversSession && station && startTime && durationMinutes
       ? [
           {
-            key: "session",
-            label: isGroup
-              ? `Group Pass · ${groupRate?.label ?? ""}`
-              : (station?.name ?? "Gaming session"),
-            amount: sessionAmount,
+            key: "pass-session",
+            label: `${station.name} · ${durationLabel(durationMinutes)}`,
+            amount: 0,
+            hint: `Covered by ${PASS_TYPE_LABELS[appliedPass!.pass.passType]} · ${appliedPass!.pass.code}`,
           },
         ]
-      : []),
-    ...(isGroup ? [] : selectedExtras)
-      .filter((e) => e.station)
-      .map((e) => ({
-        key: e.station!.id,
-        label: e.station!.name,
-        amount: extraAmountFor(e),
+      : [];
+  const gamingLines: BillLine[] = [
+    ...passSessionLine,
+    ...[
+      ...(sessionAmount
+        ? [
+            {
+              key: "session",
+              label: isGroup
+                ? `Group Pass · ${groupRate?.label ?? ""}`
+                : (station?.name ?? "Gaming session"),
+              amount: sessionAmount,
+            },
+          ]
+        : []),
+
+      ...(isGroup ? [] : selectedExtras)
+        .filter((e) => e.station)
+        .map((e) => ({
+          key: e.station!.id,
+          label: e.station!.name,
+          amount: extraAmountFor(e),
+        })),
+      ...passLines.map((l) => ({
+        key: l.id,
+        label: l.quantity > 1 ? `${l.quantity} × ${l.name}` : l.name,
+        amount: l.price * l.quantity,
       })),
-    ...passLines.map((l) => ({
-      key: l.id,
-      label: l.quantity > 1 ? `${l.quantity} × ${l.name}` : l.name,
-      amount: l.price * l.quantity,
-    })),
-  ].filter((l) => l.amount > 0);
+    ].filter((l) => l.amount > 0),
+  ];
+
 
 
 
@@ -662,7 +699,10 @@ export function BookingFlow() {
   const hasPasses = passLines.length > 0;
   /* Gaming is optional; whatever is picked simply has to be complete. */
   const groupReady = Boolean(isGroup && groupRate && groupStart && groupMembers >= 1);
-  const gamingComplete = isGroup ? groupReady : (!consoleTouched || consoleReady) && extrasReady;
+  const gamingComplete = isGroup
+    ? groupReady
+    : (!consoleTouched || consoleReady) && extrasReady && (!appliedPass || consoleReady);
+
   const hasGaming = isGroup ? groupReady : consoleReady || selectedExtras.length > 0 || hasPasses;
 
 
@@ -868,6 +908,8 @@ export function BookingFlow() {
               ...(e.rateId ? { rateId: e.rateId, extraHours: e.extraHours ?? 0 } : {}),
             })),
           passes: passLines.map((l) => ({ id: l.id, quantity: l.quantity })),
+          ...(appliedPass ? { passCode: appliedPass.pass.code } : {}),
+
           cart: cart.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
           couponCode: coupon?.valid ? coupon.code : undefined,
           studentDiscount: studentEligible,
@@ -1068,7 +1110,34 @@ export function BookingFlow() {
               hint="Start with a pass for the best value, or pick your day and any experience you like — gaming is optional."
             />
 
-            {passOptions.length ? (
+            <PassRedeem
+              applied={appliedPass}
+              plannedMinutes={durationMinutes}
+              {...(initialPassCode ? { initialCode: initialPassCode } : {})}
+              onApply={(a) => {
+                setAppliedPass(a);
+                setBookingType("single");
+                setPasses({});
+                setPassesOn(false);
+                setBranchId(a.pass.branchId);
+                setConsoleOn(true);
+                setDurationMinutes(null);
+                setStartTime(null);
+              }}
+              onClear={() => {
+                setAppliedPass(null);
+                setDurationMinutes(null);
+              }}
+            />
+
+            {appliedPass && !consoleReady ? (
+              <p className="rounded-2xl border border-amber-400/30 bg-amber-400/5 px-4 py-3 text-xs font-semibold text-amber-300">
+                Pick your console, day and time below to redeem this pass.
+              </p>
+            ) : null}
+
+            {passOptions.length && !appliedPass ? (
+
               <div
                 className={cn(
                   "relative overflow-hidden rounded-[2rem] border border-violet/40 bg-linear-to-br from-violet/15 via-surface/70 to-cyan/10 p-5 shadow-[0_30px_90px_-45px_var(--violet)] backdrop-blur-xl transition-all duration-500 sm:p-6",
@@ -1259,8 +1328,9 @@ export function BookingFlow() {
 
 
 
-            <div>
+            <div className={cn(appliedPass && "hidden")}>
               <FieldLabel>Booking Type</FieldLabel>
+
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {(
                   [

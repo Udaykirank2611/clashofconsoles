@@ -165,6 +165,8 @@ export type Database = {
           gaming_discount_amount: number
           group_members: number
           id: string
+          pass_id: string | null
+          pass_minutes: number
           payment_expires_at: string | null
           payment_mode: string | null
           payment_note: string | null
@@ -204,6 +206,8 @@ export type Database = {
           gaming_discount_amount?: number
           group_members?: number
           id?: string
+          pass_id?: string | null
+          pass_minutes?: number
           payment_expires_at?: string | null
           payment_mode?: string | null
           payment_note?: string | null
@@ -243,6 +247,8 @@ export type Database = {
           gaming_discount_amount?: number
           group_members?: number
           id?: string
+          pass_id?: string | null
+          pass_minutes?: number
           payment_expires_at?: string | null
           payment_mode?: string | null
           payment_note?: string | null
@@ -275,6 +281,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_pass_id_fkey"
+            columns: ["pass_id"]
+            isOneToOne: false
+            referencedRelation: "membership_passes"
             referencedColumns: ["id"]
           },
           {
@@ -822,6 +835,84 @@ export type Database = {
             columns: ["customer_profile_id"]
             isOneToOne: false
             referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_passes: {
+        Row: {
+          branch_id: string
+          code: string
+          created_at: string
+          customer_name: string
+          expires_on: string
+          id: string
+          pass_type: Database["public"]["Enums"]["pass_kind"]
+          phone: string
+          plan_name: string
+          price: number
+          purchased_at: string
+          remaining_minutes: number | null
+          remaining_uses: number | null
+          source_booking_id: string | null
+          status: string
+          total_minutes: number | null
+          total_uses: number | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          code: string
+          created_at?: string
+          customer_name: string
+          expires_on: string
+          id?: string
+          pass_type: Database["public"]["Enums"]["pass_kind"]
+          phone: string
+          plan_name: string
+          price?: number
+          purchased_at?: string
+          remaining_minutes?: number | null
+          remaining_uses?: number | null
+          source_booking_id?: string | null
+          status?: string
+          total_minutes?: number | null
+          total_uses?: number | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          code?: string
+          created_at?: string
+          customer_name?: string
+          expires_on?: string
+          id?: string
+          pass_type?: Database["public"]["Enums"]["pass_kind"]
+          phone?: string
+          plan_name?: string
+          price?: number
+          purchased_at?: string
+          remaining_minutes?: number | null
+          remaining_uses?: number | null
+          source_booking_id?: string | null
+          status?: string
+          total_minutes?: number | null
+          total_uses?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_passes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_passes_source_booking_id_fkey"
+            columns: ["source_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
         ]
@@ -1441,6 +1532,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_membership_passes: { Args: never; Returns: undefined }
       expire_stale_bookings: { Args: never; Returns: undefined }
       get_slot_availability: {
         Args: { _branch_id: string; _date: string }
@@ -1452,6 +1544,7 @@ export type Database = {
         }[]
       }
       next_booking_reference: { Args: never; Returns: string }
+      next_pass_code: { Args: { _prefix: string }; Returns: string }
     }
     Enums: {
       app_role: "owner" | "branch_admin"
@@ -1466,6 +1559,13 @@ export type Database = {
         | "payment_pending"
       coupon_category: "gaming" | "food" | "entire_bill"
       discount_type: "flat" | "percent"
+      pass_kind:
+        | "bronze"
+        | "silver"
+        | "gold"
+        | "membership"
+        | "combo"
+        | "unlimited"
       reward_status: "available" | "used" | "expired"
       station_status: "available" | "maintenance" | "blocked"
       station_type:
@@ -1615,6 +1715,14 @@ export const Constants = {
       ],
       coupon_category: ["gaming", "food", "entire_bill"],
       discount_type: ["flat", "percent"],
+      pass_kind: [
+        "bronze",
+        "silver",
+        "gold",
+        "membership",
+        "combo",
+        "unlimited",
+      ],
       reward_status: ["available", "used", "expired"],
       station_status: ["available", "maintenance", "blocked"],
       station_type: [
