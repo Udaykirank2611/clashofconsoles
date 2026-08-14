@@ -180,6 +180,10 @@ interface StoredHold {
     extraHours?: number;
   }[];
   passes: Record<string, number>;
+  bookingType?: BookingType;
+  groupRateId?: string | null;
+  groupStart?: string | null;
+  groupMembers?: number;
   expiresAt: number;
 }
 
@@ -237,6 +241,13 @@ export function BookingFlow() {
   const [passes, setPasses] = useState<Record<string, number>>({});
   /** Whether the Memberships & Combos group is expanded. */
   const [passesOn, setPassesOn] = useState(false);
+
+  /* Booking type: Single Pass is always the default. A Group Pass books the
+     entire café, so it replaces the per-console selection. */
+  const [bookingType, setBookingType] = useState<BookingType>("single");
+  const [groupMembers, setGroupMembers] = useState(4);
+  const [groupRateId, setGroupRateId] = useState<string | null>(null);
+  const [groupStart, setGroupStart] = useState<string | null>(null);
 
   const [cart, setCart] = useState<CartLine[]>([]);
   const [couponInput, setCouponInput] = useState("");
@@ -337,6 +348,17 @@ export function BookingFlow() {
     () => (catalogue?.sessions ?? []).filter((s) => s.branch_id === branchId),
     [catalogue, branchId],
   );
+  /** Group Pass durations + prices, owned by the selected branch. */
+  const groupRates = useMemo(
+    () =>
+      (catalogue?.groupRates ?? [])
+        .filter((r) => r.branch_id === branchId)
+        .sort((a, b) => a.sort_order - b.sort_order || a.duration_minutes - b.duration_minutes),
+    [catalogue, branchId],
+  );
+  /** Every experience a Group Pass takes over. */
+  const groupStations = useMemo(() => stations.filter((s) => s.status === "available"), [stations]);
+
   /** Admin-managed price tiers per experience station. */
   const stationRates = useMemo(
     () => (catalogue?.stationRates ?? []).filter((r) => r.branch_id === branchId),
@@ -409,12 +431,37 @@ export function BookingFlow() {
   );
 
 
+  const isGroup = bookingType === "group";
+  const groupRate = groupRates.find((r) => r.id === groupRateId) ?? null;
+  /** A Group Pass slot is only offered when every experience is free for it. */
+  const groupSlotBlocked = useCallback(
+    (slot: string, minutes: number) => {
+      if (!groupStations.length) return true;
+      return groupStations.some((st) => slotBlocked(st.id, slot, minutes));
+    },
+    [groupStations, slotBlocked],
+  );
+  const groupSlots = useMemo(
+    () => (groupRate ? slots.filter((s) => !groupSlotBlocked(s, groupRate.duration_minutes)) : []),
+    [slots, groupRate, groupSlotBlocked],
+  );
+
   useEffect(() => {
     setStationId(null);
     setStartTime(null);
     setDurationMinutes(null);
     setExtras({});
+    setGroupStart(null);
   }, [branchId, date]);
+
+  /** Default to the branch's first Group Pass duration. */
+  useEffect(() => {
+    if (!isGroup) return;
+    if (!groupRates.some((r) => r.id === groupRateId)) {
+      setGroupRateId(groupRates[0]?.id ?? null);
+      setGroupStart(null);
+    }
+  }, [isGroup, groupRates, groupRateId]);
 
   /* ---------------- Multi-tab guard ---------------- */
   const [tabBlocked, setTabBlocked] = useState(false);
@@ -494,6 +541,10 @@ export function BookingFlow() {
         extraHours: e.extraHours ?? 0,
       };
     setExtras(restored);
+    setBookingType(p.bookingType ?? "single");
+    setGroupRateId(p.groupRateId ?? null);
+    setGroupStart(p.groupStart ?? null);
+    if (p.groupMembers) setGroupMembers(p.groupMembers);
     setPasses(p.passes ?? {});
     setPassesOn(Object.keys(p.passes ?? {}).length > 0);
     setExpiresAt(p.expiresAt);
@@ -501,8 +552,12 @@ export function BookingFlow() {
   }, [branchId, date]);
 
 
-  const sessionAmount =
-    startTime && durationMinutes ? rateFor(rates, players, durationMinutes) : 0;
+  const groupAmount = isGroup && groupStart && groupRate ? Math.round(Number(groupRate.price)) : 0;
+  const sessionAmount = isGroup
+    ? groupAmount
+    : startTime && durationMinutes
+      ? rateFor(rates, players, durationMinutes)
+      : 0;
   /* Loyalty reward: free play time added on top of the booked session.
      It never reduces the bill — the guest pays for the duration they booked. */
   const rewardMinutes = customer?.reward?.minutes ?? 0;
@@ -538,7 +593,7 @@ export function BookingFlow() {
     .filter((p) => (passes[p.id] ?? 0) > 0)
     .map((p) => ({ ...p, quantity: passes[p.id]! }));
   const passesAmount = passLines.reduce((s, l) => s + l.price * l.quantity, 0);
-  const cockpitAmount = extrasAmount + passesAmount;
+  const cockpitAmount = (isGroup ? 0 : extrasAmount) + passesAmount;
 
   const foodAmount = cart.reduce((s, l) => s + l.price * l.quantity, 0);
   const gamingSubtotal = sessionAmount + cockpitAmount;
@@ -560,9 +615,17 @@ export function BookingFlow() {
 
   const gamingLines: BillLine[] = [
     ...(sessionAmount
-      ? [{ key: "session", label: station?.name ?? "Gaming session", amount: sessionAmount }]
+      ? [
+          {
+            key: "session",
+            label: isGroup
+              ? `Group Pass · ${groupRate?.label ?? ""}`
+              : (station?.name ?? "Gaming session"),
+            amount: sessionAmount,
+          },
+        ]
       : []),
-    ...selectedExtras
+    ...(isGroup ? [] : selectedExtras)
       .filter((e) => e.station)
       .map((e) => ({
         key: e.station!.id,
@@ -592,14 +655,19 @@ export function BookingFlow() {
   const consoleReady = Boolean(station && startTime && durationMinutes);
   const hasPasses = passLines.length > 0;
   /* Gaming is optional; whatever is picked simply has to be complete. */
-  const gamingComplete = (!consoleTouched || consoleReady) && extrasReady;
-  const hasGaming = consoleReady || selectedExtras.length > 0 || hasPasses;
+  const groupReady = Boolean(isGroup && groupRate && groupStart && groupMembers >= 1);
+  const gamingComplete = isGroup ? groupReady : (!consoleTouched || consoleReady) && extrasReady;
+  const hasGaming = isGroup ? groupReady : consoleReady || selectedExtras.length > 0 || hasPasses;
 
 
   /* ---------------- Reservation lock ---------------- */
   const releasedRef = useRef(false);
   const holdKey =
-    gamingComplete && branch && (consoleReady || selectedExtras.length)
+    isGroup
+      ? groupReady && branch
+        ? ["group", branch!.id, date, groupRate!.id, groupStart!].join("~")
+        : null
+      : gamingComplete && branch && (consoleReady || selectedExtras.length)
       ? [
           branch.id,
           date,
@@ -631,12 +699,18 @@ export function BookingFlow() {
           rateId: e.rateId ?? null,
           extraHours: e.extraHours ?? 0,
         }));
-      const holds = [
-        ...(consoleReady
-          ? [{ stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }]
-          : []),
-        ...extraHolds,
-      ];
+      const holds = isGroup
+        ? groupStations.map((st) => ({
+            stationId: st.id,
+            startTime: groupStart!,
+            durationMinutes: groupRate!.duration_minutes,
+          }))
+        : [
+            ...(consoleReady
+              ? [{ stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }]
+              : []),
+            ...extraHolds,
+          ];
       const res = await holdFn({
         data: { branchId: branch.id, date, sessionToken: sessionToken(), holds },
       });
@@ -645,6 +719,7 @@ export function BookingFlow() {
         toast.error(res.message ?? "This slot has just become unavailable. Please choose another available time.");
         setStartTime(null);
         setDurationMinutes(null);
+        setGroupStart(null);
         setExpiresAt(null);
         setRemaining(0);
         window.localStorage.removeItem(HOLD_KEY);
@@ -661,8 +736,12 @@ export function BookingFlow() {
         startTime: consoleReady ? startTime : null,
         durationMinutes: consoleReady ? durationMinutes : null,
         players,
-        extras: extraHolds,
+        extras: isGroup ? [] : extraHolds,
         passes,
+        bookingType,
+        groupRateId,
+        groupStart,
+        groupMembers,
         expiresAt: until,
       };
       window.localStorage.setItem(HOLD_KEY, JSON.stringify(stored));
