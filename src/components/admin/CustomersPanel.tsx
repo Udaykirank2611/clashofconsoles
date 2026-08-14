@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Gift, Phone } from "lucide-react";
+import { Check, Copy, Gift, MessageCircle, Phone } from "lucide-react";
+import { toast } from "sonner";
 import { listCustomers } from "@/lib/admin.functions";
 import { rewardLabel } from "@/lib/loyalty.functions";
+import { loyaltyMessage, whatsappLink } from "@/lib/loyalty-messages";
 import { Panel } from "./primitives";
+
 
 /** Read-only loyalty roster: name, phone, visits and available rewards. */
 export function CustomersPanel() {
