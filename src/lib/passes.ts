@@ -40,7 +40,7 @@ export function passRuleNote(p: PassInfo): string {
   if (p.passType === "combo") return "Valid Today Only · one redemption";
   if (p.passType === "unlimited")
     return "Unlimited Pass · Valid for 30 Days · Maximum 1 Hour per booking. Unlimited bookings allowed during validity.";
-  return "PS5 console play only. Booked hours are deducted from your pass.";
+  return "PS5 console play only · 1 player per booking. Booked hours are deducted from your pass.";
 }
 
 export const hoursLabel = (minutes: number | null) =>
