@@ -53,7 +53,7 @@ import {
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
 import { ConsoleSelect } from "./ConsoleSelect";
 import type { CouponCategory } from "@/lib/booking/pricing";
-import { BillSummary, type BillLine } from "./BillSummary";
+import { BillSummary, durationLabel, type BillLine } from "./BillSummary";
 import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
@@ -499,15 +499,18 @@ export function BookingFlow() {
 
   const sessionAmount =
     startTime && durationMinutes ? rateFor(rates, players, durationMinutes) : 0;
-  /* Loyalty reward: 30 minutes of the console session are free. */
-  const rewardDiscount =
-    useReward && customer && customer.rewardsAvailable > 0 && durationMinutes
-      ? Math.max(
-          0,
-          sessionAmount -
-            (durationMinutes > 30 ? rateFor(rates, players, durationMinutes - 30) : 0),
-        )
-      : 0;
+  /* Loyalty reward: free play time added on top of the booked session.
+     It never reduces the bill — the guest pays for the duration they booked. */
+  const rewardMinutes = customer?.reward?.minutes ?? 0;
+  const rewardDurationOk = Boolean(durationMinutes && durationMinutes >= REWARD_MIN_BOOKING_MINUTES);
+  const rewardSlotFree = Boolean(
+    rewardMinutes &&
+      stationId &&
+      startTime &&
+      durationMinutes &&
+      !slotBlocked(stationId, startTime, durationMinutes + rewardMinutes),
+  );
+  const rewardApplied = Boolean(useReward && rewardMinutes && rewardDurationOk && rewardSlotFree);
   const selectedExtras = useMemo(
     () =>
       Object.entries(extras)
@@ -534,7 +537,7 @@ export function BookingFlow() {
   const cockpitAmount = extrasAmount + passesAmount;
 
   const foodAmount = cart.reduce((s, l) => s + l.price * l.quantity, 0);
-  const gamingSubtotal = Math.max(0, sessionAmount - rewardDiscount) + cockpitAmount;
+  const gamingSubtotal = sessionAmount + cockpitAmount;
   const subtotal = gamingSubtotal + foodAmount;
 
   /* Category-aware bill: gaming coupon → food coupon → entire-bill coupon →
@@ -569,13 +572,7 @@ export function BookingFlow() {
     })),
   ].filter((l) => l.amount > 0);
 
-  if (rewardDiscount > 0) {
-    gamingLines.push({
-      key: "loyalty-reward",
-      label: "Loyalty reward · 30 minutes free",
-      amount: -rewardDiscount,
-    });
-  }
+
 
   const foodLines: BillLine[] = cart.map((l) => ({
     key: l.menuItemId,
@@ -780,7 +777,7 @@ export function BookingFlow() {
           cart: cart.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
           couponCode: coupon?.valid ? coupon.code : undefined,
           studentDiscount: studentEligible,
-          useReward: rewardDiscount > 0,
+          useReward: rewardApplied,
           sessionToken: sessionToken(),
           customer: {
             fullName: form.fullName.trim(),
@@ -1117,21 +1114,41 @@ export function BookingFlow() {
 
 
 
-            {customer.rewardsAvailable > 0 ? (
-              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-emerald-300/40 bg-emerald-300/5 px-4 py-3.5">
-                <input
-                  type="checkbox"
-                  checked={useReward}
-                  onChange={(e) => setUseReward(e.target.checked)}
-                  className="size-4 accent-emerald-400"
-                />
-                <span className="text-sm font-bold text-emerald-200">
-                  Use my FREE 30 Minute Reward
-                  <span className="ml-2 block text-xs font-medium text-muted-foreground sm:inline">
-                    30 minutes of your gaming session are on us.
+            {rewardMinutes > 0 ? (
+              <div className="rounded-2xl border border-emerald-300/40 bg-emerald-300/5 px-4 py-3.5">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={useReward}
+                    onChange={(e) => setUseReward(e.target.checked)}
+                    className="size-4 accent-emerald-400"
+                  />
+                  <span className="text-sm font-bold text-emerald-200">
+                    Use My Reward · {rewardLabel(rewardMinutes)} FREE
+                    <span className="mt-0.5 block text-xs font-medium text-muted-foreground">
+                      Book at least 1 hour of PS5 gaming and we add {rewardLabel(rewardMinutes)} of free play
+                      right after your slot.
+                    </span>
                   </span>
-                </span>
-              </label>
+                </label>
+                {useReward && durationMinutes && !rewardDurationOk ? (
+                  <p className="mt-2 text-xs font-semibold text-amber-300">
+                    A minimum 1 hour gaming booking is required to use your reward.
+                  </p>
+                ) : null}
+                {useReward && rewardDurationOk && stationId && startTime && !rewardSlotFree ? (
+                  <p className="mt-2 text-xs font-semibold text-amber-300">
+                    The next time slot is unavailable. Please select another booking time or continue
+                    without using your reward.
+                  </p>
+                ) : null}
+                {rewardApplied && durationMinutes ? (
+                  <p className="mt-2 text-xs font-semibold text-emerald-300">
+                    Total play time · {durationLabel(durationMinutes + rewardMinutes)} — you pay for{" "}
+                    {durationLabel(durationMinutes)} only.
+                  </p>
+                ) : null}
+              </div>
             ) : null}
 
             <div>
@@ -1804,6 +1821,11 @@ export function BookingFlow() {
                     couponCode={coupon?.valid ? (coupon.code ?? null) : null}
                     couponCategory={coupon?.valid ? ((coupon.category ?? "entire_bill") as CouponCategory) : null}
                     taxPercent={Number(branch?.tax_percent ?? 0)}
+                    reward={
+                      rewardApplied && durationMinutes
+                        ? { bookedMinutes: durationMinutes, rewardMinutes }
+                        : null
+                    }
                     footer={
                       <p className="flex items-center justify-center gap-1.5 text-[0.65rem] text-muted-foreground">
                         <ShieldCheck className="size-3.5 text-cyan" /> No payment now — we confirm by phone
