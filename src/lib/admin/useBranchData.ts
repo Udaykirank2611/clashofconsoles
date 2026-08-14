@@ -73,6 +73,19 @@ export interface AdminBooking {
   created_at: string;
   gaming_stations: { name: string } | null;
   booking_items: AdminBookingItem[];
+  /** Membership / combo / unlimited passes issued from this booking. */
+  membership_passes?: AdminIssuedPass[];
+}
+
+/** A pass issued by a booking, shown in the confirmation message. */
+export interface AdminIssuedPass {
+  code: string;
+  pass_type: string;
+  plan_name: string;
+  expires_on: string;
+  remaining_minutes: number | null;
+  remaining_uses: number | null;
+  status: string;
 }
 
 export interface AdminCoupon {
@@ -159,7 +172,7 @@ export function useBranchData(branchId: string | null): BranchData {
       supabase.from("gaming_stations").select("*").eq("branch_id", branchId).order("sort_order"),
       supabase
         .from("bookings")
-        .select("*, gaming_stations(name), booking_items(id,label,quantity,unit_price,line_total,kind,station_id,start_time,end_time,extra_hours,extra_hour_price)")
+        .select("*, gaming_stations(name), booking_items(id,label,quantity,unit_price,line_total,kind,station_id,start_time,end_time,extra_hours,extra_hour_price), membership_passes!membership_passes_source_booking_id_fkey(code,pass_type,plan_name,expires_on,remaining_minutes,remaining_uses,status)")
         .eq("branch_id", branchId)
         .order("booking_date", { ascending: false })
         .order("start_time", { ascending: true })

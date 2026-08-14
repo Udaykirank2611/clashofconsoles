@@ -78,6 +78,22 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
     Number(b.discount_amount) ? `Total discount: − ${money(b.discount_amount)}` : "",
     `Taxes: ${money(b.tax_amount)}`,
     `Amount paid: ${money(b.total_amount)}`,
+    b.membership_passes?.length
+      ? `Your Pass ID${b.membership_passes.length > 1 ? "s" : ""}:\n${b.membership_passes
+          .map(
+            (p) =>
+              `  • ${p.plan_name} — ${p.code} (valid till ${new Date(
+                `${p.expires_on}T00:00:00`,
+              ).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${
+                p.remaining_minutes !== null
+                  ? `, ${Math.round((p.remaining_minutes / 60) * 10) / 10} h left`
+                  : p.remaining_uses !== null
+                    ? `, ${p.remaining_uses} use${p.remaining_uses === 1 ? "" : "s"} left`
+                    : ""
+              })`,
+          )
+          .join("\n")}\nShow this Pass ID at the counter or enter it while booking.`
+      : "",
     b.payment_utr ? `UTR: ${b.payment_utr}` : "",
     b.special_instructions ? `Notes: ${b.special_instructions}` : "",
     "Please arrive 10 minutes early. See you at the arena!",
