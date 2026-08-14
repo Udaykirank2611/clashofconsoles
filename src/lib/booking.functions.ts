@@ -1113,6 +1113,8 @@ export const getPaymentDetails = createServerFn({ method: "POST" })
           start_time: row["start_time"],
           end_time: row["end_time"],
           players: row["players"],
+          reward_minutes: Number(row["reward_minutes"] ?? 0),
+
           customer_name: row["customer_name"],
           customer_phone: row["customer_phone"],
           total_amount: Number(row["total_amount"]),
