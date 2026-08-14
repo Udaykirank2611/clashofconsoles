@@ -436,22 +436,52 @@ export const createBooking = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!branch) return { ok: false, message: "Branch unavailable." };
 
-    const extras = data.extras ?? [];
-    const hasSlot = Boolean(data.stationId && data.startTime && data.durationMinutes);
-    const ids = [...(data.stationId ? [data.stationId] : []), ...extras.map((e) => e.stationId)];
+    /* Group Pass reserves the entire café, so it never carries a single
+       station or extra experiences — only one time range across everything. */
+    const isGroup = data.bookingType === "group";
+    let groupRate: { id: string; label: string; duration_minutes: number; price: number } | null = null;
+    let groupStations: { id: string; name: string }[] = [];
+    if (isGroup) {
+      if (!data.startTime || !data.groupRateId)
+        return { ok: false, message: "Pick a start time and duration for your group pass." };
+      const { data: rate } = await db
+        .from("group_pass_rates")
+        .select("id, label, duration_minutes, price")
+        .eq("id", data.groupRateId)
+        .eq("branch_id", data.branchId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!rate) return { ok: false, message: "That group pass duration is no longer available." };
+      groupRate = { ...rate, price: Math.round(Number(rate.price)) };
+      const { data: all } = await db
+        .from("gaming_stations")
+        .select("id, name")
+        .eq("branch_id", data.branchId)
+        .eq("status", "available");
+      groupStations = all ?? [];
+      if (!groupStations.length)
+        return { ok: false, message: "No gaming experiences are available at this branch right now." };
+    }
+
+    const extras = isGroup ? [] : (data.extras ?? []);
+    const hasSlot = !isGroup && Boolean(data.stationId && data.startTime && data.durationMinutes);
+    const ids = isGroup
+      ? []
+      : [...(data.stationId ? [data.stationId] : []), ...extras.map((e) => e.stationId)];
     const { data: stations } = ids.length
       ? await db.from("gaming_stations").select("*").in("id", ids)
       : { data: [] as any[] };
     const station = stations?.find((s) => s.id === data.stationId);
     if (hasSlot && (!station || station.status !== "available"))
       return { ok: false, message: "This station is no longer available." };
-    if (!hasSlot && !extras.length && !(data.passes ?? []).length)
+    if (!isGroup && !hasSlot && !extras.length && !(data.passes ?? []).length)
       return { ok: false, message: "Add a gaming session or a pass before confirming." };
     for (const e of extras) {
       const st = stations?.find((s) => s.id === e.stationId);
       if (!st || st.status !== "available")
         return { ok: false, message: "One of the selected experiences is no longer available." };
     }
+
 
     // Final conflict check, ignoring this visitor's own active locks.
     const { data: busyRows } = await db.rpc("get_slot_availability", {
