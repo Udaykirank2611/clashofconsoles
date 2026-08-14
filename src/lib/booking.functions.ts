@@ -389,7 +389,7 @@ export const createBooking = createServerFn({ method: "POST" })
         cart: z.array(z.object({ menuItemId: uuid, quantity: z.number().int().min(1).max(20) })),
         couponCode: z.string().trim().max(32).optional(),
         studentDiscount: z.boolean().optional(),
-        /** Redeem an available loyalty reward: first 30 minutes of the console session free. */
+        /** Redeem an available loyalty reward: it extends the console session for free. */
         useReward: z.boolean().optional(),
         sessionToken: z.string().min(8).max(64),
         customer: z.object({
@@ -456,8 +456,46 @@ export const createBooking = createServerFn({ method: "POST" })
       (b) => !(b.source === "locked" && own.has(`${b.station_id}|${b.start_time}`)),
     );
     const TAKEN = "This slot has just become unavailable. Please choose another available time.";
-    if (hasSlot && isRangeBusy(busy, data.stationId!, data.startTime!, data.durationMinutes!))
+    const NEXT_SLOT_BUSY =
+      "The next time slot is unavailable. Please select another booking time or continue without using your reward.";
+
+    /* Loyalty reward: it never discounts the bill — it extends the booked
+       gaming session, provided the immediately following slot is free. */
+    const { normalizePhone, REWARD_MIN_BOOKING_MINUTES } = await import("@/lib/loyalty.functions");
+    const loyaltyPhone = normalizePhone(data.customer.phone);
+    let rewardId: string | null = null;
+    let rewardMinutes = 0;
+    if (data.useReward && hasSlot && (data.durationMinutes ?? 0) >= REWARD_MIN_BOOKING_MINUTES) {
+      const { data: reward } = await db
+        .from("rewards")
+        .select("id, minutes")
+        .eq("phone", loyaltyPhone)
+        .eq("status", "available")
+        .is("booking_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (reward) {
+        rewardId = reward.id;
+        rewardMinutes = Number(reward.minutes ?? 30);
+      }
+    }
+    /** Total minutes the station is blocked for: paid time + free reward time. */
+    const slotMinutes = (data.durationMinutes ?? 0) + rewardMinutes;
+
+    if (hasSlot && isRangeBusy(busy, data.stationId!, data.startTime!, slotMinutes)) {
+      // The paid slot is fine and only the reward extension collides → tell the
+      // guest exactly that and keep their reward untouched.
+      if (rewardMinutes && !isRangeBusy(busy, data.stationId!, data.startTime!, data.durationMinutes!))
+        return { ok: false, message: NEXT_SLOT_BUSY };
       return { ok: false, message: TAKEN };
+    }
+    if (hasSlot && rewardMinutes) {
+      const startM = Number(data.startTime!.slice(0, 2)) * 60 + Number(data.startTime!.slice(3, 5));
+      const closeM =
+        Number(String(branch.closes_at).slice(0, 2)) * 60 + Number(String(branch.closes_at).slice(3, 5));
+      if (closeM > startM && startM + slotMinutes > closeM) return { ok: false, message: NEXT_SLOT_BUSY };
+    }
     for (const e of extras) {
       const minutes = e.durationMinutes + (e.extraHours ?? 0) * 60;
       if (isRangeBusy(busy, e.stationId, e.startTime, minutes)) return { ok: false, message: TAKEN };
@@ -473,7 +511,7 @@ export const createBooking = createServerFn({ method: "POST" })
     const startMin = hasSlot
       ? Number(data.startTime!.slice(0, 2)) * 60 + Number(data.startTime!.slice(3, 5))
       : 0;
-    const endMin = startMin + (data.durationMinutes ?? 0);
+    const endMin = startMin + slotMinutes;
     const clashes =
       hasSlot &&
       (samePhone ?? []).some((b) => {
@@ -503,29 +541,9 @@ export const createBooking = createServerFn({ method: "POST" })
       ? 0
       : rateFor(rateRows, data.players, data.durationMinutes ?? 0);
 
-    /* Loyalty reward: the first 30 minutes of the console session are free,
-       the remaining minutes are charged at the normal rate. */
-    const { normalizePhone, REWARD_MINUTES } = await import("@/lib/loyalty.functions");
-    const loyaltyPhone = normalizePhone(data.customer.phone);
-    let rewardId: string | null = null;
-    let rewardDiscount = 0;
-    if (data.useReward && hasSlot) {
-      const { data: reward } = await db
-        .from("rewards")
-        .select("id")
-        .eq("phone", loyaltyPhone)
-        .eq("status", "available")
-        .is("booking_id", null)
-        .limit(1)
-        .maybeSingle();
-      if (reward) {
-        const remainingMinutes = Math.max(0, (data.durationMinutes ?? 0) - REWARD_MINUTES);
-        const charged = remainingMinutes ? rateFor(rateRows, data.players, remainingMinutes) : 0;
-        rewardDiscount = Math.max(0, Math.round(fullSessionAmount - charged));
-        rewardId = reward.id;
-      }
-    }
-    const sessionAmount = Math.max(0, fullSessionAmount - rewardDiscount);
+    // The reward is free play time, never a discount: the guest still pays the
+    // full price of the duration they booked.
+    const sessionAmount = fullSessionAmount;
 
 
     // Tiered experience prices (theatre / cockpit / snooker / lounge) are priced
@@ -737,7 +755,8 @@ export const createBooking = createServerFn({ method: "POST" })
         station_id: data.stationId ?? null,
         booking_date: data.date,
         start_time: hasSlot ? data.startTime! : null,
-        end_time: hasSlot ? addMinutes(data.startTime!, data.durationMinutes!) : null,
+        end_time: hasSlot ? addMinutes(data.startTime!, slotMinutes) : null,
+        reward_minutes: hasSlot ? rewardMinutes : 0,
         players: data.players,
         game_title: data.gameTitle || null,
         customer_name: data.customer.fullName,
