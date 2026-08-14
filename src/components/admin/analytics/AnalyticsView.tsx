@@ -5,7 +5,8 @@ import { getAnalytics } from "@/lib/analytics.functions";
 import { Panel, StatCard, money } from "../primitives";
 import { ScopeBar } from "./ScopeBar";
 import { useAnalyticsScope } from "./scope";
-import { BookingTrendChart, RevenueChart, SplitPie, groupSeries } from "./charts";
+import { BookingTrendChart, PaymentModeChart, RevenueChart, SplitPie, groupSeries } from "./charts";
+import { DrilldownDialog, type Drilldown } from "./DrilldownDialog";
 import { ScrollTable } from "./TodayPanel";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export function AnalyticsView({
 }) {
   const scope = useAnalyticsScope(isOwner ? null : defaultBranchId);
   const [granularity, setGranularity] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [drilldown, setDrilldown] = useState<Drilldown | null>(null);
   const fetchAnalytics = useServerFn(getAnalytics);
 
   const { data, isFetching } = useQuery({
@@ -55,6 +57,8 @@ export function AnalyticsView({
             <StatCard label="Pending" value={data.kpis.pending} tone="warn" />
             <StatCard label="Expired" value={data.kpis.expired} />
             <StatCard label="Avg booking value" value={money(data.kpis.avgValue)} />
+            <StatCard label="UPI revenue" value={money(data.kpis.upiRevenue)} tone="good" hint="Approved as UPI" />
+            <StatCard label="Cash revenue" value={money(data.kpis.cashRevenue)} tone="good" hint="Approved as cash" />
             <StatCard label="UTR submitted" value={data.payments.utrSubmitted} />
           </div>
 
@@ -108,32 +112,74 @@ export function AnalyticsView({
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Panel title="Peak hours">
+            <Panel title="Peak hours" action={<DrillHint />}>
               <Bars
                 rows={data.peakHours
                   .filter((h) => h.bookings > 0)
-                  .map((h) => ({ label: hourLabel(h.hour), value: h.bookings, display: `${h.bookings}` }))}
+                  .map((h) => ({
+                    label: hourLabel(h.hour),
+                    value: h.bookings,
+                    display: `${h.bookings}`,
+                    onClick: () =>
+                      setDrilldown({ kind: "hour", key: String(h.hour), title: `Peak hours · ${hourLabel(h.hour)}` }),
+                  }))}
                 empty="No timed bookings in this range."
               />
             </Panel>
 
-            <Panel title="Console utilisation">
+            <Panel title="Console utilisation" action={<DrillHint />}>
               <Bars
                 rows={data.utilization.map((u) => ({
                   label: `${u.name}${u.branch && !scope.branchId ? ` · ${u.branch}` : ""}${u.status !== "available" ? " (out of service)" : ""}`,
                   value: u.utilization,
                   display: `${u.utilization}%`,
+                  onClick: () =>
+                    setDrilldown({ kind: "station", key: u.stationId, title: `Console utilisation · ${u.name}` }),
                 }))}
                 empty="No stations configured."
               />
             </Panel>
           </div>
 
-          <Panel title="Service performance">
-            <ScrollTable
-              head={["Service", "Bookings", "Gaming hours", "Revenue", "Avg value"]}
-              empty="No gaming activity in this range."
-              rows={data.services.map((s) => [s.type, String(s.bookings), `${s.hours} h`, money(s.revenue), money(s.avgValue)])}
+          <Panel title="Service performance" action={<DrillHint />}>
+            <ul className="space-y-2">
+              {data.services.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No gaming activity in this range.</p>
+              ) : (
+                data.services.map((s) => (
+                  <li key={s.type}>
+                    <button
+                      type="button"
+                      onClick={() => setDrilldown({ kind: "service", key: s.type, title: `Service · ${s.type}` })}
+                      className="grid w-full grid-cols-2 items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3 text-left text-xs transition-colors hover:border-cyan/40 sm:grid-cols-5"
+                    >
+                      <span className="font-semibold">{s.type}</span>
+                      <span className="text-muted-foreground">{s.bookings} bookings</span>
+                      <span className="text-muted-foreground">{s.hours} h</span>
+                      <span className="font-bold">{money(s.revenue)}</span>
+                      <span className="text-muted-foreground">avg {money(s.avgValue)}</span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </Panel>
+
+          <Panel title="Payment mode">
+            <div className="mb-4 grid gap-4 sm:grid-cols-3">
+              <StatCard label="UPI revenue" value={money(data.paymentModes.upi.revenue)} hint={`${data.paymentModes.upi.bookings} bookings`} />
+              <StatCard label="Cash revenue" value={money(data.paymentModes.cash.revenue)} hint={`${data.paymentModes.cash.bookings} bookings`} />
+              <StatCard
+                label="Mode not recorded"
+                value={money(data.paymentModes.unrecorded.revenue)}
+                tone={data.paymentModes.unrecorded.bookings ? "warn" : "default"}
+                hint={`${data.paymentModes.unrecorded.bookings} bookings`}
+              />
+            </div>
+            <PaymentModeChart
+              upi={data.paymentModes.upi.revenue}
+              cash={data.paymentModes.cash.revenue}
+              unrecorded={data.paymentModes.unrecorded.revenue}
             />
           </Panel>
 
@@ -248,7 +294,9 @@ export function AnalyticsView({
               <StatCard label="Awaiting payment" value={data.payments.awaitingPayment} />
               <StatCard label="Rejected / cancelled" value={data.payments.rejected} tone="bad" />
               <StatCard label="Expired" value={data.payments.expired} />
-              <StatCard label="UTR submitted" value={data.payments.utrSubmitted} />
+              <StatCard label="UPI revenue" value={money(data.kpis.upiRevenue)} tone="good" hint="Approved as UPI" />
+            <StatCard label="Cash revenue" value={money(data.kpis.cashRevenue)} tone="good" hint="Approved as cash" />
+            <StatCard label="UTR submitted" value={data.payments.utrSubmitted} />
             </div>
           </Panel>
 
@@ -285,15 +333,26 @@ export function AnalyticsView({
           ) : null}
         </>
       )}
+
+      <DrilldownDialog
+        drilldown={drilldown}
+        branchId={scope.branchId}
+        range={scope.range}
+        onClose={() => setDrilldown(null)}
+      />
     </div>
   );
+}
+
+function DrillHint() {
+  return <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">Click to drill down</span>;
 }
 
 function Bars({
   rows,
   empty,
 }: {
-  rows: { label: string; value: number; display: string }[];
+  rows: { label: string; value: number; display: string; onClick?: () => void }[];
   empty: string;
 }) {
   if (!rows.length) return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
@@ -301,7 +360,22 @@ function Bars({
   return (
     <ul className="space-y-2.5">
       {rows.map((r, i) => (
-        <li key={`${r.label}-${i}`} className="grid grid-cols-[minmax(96px,34%)_1fr_auto] items-center gap-3">
+        <li key={`${r.label}-${i}`}>
+          <div
+            role={r.onClick ? "button" : undefined}
+            tabIndex={r.onClick ? 0 : undefined}
+            onClick={r.onClick}
+            onKeyDown={(e) => {
+              if (r.onClick && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                r.onClick();
+              }
+            }}
+            className={cn(
+              "grid grid-cols-[minmax(96px,34%)_1fr_auto] items-center gap-3 rounded-xl px-1 py-1",
+              r.onClick && "cursor-pointer transition-colors hover:bg-muted/30",
+            )}
+          >
           <span className="truncate text-xs text-muted-foreground">{r.label}</span>
           <span className="h-2.5 overflow-hidden rounded-full bg-muted/50">
             <span
@@ -309,7 +383,8 @@ function Bars({
               style={{ width: `${Math.max(3, (r.value / max) * 100)}%` }}
             />
           </span>
-          <span className="text-xs font-bold">{r.display}</span>
+            <span className="text-xs font-bold">{r.display}</span>
+          </div>
         </li>
       ))}
     </ul>
