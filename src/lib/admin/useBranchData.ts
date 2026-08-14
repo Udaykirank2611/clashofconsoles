@@ -109,6 +109,17 @@ export interface AdminSessionOption {
   sort_order: number;
 }
 
+/** A branch-owned Group Pass duration + price row. */
+export interface AdminGroupPassRate {
+  id: string;
+  branch_id: string;
+  label: string;
+  duration_minutes: number;
+  price: number;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export interface AdminMenuItem {
   id: string;
   name: string;
@@ -125,6 +136,7 @@ export interface BranchData {
   bookings: AdminBooking[];
   coupons: AdminCoupon[];
   sessions: AdminSessionOption[];
+  groupRates: AdminGroupPassRate[];
   menu: AdminMenuItem[];
   refresh: () => Promise<void>;
 }
@@ -136,11 +148,12 @@ export function useBranchData(branchId: string | null): BranchData {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [coupons, setCoupons] = useState<AdminCoupon[]>([]);
   const [sessions, setSessions] = useState<AdminSessionOption[]>([]);
+  const [groupRates, setGroupRates] = useState<AdminGroupPassRate[]>([]);
   const [menu, setMenu] = useState<AdminMenuItem[]>([]);
 
   const refresh = useCallback(async () => {
     if (!branchId) return;
-    const [s, b, c, r, m] = await Promise.all([
+    const [s, b, c, r, g, m] = await Promise.all([
       supabase.from("gaming_stations").select("*").eq("branch_id", branchId).order("sort_order"),
       supabase
         .from("bookings")
@@ -161,6 +174,12 @@ export function useBranchData(branchId: string | null): BranchData {
         .order("sort_order")
         .order("duration_minutes"),
       supabase
+        .from("group_pass_rates")
+        .select("*")
+        .eq("branch_id", branchId)
+        .order("sort_order")
+        .order("duration_minutes"),
+      supabase
         .from("menu_items")
         .select("id, name, category, price, is_available, branch_id, sort_order")
         .eq("branch_id", branchId)
@@ -170,6 +189,7 @@ export function useBranchData(branchId: string | null): BranchData {
     setBookings((b.data ?? []) as unknown as AdminBooking[]);
     setCoupons((c.data ?? []) as unknown as AdminCoupon[]);
     setSessions((r.data ?? []) as unknown as AdminSessionOption[]);
+    setGroupRates((g.data ?? []) as unknown as AdminGroupPassRate[]);
     setMenu((m.data ?? []) as unknown as AdminMenuItem[]);
     setLoading(false);
   }, [branchId]);
@@ -186,6 +206,7 @@ export function useBranchData(branchId: string | null): BranchData {
       "gaming_stations",
       "menu_items",
       "session_options",
+      "group_pass_rates",
       "coupons",
       "branches",
     ];
@@ -199,5 +220,5 @@ export function useBranchData(branchId: string | null): BranchData {
     };
   }, [branchId, refresh]);
 
-  return { loading, stations, bookings, coupons, sessions, menu, refresh };
+  return { loading, stations, bookings, coupons, sessions, groupRates, menu, refresh };
 }
