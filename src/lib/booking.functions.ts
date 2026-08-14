@@ -1058,6 +1058,8 @@ export const getPaymentDetails = createServerFn({ method: "POST" })
         start_time: string | null;
         end_time: string | null;
         players: number;
+        reward_minutes: number;
+
         customer_name: string;
         customer_phone: string;
         total_amount: number;
