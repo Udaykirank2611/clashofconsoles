@@ -212,6 +212,19 @@ export interface BookingSummary {
   tax_amount: number;
   total_amount: number;
   items: BookingSummaryItem[];
+  /** Passes issued from this booking, shown to the guest with their Pass ID. */
+  passes?: IssuedPassSummary[];
+}
+
+/** A membership / combo / unlimited pass issued from a booking. */
+export interface IssuedPassSummary {
+  code: string;
+  pass_type: string;
+  plan_name: string;
+  expires_on: string;
+  remaining_minutes: number | null;
+  remaining_uses: number | null;
+  status: string;
 }
 
 /** Admin-editable session price for a players × duration combination. */

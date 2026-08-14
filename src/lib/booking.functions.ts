@@ -1198,6 +1198,11 @@ export const getBooking = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!b) return null;
     const row = b as unknown as Record<string, any>;
+    const { data: passRows } = await db
+      .from("membership_passes")
+      .select("code, pass_type, plan_name, expires_on, remaining_minutes, remaining_uses, status")
+      .eq("source_booking_id", row["id"])
+      .order("created_at", { ascending: true });
     return {
       reference: row["reference"],
       status: row["status"],
@@ -1237,6 +1242,15 @@ export const getBooking = createServerFn({ method: "POST" })
         extra_hours: Number(i.extra_hours ?? 0),
         start_time: i.start_time ?? null,
         end_time: i.end_time ?? null,
+      })),
+      passes: (passRows ?? []).map((p: any) => ({
+        code: p.code,
+        pass_type: p.pass_type,
+        plan_name: p.plan_name,
+        expires_on: p.expires_on,
+        remaining_minutes: p.remaining_minutes === null ? null : Number(p.remaining_minutes),
+        remaining_uses: p.remaining_uses === null ? null : Number(p.remaining_uses),
+        status: p.status,
       })),
     };
   });
