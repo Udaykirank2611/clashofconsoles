@@ -2083,10 +2083,20 @@ export function BookingFlow() {
                         label="Duration"
                         value={
                           startTime && durationMinutes
-                            ? `${formatTime(startTime)} – ${formatTime(addMinutes(startTime, durationMinutes))}`
+                            ? `${formatTime(startTime)} – ${formatTime(
+                                addMinutes(
+                                  startTime,
+                                  durationMinutes + (rewardApplied ? rewardMinutes : 0),
+                                ),
+                              )}${
+                                rewardApplied
+                                  ? ` (${durationLabel(durationMinutes + rewardMinutes)} incl. ${rewardLabel(rewardMinutes)} free)`
+                                  : ` (${durationLabel(durationMinutes)})`
+                              }`
                             : "—"
                         }
                       />
+
                       <Row label="Players" value={String(players)} />
                     </>
                   )}
