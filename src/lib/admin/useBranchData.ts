@@ -39,7 +39,9 @@ export interface AdminBooking {
   start_time: string;
   end_time: string;
   players: number;
+  reward_minutes?: number | null;
   game_title: string | null;
+
   status:
     | "awaiting_payment"
     | "payment_pending"

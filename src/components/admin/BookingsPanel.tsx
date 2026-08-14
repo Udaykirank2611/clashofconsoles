@@ -328,10 +328,15 @@ export function BookingsPanel({
                           label="Slot"
                           value={
                             hasSlot
-                              ? `${formatTime(b.start_time!)} – ${formatTime(b.end_time!)} (${durationLabel(b.start_time, b.end_time)})`
+                              ? `${formatTime(b.start_time!)} – ${formatTime(b.end_time!)} (${durationLabel(b.start_time, b.end_time)})${
+                                  b.reward_minutes
+                                    ? ` · incl. ${b.reward_minutes} min loyalty free`
+                                    : ""
+                                }`
                               : "Passes only"
                           }
                         />
+
                         {b.game_title ? <Detail label="Game" value={b.game_title} /> : null}
                         <div className="rounded-2xl border border-border/70 bg-background/40 p-3">
                           <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
