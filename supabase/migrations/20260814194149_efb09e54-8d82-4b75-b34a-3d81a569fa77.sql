@@ -1,0 +1,13 @@
+REVOKE EXECUTE ON FUNCTION public.apply_booking_completion() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.complete_past_bookings() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.expire_membership_passes() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.expire_stale_bookings() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_slot_availability(uuid, date) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.issue_membership_passes() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.next_booking_reference() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.next_pass_code(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_booking_created() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_booking_updated() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.release_reward_on_booking_void() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.seed_branch_workspace() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.sync_booking_transaction() FROM PUBLIC;
