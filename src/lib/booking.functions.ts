@@ -1198,6 +1198,11 @@ export const getBooking = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!b) return null;
     const row = b as unknown as Record<string, any>;
+    const { data: passRows } = await db
+      .from("membership_passes")
+      .select("code, pass_type, plan_name, expires_on, remaining_minutes, remaining_uses, status")
+      .eq("source_booking_id", row["id"])
+      .order("created_at", { ascending: true });
     return {
       reference: row["reference"],
       status: row["status"],
