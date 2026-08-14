@@ -96,11 +96,11 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                     />
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full opacity-40 blur-[80px] transition-opacity duration-700 group-hover/tilt:opacity-80 [background:radial-gradient(circle,color-mix(in_oklab,var(--t1)_60%,transparent),transparent_70%)]"
+                      className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full opacity-25 blur-[90px] transition-opacity duration-700 group-hover/tilt:opacity-45 [background:radial-gradient(circle,color-mix(in_oklab,var(--t1)_60%,transparent),transparent_70%)]"
                     />
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute -bottom-24 -left-16 size-56 rounded-full opacity-30 blur-[90px] [background:radial-gradient(circle,color-mix(in_oklab,var(--t2)_60%,transparent),transparent_70%)]"
+                      className="pointer-events-none absolute -bottom-24 -left-16 size-56 rounded-full opacity-20 blur-[100px] [background:radial-gradient(circle,color-mix(in_oklab,var(--t2)_60%,transparent),transparent_70%)]"
                     />
 
                     {plan.badge ? (
@@ -143,7 +143,7 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                         {plan.perks.map((perk) => (
                           <li key={perk} className="flex items-start gap-3 text-sm text-muted-foreground">
                             <Check
-                              className="mt-0.5 size-4 shrink-0 text-[color-mix(in_oklab,var(--t1)_85%,white)]"
+                              className="mt-0.5 size-4 shrink-0 text-foreground/60"
                               aria-hidden="true"
                             />
                             {perk}
