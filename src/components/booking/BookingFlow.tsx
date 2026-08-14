@@ -1461,7 +1461,7 @@ export function BookingFlow() {
                 durations={durations}
                 priceFor={(m) => rateFor(rates, players, m)}
                 players={players}
-                playerOptions={PLAYER_OPTIONS}
+                playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
                 playerPrice={(p) => rateFor(rates, p, 60)}
                 onPlayers={setPlayers}
                 startTime={startTime}
