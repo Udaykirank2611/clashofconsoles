@@ -76,13 +76,19 @@ export interface RawBranch {
   closes_at: string;
 }
 
-/** Statuses that represent money actually earned. */
-export const REVENUE_STATUSES = ["confirmed", "completed"] as const;
+/** Statuses that represent money actually earned (a session is earned once it ends). */
+export const REVENUE_STATUSES = ["completed"] as const;
 /** Statuses that represent money still unconfirmed. */
 export const PENDING_STATUSES = ["pending", "payment_pending", "awaiting_payment"] as const;
 
 const n = (v: unknown) => Number(v ?? 0) || 0;
 export const isRevenue = (s: string) => (REVENUE_STATUSES as readonly string[]).includes(s);
+/**
+ * Money is realised only once the session is over. Non-refundable purchases
+ * without a gaming slot (passes, food) count as soon as they are confirmed.
+ */
+export const isRealized = (b: { status: string; station_id?: string | null }) =>
+  b.status === "completed" || (b.status === "confirmed" && !b.station_id);
 export const isPending = (s: string) => (PENDING_STATUSES as readonly string[]).includes(s);
 
 export const SERVICE_LABELS: Record<string, string> = {
@@ -184,7 +190,7 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
   const { bookings, stations, branches } = input;
   const branchName = new Map(branches.map((b) => [b.id, b.name]));
 
-  const revenueRows = bookings.filter((b) => isRevenue(b.status));
+  const revenueRows = bookings.filter(isRealized);
   const pendingRows = bookings.filter((b) => isPending(b.status));
 
   let gamingRevenue = 0;
@@ -287,7 +293,7 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
     if (b.status === "cancelled") point.cancelled += 1;
     if (b.status === "expired") point.expired += 1;
     if (isPending(b.status)) point.pending += 1;
-    if (isRevenue(b.status)) {
+    if (isRealized(b)) {
       const s = splitBooking(b);
       point.gaming += Math.round(s.gaming);
       point.food += Math.round(s.food);
@@ -345,7 +351,7 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
   const stationType = new Map(stations.map((s) => [s.id, s.station_type]));
   const serviceMap = new Map<string, { bookings: number; minutes: number; revenue: number }>();
   for (const b of counted) {
-    const revenue = isRevenue(b.status) ? splitBooking(b).gaming : 0;
+    const revenue = isRealized(b) ? splitBooking(b).gaming : 0;
     const mins = stationMinutes(b);
     const total = [...mins.values()].reduce((s, m) => s + m, 0);
     for (const [stationId, m] of mins) {
@@ -461,7 +467,7 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
   const compareIds = input.branchId ? [input.branchId] : branches.map((b) => b.id);
   const branchComparison: BranchCompareRow[] = compareIds.map((id) => {
     const rows = bookings.filter((b) => b.branch_id === id);
-    const rev = rows.filter((b) => isRevenue(b.status));
+    const rev = rows.filter(isRealized);
     let g = 0;
     let f = 0;
     let t = 0;
@@ -678,7 +684,7 @@ export function buildDrilldownRows(
         players: n(b.players),
         status: b.status,
         paymentMode: paymentModeLabel(b.payment_mode),
-        amount: Math.round(isRevenue(b.status) ? split.gaming : 0),
+        amount: Math.round(isRealized(b) ? split.gaming : 0),
       });
     }
   }
