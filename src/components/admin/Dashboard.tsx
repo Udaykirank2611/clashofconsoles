@@ -22,14 +22,19 @@ import { NotificationBell } from "./NotificationBell";
 import { AnalyticsView } from "./analytics/AnalyticsView";
 import { ReportsView } from "./analytics/ReportsView";
 import { TodayPanel } from "./analytics/TodayPanel";
+import { BookingCalendar } from "./calendar/BookingCalendar";
+import { DailyClosingView } from "./closing/DailyClosingView";
 
 const BRANCH_TABS = [
   "Dashboard",
+  "Booking Calendar",
   "Bookings",
   "Customers",
   "Memberships",
+  "Daily Closing",
   "Analytics",
   "Reports",
+
   "Stations",
   "Sessions & Pricing",
   "Menu",
@@ -191,6 +196,14 @@ export function AdminDashboard() {
             onChanged={data.refresh}
             focusReference={focusReference}
           />
+        ) : null}
+
+        {tab === "Booking Calendar" ? (
+          <BookingCalendar branches={branches} defaultBranchId={branch.id} />
+        ) : null}
+
+        {tab === "Daily Closing" ? (
+          <DailyClosingView branches={branches} defaultBranchId={branch.id} />
         ) : null}
 
         {tab === "Customers" ? <CustomersPanel /> : null}

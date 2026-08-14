@@ -533,6 +533,89 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_closing_reports: {
+        Row: {
+          branch_id: string
+          cancelled_bookings: number
+          cash_revenue: number
+          closed_by: string | null
+          closed_by_email: string | null
+          completed_bookings: number
+          coupon_discounts: number
+          created_at: string
+          food_revenue: number
+          gaming_revenue: number
+          id: string
+          membership_revenue: number
+          notes: string
+          pending_bookings: number
+          report_date: string
+          snapshot: Json
+          student_discounts: number
+          total_bookings: number
+          total_customers: number
+          total_revenue: number
+          updated_at: string
+          upi_revenue: number
+        }
+        Insert: {
+          branch_id: string
+          cancelled_bookings?: number
+          cash_revenue?: number
+          closed_by?: string | null
+          closed_by_email?: string | null
+          completed_bookings?: number
+          coupon_discounts?: number
+          created_at?: string
+          food_revenue?: number
+          gaming_revenue?: number
+          id?: string
+          membership_revenue?: number
+          notes?: string
+          pending_bookings?: number
+          report_date: string
+          snapshot?: Json
+          student_discounts?: number
+          total_bookings?: number
+          total_customers?: number
+          total_revenue?: number
+          updated_at?: string
+          upi_revenue?: number
+        }
+        Update: {
+          branch_id?: string
+          cancelled_bookings?: number
+          cash_revenue?: number
+          closed_by?: string | null
+          closed_by_email?: string | null
+          completed_bookings?: number
+          coupon_discounts?: number
+          created_at?: string
+          food_revenue?: number
+          gaming_revenue?: number
+          id?: string
+          membership_revenue?: number
+          notes?: string
+          pending_bookings?: number
+          report_date?: string
+          snapshot?: Json
+          student_discounts?: number
+          total_bookings?: number
+          total_customers?: number
+          total_revenue?: number
+          updated_at?: string
+          upi_revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_closing_reports_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experience_rates: {
         Row: {
           branch_id: string
