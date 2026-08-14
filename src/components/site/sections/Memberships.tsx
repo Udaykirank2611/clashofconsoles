@@ -96,26 +96,23 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                     />
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full opacity-40 blur-[80px] transition-opacity duration-700 group-hover/tilt:opacity-80 [background:radial-gradient(circle,color-mix(in_oklab,var(--t1)_60%,transparent),transparent_70%)]"
+                      className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full opacity-25 blur-[90px] transition-opacity duration-700 group-hover/tilt:opacity-45 [background:radial-gradient(circle,color-mix(in_oklab,var(--t1)_60%,transparent),transparent_70%)]"
                     />
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute -bottom-24 -left-16 size-56 rounded-full opacity-30 blur-[90px] [background:radial-gradient(circle,color-mix(in_oklab,var(--t2)_60%,transparent),transparent_70%)]"
+                      className="pointer-events-none absolute -bottom-24 -left-16 size-56 rounded-full opacity-20 blur-[100px] [background:radial-gradient(circle,color-mix(in_oklab,var(--t2)_60%,transparent),transparent_70%)]"
                     />
 
                     {plan.badge ? (
-                      <span className="absolute right-6 top-6 inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_oklab,var(--t1)_45%,transparent)] bg-[color-mix(in_oklab,var(--t1)_14%,transparent)] px-3 py-1.5 text-[0.55rem] font-bold uppercase tracking-[0.2em] text-[color-mix(in_oklab,var(--t1)_88%,white)]">
+                      <span className="absolute right-6 top-6 inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_oklab,var(--t1)_55%,transparent)] px-3 py-1.5 text-[0.55rem] font-bold uppercase tracking-[0.2em] text-foreground">
                         <Crown className="size-3" aria-hidden="true" /> {plan.badge}
                       </span>
                     ) : null}
 
                     <div className="relative [transform:translateZ(40px)]">
-                      <span className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--t1)_35%,transparent)] bg-[color-mix(in_oklab,var(--t1)_10%,transparent)] px-3 py-1.5">
-                        <TierIcon
-                          className="size-3.5 text-[color-mix(in_oklab,var(--t1)_90%,white)]"
-                          aria-hidden="true"
-                        />
-                        <span className="text-[0.55rem] font-bold uppercase tracking-[0.28em] text-[color-mix(in_oklab,var(--t1)_90%,white)]">
+                      <span className="inline-flex items-center gap-2">
+                        <TierIcon className="size-4 text-foreground/80" aria-hidden="true" />
+                        <span className="text-[0.55rem] font-bold uppercase tracking-[0.28em] text-foreground/80">
                           {tier.label}
                         </span>
                       </span>
@@ -124,36 +121,29 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                         {plan.name}
                       </p>
 
-                      <p className="mt-3 text-5xl font-black tracking-tight sm:text-6xl [background:linear-gradient(100deg,color-mix(in_oklab,var(--t1)_85%,white),white_45%,color-mix(in_oklab,var(--t2)_85%,white))] bg-clip-text text-transparent">
+                      <p className="mt-3 text-5xl font-black tracking-tight text-foreground sm:text-6xl">
                         {inr(plan.price)}
                       </p>
 
                       <div className="mt-5 flex flex-wrap gap-2">
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/50 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          <Clock3
-                            className="size-3.5 text-[color-mix(in_oklab,var(--t1)_85%,white)]"
-                            aria-hidden="true"
-                          />
+                          <Clock3 className="size-3.5 text-foreground/70" aria-hidden="true" />
                           {Number(plan.hours_included)} Hours
                         </span>
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/50 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          <CalendarDays
-                            className="size-3.5 text-[color-mix(in_oklab,var(--t1)_85%,white)]"
-                            aria-hidden="true"
-                          />
+                          <CalendarDays className="size-3.5 text-foreground/70" aria-hidden="true" />
                           {plan.validity}
                         </span>
                       </div>
 
-                      <p className="mt-5 rounded-2xl border border-[color-mix(in_oklab,var(--t1)_22%,transparent)] bg-[color-mix(in_oklab,var(--t1)_8%,transparent)] px-4 py-3 text-xs font-medium text-[color-mix(in_oklab,var(--t1)_78%,white)]">
-                        {tier.perk}
-                      </p>
+                      <p className="mt-5 text-xs font-medium text-muted-foreground">{tier.perk}</p>
+
 
                       <ul className="mt-6 space-y-3">
                         {plan.perks.map((perk) => (
                           <li key={perk} className="flex items-start gap-3 text-sm text-muted-foreground">
                             <Check
-                              className="mt-0.5 size-4 shrink-0 text-[color-mix(in_oklab,var(--t1)_85%,white)]"
+                              className="mt-0.5 size-4 shrink-0 text-foreground/60"
                               aria-hidden="true"
                             />
                             {perk}
