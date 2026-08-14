@@ -1243,5 +1243,14 @@ export const getBooking = createServerFn({ method: "POST" })
         start_time: i.start_time ?? null,
         end_time: i.end_time ?? null,
       })),
+      passes: (passRows ?? []).map((p: any) => ({
+        code: p.code,
+        pass_type: p.pass_type,
+        plan_name: p.plan_name,
+        expires_on: p.expires_on,
+        remaining_minutes: p.remaining_minutes === null ? null : Number(p.remaining_minutes),
+        remaining_uses: p.remaining_uses === null ? null : Number(p.remaining_uses),
+        status: p.status,
+      })),
     };
   });
