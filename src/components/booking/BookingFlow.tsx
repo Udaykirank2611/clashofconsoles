@@ -1989,17 +1989,36 @@ export function BookingFlow() {
                       month: "short",
                     })}
                   />
-                  <Row label="PlayStation" value={station?.name ?? "—"} />
-                  <Row
-                    label="Duration"
-                    value={
-                      startTime && durationMinutes
-                        ? `${formatTime(startTime)} – ${formatTime(addMinutes(startTime, durationMinutes))}`
-                        : "—"
-                    }
-                  />
-                  <Row label="Players" value={String(players)} />
-                  {selectedExtras.map((e) => (
+                  <Row label="Booking type" value={isGroup ? "Group Pass" : "Single Pass"} />
+                  {isGroup ? (
+                    <>
+                      <Row label="Members" value={String(groupMembers)} />
+                      <Row label="Duration" value={groupRate?.label ?? "—"} />
+                      <Row
+                        label="Time"
+                        value={
+                          groupStart && groupRate
+                            ? `${formatTime(groupStart)} – ${formatTime(addMinutes(groupStart, groupRate.duration_minutes))}`
+                            : "—"
+                        }
+                      />
+                      <Row label="Price" value={groupAmount ? inr(groupAmount) : "—"} />
+                    </>
+                  ) : (
+                    <>
+                      <Row label="PlayStation" value={station?.name ?? "—"} />
+                      <Row
+                        label="Duration"
+                        value={
+                          startTime && durationMinutes
+                            ? `${formatTime(startTime)} – ${formatTime(addMinutes(startTime, durationMinutes))}`
+                            : "—"
+                        }
+                      />
+                      <Row label="Players" value={String(players)} />
+                    </>
+                  )}
+                  {(isGroup ? [] : selectedExtras).map((e) => (
                     <Row
                       key={e.station!.id}
                       label={e.station!.name}
@@ -2025,6 +2044,12 @@ export function BookingFlow() {
                     <Row label="Food" value="—" />
                   )}
                 </dl>
+                {isGroup ? (
+                  <p className="mt-4 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3 text-[0.68rem] text-cyan">
+                    This booking reserves the entire gaming café exclusively for your group during the
+                    selected time.
+                  </p>
+                ) : null}
                 <div className="mt-5 border-t border-border pt-4">
                   <BillSummary
                     gamingLines={gamingLines}
@@ -2058,11 +2083,15 @@ export function BookingFlow() {
             <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {[
                 branch?.name,
-                station?.name,
-                startTime && durationMinutes
+                isGroup ? `Group Pass · ${groupMembers} members` : null,
+                isGroup && groupStart && groupRate
+                  ? `${formatTime(groupStart)} · ${groupRate.label}`
+                  : null,
+                isGroup ? null : station?.name,
+                !isGroup && startTime && durationMinutes
                   ? `${formatTime(startTime)} · ${durationMinutes / 60 >= 1 ? `${durationMinutes / 60}h` : "30m"}`
                   : null,
-                selectedExtras.length ? `+ ${selectedExtras.length} experience(s)` : null,
+                !isGroup && selectedExtras.length ? `+ ${selectedExtras.length} experience(s)` : null,
                 passLines.length ? `${passLines.reduce((s, l) => s + l.quantity, 0)} pass(es)` : null,
                 cart.length ? `${cart.reduce((s, l) => s + l.quantity, 0)} food items` : null,
               ]
