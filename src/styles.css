@@ -102,46 +102,49 @@
 }
 
 /*
- * Home page palette — neon pink + electric blue.
+ * Home page palette — obsidian base, electric indigo-blue lead,
+ * neon magenta accent, champagne gold as the premium highlight.
  * Scoped so the rest of the app keeps the original arena tokens.
  */
 .theme-neon-pink {
-  /* Electric blue stays the lead action colour, slightly deeper for contrast */
-  --primary: oklch(0.64 0.21 262);
-  --primary-foreground: oklch(0.14 0.01 260);
-  /* Neon pink replaces the purple accent */
-  --violet: oklch(0.68 0.27 350);
-  /* Hot magenta replaces the soft cyan highlight */
-  --cyan: oklch(0.75 0.23 340);
-  --accent: oklch(0.68 0.27 350);
+  /* Electric indigo-blue leads all actions */
+  --primary: oklch(0.62 0.2 268);
+  --primary-foreground: oklch(0.98 0.005 260);
+  /* Neon magenta accent */
+  --violet: oklch(0.66 0.25 348);
+  /* Champagne gold highlight — the premium note */
+  --cyan: oklch(0.86 0.13 88);
+  --accent: oklch(0.66 0.25 348);
   --accent-foreground: oklch(0.99 0.003 350);
-  --ring: oklch(0.68 0.27 350);
+  --ring: oklch(0.7 0.19 300);
 
-  --background: oklch(0.12 0.012 300);
-  --surface: oklch(0.16 0.016 305);
-  --surface-2: oklch(0.2 0.02 310);
-  --card: oklch(0.16 0.016 305);
-  --popover: oklch(0.16 0.016 305);
-  --secondary: oklch(0.23 0.02 310);
-  --muted: oklch(0.21 0.018 308);
-  --muted-foreground: oklch(0.74 0.03 320);
-  --border: oklch(0.85 0.12 340 / 14%);
-  --input: oklch(0.85 0.12 340 / 18%);
+  --background: oklch(0.1 0.014 278);
+  --surface: oklch(0.14 0.018 280);
+  --surface-2: oklch(0.18 0.022 282);
+  --card: oklch(0.14 0.018 280);
+  --popover: oklch(0.14 0.018 280);
+  --secondary: oklch(0.21 0.024 284);
+  --muted: oklch(0.19 0.02 282);
+  --muted-foreground: oklch(0.76 0.025 290);
+  --border: oklch(0.88 0.06 300 / 13%);
+  --input: oklch(0.88 0.06 300 / 18%);
 
   --gradient-arena: linear-gradient(
     120deg,
-    color-mix(in oklab, var(--primary) 42%, transparent),
-    color-mix(in oklab, var(--violet) 38%, transparent) 55%,
-    color-mix(in oklab, var(--cyan) 26%, transparent)
+    color-mix(in oklab, var(--primary) 45%, transparent),
+    color-mix(in oklab, var(--violet) 40%, transparent) 52%,
+    color-mix(in oklab, var(--cyan) 22%, transparent)
   );
   --gradient-text: linear-gradient(
     100deg,
-    color-mix(in oklab, var(--primary) 65%, white),
-    oklch(0.99 0 0) 40%,
-    color-mix(in oklab, var(--violet) 78%, white)
+    color-mix(in oklab, var(--primary) 70%, white),
+    oklch(0.99 0 0) 42%,
+    color-mix(in oklab, var(--violet) 75%, white) 72%,
+    color-mix(in oklab, var(--cyan) 70%, white)
   );
-  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--violet) 40%, transparent),
-    0 18px 60px -18px color-mix(in oklab, var(--violet) 60%, transparent);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--violet) 34%, transparent),
+    0 18px 60px -18px color-mix(in oklab, var(--primary) 60%, transparent);
+
 
   /* Membership tier signatures */
   --tier-bronze: oklch(0.72 0.15 60);
