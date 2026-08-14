@@ -1110,6 +1110,8 @@ export const getBooking = createServerFn({ method: "POST" })
       branch_address: row["branches"]?.address ?? "",
       station_name: row["gaming_stations"]?.name ?? "",
       booking_date: row["booking_date"],
+      booking_type: row["booking_type"] === "group" ? "group" : "single",
+      group_members: Number(row["group_members"] ?? 0),
       start_time: row["start_time"],
       end_time: row["end_time"],
       players: Number(row["players"] ?? 1),

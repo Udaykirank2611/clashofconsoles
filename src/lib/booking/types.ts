@@ -190,6 +190,8 @@ export interface BookingSummary {
   branch_address: string;
   station_name: string;
   booking_date: string;
+  booking_type?: BookingType;
+  group_members?: number;
   start_time: string;
   end_time: string;
   players: number;
