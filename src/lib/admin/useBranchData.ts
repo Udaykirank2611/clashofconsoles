@@ -159,7 +159,7 @@ export function useBranchData(branchId: string | null): BranchData {
       supabase.from("gaming_stations").select("*").eq("branch_id", branchId).order("sort_order"),
       supabase
         .from("bookings")
-        .select("*, gaming_stations(name), booking_items(id,label,quantity,unit_price,line_total,kind,station_id,start_time,end_time,extra_hours,extra_hour_price)")
+        .select("*, gaming_stations(name), booking_items(id,label,quantity,unit_price,line_total,kind,station_id,start_time,end_time,extra_hours,extra_hour_price), membership_passes!membership_passes_source_booking_id_fkey(code,pass_type,plan_name,expires_on,remaining_minutes,remaining_uses,status)")
         .eq("branch_id", branchId)
         .order("booking_date", { ascending: false })
         .order("start_time", { ascending: true })
