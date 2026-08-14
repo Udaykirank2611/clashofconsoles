@@ -149,6 +149,7 @@ export type Database = {
           addons_amount: number
           bill_discount_amount: number
           booking_date: string
+          booking_type: string
           branch_id: string
           coupon_code: string | null
           coupon_id: string | null
@@ -162,6 +163,7 @@ export type Database = {
           food_discount_amount: number
           game_title: string | null
           gaming_discount_amount: number
+          group_members: number
           id: string
           payment_expires_at: string | null
           payment_mode: string | null
@@ -186,6 +188,7 @@ export type Database = {
           addons_amount?: number
           bill_discount_amount?: number
           booking_date: string
+          booking_type?: string
           branch_id: string
           coupon_code?: string | null
           coupon_id?: string | null
@@ -199,6 +202,7 @@ export type Database = {
           food_discount_amount?: number
           game_title?: string | null
           gaming_discount_amount?: number
+          group_members?: number
           id?: string
           payment_expires_at?: string | null
           payment_mode?: string | null
@@ -223,6 +227,7 @@ export type Database = {
           addons_amount?: number
           bill_discount_amount?: number
           booking_date?: string
+          booking_type?: string
           branch_id?: string
           coupon_code?: string | null
           coupon_id?: string | null
@@ -236,6 +241,7 @@ export type Database = {
           food_discount_amount?: number
           game_title?: string | null
           gaming_discount_amount?: number
+          group_members?: number
           id?: string
           payment_expires_at?: string | null
           payment_mode?: string | null
@@ -667,6 +673,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "gaming_stations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_pass_rates: {
+        Row: {
+          branch_id: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          label: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          is_active?: boolean
+          label: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_pass_rates_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
