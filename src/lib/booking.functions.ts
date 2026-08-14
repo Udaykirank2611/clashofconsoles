@@ -811,12 +811,18 @@ export const createBooking = createServerFn({ method: "POST" })
       .insert({
         reference,
         branch_id: data.branchId,
-        station_id: data.stationId ?? null,
+        station_id: isGroup ? null : (data.stationId ?? null),
         booking_date: data.date,
-        start_time: hasSlot ? data.startTime! : null,
-        end_time: hasSlot ? addMinutes(data.startTime!, slotMinutes) : null,
+        booking_type: isGroup ? "group" : "single",
+        group_members: isGroup ? (data.groupMembers ?? 1) : 0,
+        start_time: isGroup ? data.startTime! : hasSlot ? data.startTime! : null,
+        end_time: isGroup
+          ? addMinutes(data.startTime!, groupRate!.duration_minutes)
+          : hasSlot
+            ? addMinutes(data.startTime!, slotMinutes)
+            : null,
         reward_minutes: hasSlot ? rewardMinutes : 0,
-        players: data.players,
+        players: isGroup ? Math.min(4, data.groupMembers ?? 1) : data.players,
         game_title: data.gameTitle || null,
         customer_name: data.customer.fullName,
         customer_phone: data.customer.phone,
@@ -877,6 +883,24 @@ export const createBooking = createServerFn({ method: "POST" })
         extra_hours: l.extra_hours,
         extra_hour_price: l.extra_hour_price,
       })),
+      /* A Group Pass blocks every experience for its window; the price sits on
+         the booking itself, so these lines are zero-value placeholders. */
+      ...(isGroup
+        ? groupStations.map((st) => ({
+            booking_id: booking.id,
+            kind: "addon" as const,
+            menu_item_id: null,
+            station_id: st.id,
+            label: `${st.name} · Group Pass`,
+            unit_price: 0,
+            quantity: 1,
+            line_total: 0,
+            start_time: data.startTime!,
+            end_time: addMinutes(data.startTime!, groupRate!.duration_minutes),
+            extra_hours: 0,
+            extra_hour_price: 0,
+          }))
+        : []),
       ...passLines.map((l) => ({
         booking_id: booking.id,
         kind: "addon" as const,
