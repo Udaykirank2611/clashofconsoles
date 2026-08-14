@@ -1,4 +1,4 @@
-import { Gamepad2, UtensilsCrossed, ShieldCheck, Ticket, GraduationCap } from "lucide-react";
+import { Gamepad2, UtensilsCrossed, ShieldCheck, Ticket, GraduationCap, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { inr, type Bill, type CouponCategory } from "@/lib/booking/pricing";
 
@@ -56,6 +56,17 @@ function Line({
   );
 }
 
+/** "1 Hour 30 Minutes" */
+export function durationLabel(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const parts = [
+    ...(h ? [`${h} Hour${h > 1 ? "s" : ""}`] : []),
+    ...(m ? [`${m} Minutes`] : []),
+  ];
+  return parts.join(" ") || "0 Minutes";
+}
+
 function Card({
   icon,
   title,
@@ -91,6 +102,7 @@ export function BillSummary({
   couponCode,
   couponCategory,
   taxPercent = 0,
+  reward = null,
   footer,
 }: {
   gamingLines: BillLine[];
@@ -99,6 +111,8 @@ export function BillSummary({
   couponCode?: string | null;
   couponCategory?: CouponCategory | null;
   taxPercent?: number;
+  /** Loyalty reward applied to the console session, shown as free play time. */
+  reward?: { bookedMinutes: number; rewardMinutes: number } | null;
   footer?: React.ReactNode;
 }) {
   const tag = couponCategory ? CATEGORY_TAG[couponCategory] : "Coupon";
@@ -120,6 +134,21 @@ export function BillSummary({
               </>
             ) : null}
           </div>
+          {reward ? (
+            <div className="mt-3 space-y-2 rounded-xl border border-emerald-300/35 bg-emerald-300/8 p-3">
+              <p className="flex items-center gap-1.5 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-emerald-300">
+                <Gift className="size-3.5" /> Loyalty reward applied
+              </p>
+              <Line label="Gaming time" value={durationLabel(reward.bookedMinutes)} />
+              <Line label="Reward applied" value={`${durationLabel(reward.rewardMinutes)} free`} tone="green" />
+              <Line
+                label="Total play time"
+                value={durationLabel(reward.bookedMinutes + reward.rewardMinutes)}
+                strong
+              />
+              <Line label="Amount charged" value={`${durationLabel(reward.bookedMinutes)} only`} tone="muted" />
+            </div>
+          ) : null}
         </Card>
       ) : null}
 
