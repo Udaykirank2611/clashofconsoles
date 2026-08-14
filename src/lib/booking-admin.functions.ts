@@ -84,17 +84,6 @@ async function isSlotFree(
   return null;
 }
 
-/** RLS-checked read: confirms this admin manages the booking's branch. */
-async function loadBookingForAdmin(supabase: never, bookingId: string) {
-  const client = supabase as unknown as {
-    from: (t: string) => {
-      select: (s: string) => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: Record<string, unknown> | null }> } };
-    };
-  };
-  const { data } = await client.from("bookings").select("*").eq("id", bookingId).maybeSingle();
-  return data;
-}
-
 /** Drag & drop: move a booking to another console, time or date. Duration is preserved. */
 export const moveBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -109,18 +98,22 @@ export const moveBooking = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<AdminMoveResult> => {
-    const booking = await loadBookingForAdmin(context.supabase as never, data.bookingId);
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", data.bookingId)
+      .maybeSingle();
     if (!booking) return { ok: false, message: "You cannot edit this booking." };
-    if (!booking['start_time'] || !booking['end_time'])
+    if (!booking.start_time || !booking.end_time)
       return { ok: false, message: "This booking has no timed session to move." };
 
-    const duration = toMinutes(String(booking['end_time'])) - toMinutes(String(booking['start_time']));
+    const duration = toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time));
     const start = toMinutes(data.startTime);
     const end = start + duration;
     if (end > 24 * 60) return { ok: false, message: "Cannot move booking because it would run past midnight." };
 
     const conflict = await isSlotFree(
-      String(booking['branch_id']),
+      String(booking.branch_id),
       data.stationId,
       data.date,
       start,
@@ -169,7 +162,11 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<AdminMoveResult> => {
-    const booking = await loadBookingForAdmin(context.supabase as never, data.bookingId);
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", data.bookingId)
+      .maybeSingle();
     if (!booking) return { ok: false, message: "You cannot edit this booking." };
 
     let start: number | null = null;
@@ -181,7 +178,7 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
       if (end > 24 * 60) return { ok: false, message: "The session cannot run past midnight." };
       if (data.stationId) {
         const conflict = await isSlotFree(
-          String(booking['branch_id']),
+          String(booking.branch_id),
           data.stationId,
           data.date,
           start,
