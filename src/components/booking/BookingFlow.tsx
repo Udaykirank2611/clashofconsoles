@@ -1496,7 +1496,10 @@ export function BookingFlow() {
             ) : null}
 
             <div className="space-y-4">
-              {(isGroup ? [] : experienceGroups.filter((g) => !g.isConsole)).map((g) => {
+              {(isGroup || passConsoleOnly
+                ? []
+                : experienceGroups.filter((g) => !g.isConsole)
+              ).map((g) => {
                 const isConsole = g.isConsole;
                 const selectedId = isConsole
                   ? stationId
