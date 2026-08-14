@@ -138,7 +138,7 @@ export interface ServiceRow {
   avgValue: number;
 }
 
-}
+
 
 export interface FoodItemRow {
   name: string;
