@@ -170,7 +170,7 @@ export async function loadTransactions(
   };
 
   const opening = ((openingRes.data ?? []) as Record<string, unknown>[]).reduce(
-    (acc, r) => ({
+    (acc: { cash: number; bank: number }, r) => ({
       cash: acc.cash + num(r['opening_cash']),
       bank: acc.bank + num(r['opening_bank']),
     }),
