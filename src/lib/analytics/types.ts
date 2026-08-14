@@ -136,13 +136,8 @@ export interface ServiceRow {
   hours: number;
   revenue: number;
   avgValue: number;
-  upiRevenue: number;
-  cashRevenue: number;
 }
 
-export interface PaymentModeStat {
-  revenue: number;
-  bookings: number;
 }
 
 export interface FoodItemRow {
