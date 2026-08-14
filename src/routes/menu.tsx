@@ -137,7 +137,7 @@ function MenuPage() {
                     href={`#${slugify(c)}`}
                     className="block text-sm text-muted-foreground transition-colors duration-300 hover:text-cyan"
                   >
-                    {c}
+                    {c === "VEG-SNACKS" ? "Veg-Snacks" : c === "NON-VEG SNACKS" ? "Non-Veg Snacks" : c}
                   </a>
                 ))}
               </div>
