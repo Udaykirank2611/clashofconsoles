@@ -103,6 +103,9 @@ export function BookingsPanel({
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  /** Booking awaiting the "how did they pay?" confirmation dialog. */
+  const [approving, setApproving] = useState<AdminBooking | null>(null);
+  const [payMode, setPayMode] = useState<"upi" | "cash">("upi");
   const editHours = useServerFn(updateBookingExtraHours);
 
   useEffect(() => {
@@ -139,9 +142,16 @@ export function BookingsPanel({
   };
 
 
-  const setStatus = async (booking: AdminBooking, status: "confirmed" | "cancelled" | "completed") => {
+  const setStatus = async (
+    booking: AdminBooking,
+    status: "confirmed" | "cancelled" | "completed",
+    paymentMode?: "upi" | "cash",
+  ) => {
     setBusy(booking.id);
-    const { error } = await supabase.from("bookings").update({ status }).eq("id", booking.id);
+    const { error } = await supabase
+      .from("bookings")
+      .update(paymentMode ? { status, payment_mode: paymentMode } : { status })
+      .eq("id", booking.id);
     setBusy(null);
     if (error) {
       toast.error("Could not update this booking.");
@@ -261,16 +271,19 @@ export function BookingsPanel({
                         <AdminButton
                           variant="success"
                           disabled={busy === b.id}
-                          onClick={() => void setStatus(b, "confirmed")}
+                          onClick={() => {
+                            setPayMode("upi");
+                            setApproving(b);
+                          }}
                         >
-                          Approve payment
+                          Approve
                         </AdminButton>
                         <AdminButton
                           variant="danger"
                           disabled={busy === b.id}
                           onClick={() => void setStatus(b, "cancelled")}
                         >
-                          Reject
+                          Decline
                         </AdminButton>
                       </>
                     ) : b.status === "confirmed" ? (
@@ -334,6 +347,10 @@ export function BookingsPanel({
                                 ? new Date(b.payment_submitted_at).toLocaleString("en-IN")
                                 : "—"
                             }
+                          />
+                          <Detail
+                            label="Payment mode"
+                            value={b.payment_mode === "upi" ? "UPI" : b.payment_mode === "cash" ? "Cash" : "Not recorded"}
                           />
                           {b.payment_note ? <Detail label="Guest note" value={b.payment_note} /> : null}
                         </div>
@@ -421,6 +438,63 @@ export function BookingsPanel({
           })}
         </div>
       )}
+
+      {approving ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          onClick={() => setApproving(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl"
+          >
+            <h3 className="text-sm font-black uppercase tracking-[0.18em]">Confirm Payment</h3>
+            <p className="mt-2 text-xs text-muted-foreground">Select how the customer paid.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
+            </p>
+
+            <div className="mt-4 space-y-2">
+              {(["upi", "cash"] as const).map((m) => (
+                <label
+                  key={m}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-colors",
+                    payMode === m ? "border-cyan/50 bg-cyan/10 text-cyan" : "border-border bg-surface/60",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="payment-mode"
+                    value={m}
+                    checked={payMode === m}
+                    onChange={() => setPayMode(m)}
+                    className="accent-cyan"
+                  />
+                  {m === "upi" ? "UPI" : "Cash"}
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <AdminButton onClick={() => setApproving(null)}>Cancel</AdminButton>
+              <AdminButton
+                variant="success"
+                disabled={busy === approving.id}
+                onClick={() => {
+                  const booking = approving;
+                  setApproving(null);
+                  void setStatus(booking, "confirmed", payMode);
+                }}
+              >
+                Approve Payment
+              </AdminButton>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </Panel>
   );
 }

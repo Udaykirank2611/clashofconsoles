@@ -49,6 +49,7 @@ export interface AdminBooking {
     | "cancelled"
     | "expired";
   payment_utr: string | null;
+  payment_mode: string | null;
   payment_note: string | null;
   payment_submitted_at: string | null;
   payment_expires_at: string | null;

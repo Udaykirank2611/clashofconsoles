@@ -49,6 +49,7 @@ export interface RawBooking {
   tax_amount: number;
   total_amount: number;
   payment_utr: string | null;
+  payment_mode: string | null;
   payment_submitted_at: string | null;
   created_at: string;
   gaming_stations: { name: string; station_type: string } | null;
@@ -88,6 +89,10 @@ export const SERVICE_LABELS: Record<string, string> = {
   private_theatre: "Private Theatre",
   private_lounge: "Private Gaming Lounge",
 };
+
+/** Normalised payment-mode label used everywhere in analytics + reports. */
+export const paymentModeLabel = (mode?: string | null) =>
+  mode === "upi" ? "UPI" : mode === "cash" ? "Cash" : "Not recorded";
 
 const minutes = (t?: string | null) => {
   if (!t) return null;
@@ -207,6 +212,26 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
     expired: bookings.filter((b) => b.status === "expired").length,
     pending: pendingRows.length,
     avgValue: revenueRows.length ? Math.round(totalRevenue / revenueRows.length) : 0,
+    upiRevenue: Math.round(
+      revenueRows.filter((b) => b.payment_mode === "upi").reduce((s2, b) => s2 + n(b.total_amount), 0),
+    ),
+    cashRevenue: Math.round(
+      revenueRows.filter((b) => b.payment_mode === "cash").reduce((s2, b) => s2 + n(b.total_amount), 0),
+    ),
+  };
+
+  // ---- payment modes ------------------------------------------------------
+  const modeRow = (mode: "upi" | "cash" | null) => {
+    const rows = revenueRows.filter((b) => (b.payment_mode ?? null) === mode);
+    return {
+      revenue: Math.round(rows.reduce((s2, b) => s2 + n(b.total_amount), 0)),
+      bookings: rows.length,
+    };
+  };
+  const paymentModes = {
+    upi: modeRow("upi"),
+    cash: modeRow("cash"),
+    unrecorded: modeRow(null),
   };
 
   // ---- daily series -------------------------------------------------------
@@ -494,6 +519,7 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
       expired: bookings.filter((b) => b.status === "expired").length,
       utrSubmitted: bookings.filter((b) => !!b.payment_utr).length,
     },
+    paymentModes,
     branchComparison,
   };
 }
@@ -533,6 +559,7 @@ export function buildReportRows(
         finalAmount: Math.round(split.gaming),
         status: b.status,
         paymentStatus: paymentStatus(b),
+        paymentMode: paymentModeLabel(b.payment_mode),
       });
     }
     if (type !== "gaming" && split.foodGross > 0) {
@@ -553,8 +580,78 @@ export function buildReportRows(
         finalAmount: Math.round(split.food),
         status: b.status,
         paymentStatus: paymentStatus(b),
+        paymentMode: paymentModeLabel(b.payment_mode),
       });
     }
   }
   return rows.sort((a, b) => (a.date === b.date ? a.reference.localeCompare(b.reference) : b.date.localeCompare(a.date)));
+}
+
+/* ---------------------------------------------------------------------------
+   Drill-down: the exact bookings / sessions behind one chart slice.
+--------------------------------------------------------------------------- */
+
+export interface DrilldownSelection {
+  /** Which chart the admin clicked. */
+  kind: "hour" | "station" | "service";
+  /** Hour (0-23) for peak hours, station id for utilisation, station type for services. */
+  key: string;
+}
+
+export function buildDrilldownRows(
+  bookings: RawBooking[],
+  stations: RawStation[],
+  branchName: Map<string, string>,
+  sel: DrilldownSelection,
+): import("./types").DrilldownRow[] {
+  const stationById = new Map(stations.map((s) => [s.id, s]));
+  const counted = bookings.filter((b) => b.status !== "cancelled" && b.status !== "expired");
+  const rows: import("./types").DrilldownRow[] = [];
+
+  for (const b of counted) {
+    const slots: { stationId: string | null; start: string | null; end: string | null; label: string }[] = [
+      { stationId: b.station_id, start: b.start_time, end: b.end_time, label: b.gaming_stations?.name ?? "Session" },
+      ...b.booking_items
+        .filter((i) => i.kind === "addon" && i.station_id)
+        .map((i) => ({ stationId: i.station_id, start: i.start_time, end: i.end_time, label: i.label })),
+    ].filter((s) => s.stationId || (s.start && s.end));
+
+    for (const slot of slots) {
+      const st = slot.stationId ? stationById.get(slot.stationId) : undefined;
+      const start = minutes(slot.start);
+      const end = minutes(slot.end);
+
+      if (sel.kind === "hour") {
+        const hour = Number(sel.key);
+        if (start == null) continue;
+        const last = end != null && end > start ? Math.ceil(end / 60) : Math.floor(start / 60) + 1;
+        if (hour < Math.floor(start / 60) || hour >= last) continue;
+      } else if (sel.kind === "station") {
+        if (slot.stationId !== sel.key) continue;
+      } else {
+        const type = st?.station_type ?? b.gaming_stations?.station_type ?? "";
+        if ((SERVICE_LABELS[type] ?? type) !== sel.key) continue;
+      }
+
+      const split = splitBooking(b);
+      rows.push({
+        bookingId: b.id,
+        reference: b.reference,
+        date: b.booking_date,
+        time: slot.start && slot.end ? `${slot.start.slice(0, 5)} – ${slot.end.slice(0, 5)}` : "—",
+        minutes: start != null && end != null && end > start ? end - start : 0,
+        branch: branchName.get(b.branch_id) ?? "",
+        station: st?.name ?? slot.label,
+        service: SERVICE_LABELS[st?.station_type ?? ""] ?? st?.station_type ?? "—",
+        customer: b.customer_name,
+        phone: b.customer_phone,
+        players: n(b.players),
+        status: b.status,
+        paymentMode: paymentModeLabel(b.payment_mode),
+        amount: Math.round(isRevenue(b.status) ? split.gaming : 0),
+      });
+    }
+  }
+
+  return rows.sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : b.date.localeCompare(a.date)));
 }

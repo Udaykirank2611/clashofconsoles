@@ -47,6 +47,7 @@ export function ReportsView({
   const [quick, setQuick] = useState<QuickReport>("combined");
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [payMode, setPayMode] = useState("all");
   const type = QUICK.find((q) => q.id === quick)?.type ?? "combined";
 
   const fetchReport = useServerFn(getReport);
@@ -66,12 +67,13 @@ export function ReportsView({
     const q = search.trim().toLowerCase();
     return rows
       .filter((r) => (status === "all" ? true : r.status === status))
+      .filter((r) => (payMode === "all" ? true : r.paymentMode === payMode))
       .filter((r) =>
         q
           ? [r.reference, r.customer, r.phone, r.service, r.branch].some((v) => v.toLowerCase().includes(q))
           : true,
       );
-  }, [rows, status, search]);
+  }, [rows, status, search, payMode]);
 
   const filename = `coc-${quick}-${scope.branchId ? (branches.find((b) => b.id === scope.branchId)?.name ?? "branch") : "all-branches"}-${scope.range.from}-to-${scope.range.to}`
     .toLowerCase()
@@ -142,6 +144,18 @@ export function ReportsView({
         </Panel>
       ) : null}
 
+      {analytics ? (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard label="UPI revenue" value={money(analytics.paymentModes.upi.revenue)} tone="good" />
+          <StatCard label="Cash revenue" value={money(analytics.paymentModes.cash.revenue)} tone="good" />
+          <StatCard
+            label="Mode not recorded"
+            value={money(analytics.paymentModes.unrecorded.revenue)}
+            tone={analytics.paymentModes.unrecorded.bookings ? "warn" : "default"}
+          />
+        </div>
+      ) : null}
+
       {quick === "student" && analytics ? (
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard label="Student discounts used" value={analytics.student.uses} />
@@ -185,6 +199,17 @@ export function ReportsView({
               />
             </label>
             <select
+              value={payMode}
+              onChange={(e) => setPayMode(e.target.value)}
+              className="rounded-full border border-border bg-surface/70 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] outline-none"
+            >
+              {["all", "UPI", "Cash", "Not recorded"].map((m) => (
+                <option key={m} value={m}>
+                  {m === "all" ? "All payment modes" : m}
+                </option>
+              ))}
+            </select>
+            <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="rounded-full border border-border bg-surface/70 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] outline-none"
@@ -200,7 +225,7 @@ export function ReportsView({
       >
         {isFetching ? <p className="pb-3 text-xs text-muted-foreground">Updating…</p> : null}
         <ScrollTable
-          head={["Date", "Branch", "Ref", "Customer", "Phone", "Type", "Service / items", "Amount", "Discount", "Final", "Status", "Payment"]}
+          head={["Date", "Branch", "Ref", "Customer", "Phone", "Type", "Service / items", "Amount", "Discount", "Final", "Status", "Payment", "Payment mode"]}
           empty="No records for these filters."
           rows={filtered.map((r) => [
             r.date,
@@ -215,6 +240,7 @@ export function ReportsView({
             money(r.finalAmount),
             r.status.replace("_", " "),
             r.paymentStatus,
+            r.paymentMode,
           ])}
         />
         {filtered.length ? (

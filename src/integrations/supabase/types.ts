@@ -164,6 +164,7 @@ export type Database = {
           gaming_discount_amount: number
           id: string
           payment_expires_at: string | null
+          payment_mode: string | null
           payment_note: string | null
           payment_submitted_at: string | null
           payment_utr: string | null
@@ -199,6 +200,7 @@ export type Database = {
           gaming_discount_amount?: number
           id?: string
           payment_expires_at?: string | null
+          payment_mode?: string | null
           payment_note?: string | null
           payment_submitted_at?: string | null
           payment_utr?: string | null
@@ -234,6 +236,7 @@ export type Database = {
           gaming_discount_amount?: number
           id?: string
           payment_expires_at?: string | null
+          payment_mode?: string | null
           payment_note?: string | null
           payment_submitted_at?: string | null
           payment_utr?: string | null

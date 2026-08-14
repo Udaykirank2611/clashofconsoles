@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { loadAnalytics, loadReport, loadTodayOverview } from "./analytics/load.server";
-import type { AnalyticsResult, ReportRow } from "./analytics/types";
+import { loadAnalytics, loadDrilldown, loadReport, loadTodayOverview } from "./analytics/load.server";
+import type { AnalyticsResult, DrilldownRow, ReportRow } from "./analytics/types";
 import type { TodayOverview } from "./analytics/load.server";
 
 const scopeSchema = z.object({
@@ -27,6 +27,18 @@ export const getReport = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<ReportRow[]> =>
     loadReport(context.supabase, context.userId, data),
+  );
+
+/** Exact bookings/sessions behind a clicked chart slice. */
+export const getDrilldown = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    scopeSchema
+      .extend({ kind: z.enum(["hour", "station", "service"]), key: z.string().min(1) })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<DrilldownRow[]> =>
+    loadDrilldown(context.supabase, context.userId, data),
   );
 
 /** Live operational snapshot for today, for the selected branch scope. */

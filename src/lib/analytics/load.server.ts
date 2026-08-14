@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
+  buildDrilldownRows,
   buildReportRows,
   computeAnalytics,
   hasGaming,
@@ -10,13 +11,14 @@ import {
   type RawBooking,
   type RawBranch,
   type RawStation,
+  type DrilldownSelection,
 } from "./compute";
-import type { AnalyticsResult, ReportRow, ReportType } from "./types";
+import type { AnalyticsResult, DrilldownRow, ReportRow, ReportType } from "./types";
 
 type Client = SupabaseClient<Database>;
 
 const BOOKING_SELECT =
-  "id, reference, branch_id, station_id, booking_date, start_time, end_time, players, status, customer_name, customer_phone, coupon_code, session_amount, addons_amount, food_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, discount_amount, student_discount, student_discount_amount, tax_amount, total_amount, payment_utr, payment_submitted_at, created_at, gaming_stations(name, station_type), booking_items(kind, label, quantity, line_total, unit_price, menu_item_id, station_id, start_time, end_time)";
+  "id, reference, branch_id, station_id, booking_date, start_time, end_time, players, status, customer_name, customer_phone, coupon_code, session_amount, addons_amount, food_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, discount_amount, student_discount, student_discount_amount, tax_amount, total_amount, payment_utr, payment_mode, payment_submitted_at, created_at, gaming_stations(name, station_type), booking_items(kind, label, quantity, line_total, unit_price, menu_item_id, station_id, start_time, end_time)";
 
 /** Branch ids this admin may read, or null when the account has no admin role. */
 async function resolveScope(supabase: Client, userId: string, branchId: string | null) {
@@ -129,6 +131,29 @@ export async function loadReport(
   if (!scope) return [];
   const bookings = await fetchBookings(supabase, scope.ids, input.from, input.to);
   return buildReportRows(bookings, new Map(scope.branches.map((b) => [b.id, b.name])), input.type);
+}
+
+/** Underlying bookings/sessions behind one analytics chart slice. */
+export async function loadDrilldown(
+  supabase: Client,
+  userId: string,
+  input: { branchId: string | null; from: string; to: string } & DrilldownSelection,
+): Promise<DrilldownRow[]> {
+  const scope = await resolveScope(supabase, userId, input.branchId);
+  if (!scope) return [];
+  const [bookings, stationsRes] = await Promise.all([
+    fetchBookings(supabase, scope.ids, input.from, input.to),
+    supabase
+      .from("gaming_stations")
+      .select("id, branch_id, name, station_type, status, is_addon")
+      .in("branch_id", scope.ids),
+  ]);
+  return buildDrilldownRows(
+    bookings,
+    (stationsRes.data ?? []) as RawStation[],
+    new Map(scope.branches.map((b) => [b.id, b.name])),
+    { kind: input.kind, key: input.key },
+  );
 }
 
 export interface TodayOverview {

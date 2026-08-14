@@ -98,6 +98,13 @@ export interface Kpis {
   expired: number;
   pending: number;
   avgValue: number;
+  upiRevenue: number;
+  cashRevenue: number;
+}
+
+export interface PaymentModeStat {
+  revenue: number;
+  bookings: number;
 }
 
 export interface DayPoint {
@@ -130,6 +137,8 @@ export interface ServiceRow {
   revenue: number;
   avgValue: number;
 }
+
+
 
 export interface FoodItemRow {
   name: string;
@@ -202,6 +211,7 @@ export interface AnalyticsResult {
     expired: number;
     utrSubmitted: number;
   };
+  paymentModes: { upi: PaymentModeStat; cash: PaymentModeStat; unrecorded: PaymentModeStat };
   branchComparison: BranchCompareRow[];
 }
 
@@ -220,4 +230,23 @@ export interface ReportRow {
   finalAmount: number;
   status: string;
   paymentStatus: string;
+  paymentMode: string;
+}
+
+/** One underlying session/booking row behind a chart slice. */
+export interface DrilldownRow {
+  bookingId: string;
+  reference: string;
+  date: string;
+  time: string;
+  minutes: number;
+  branch: string;
+  station: string;
+  service: string;
+  customer: string;
+  phone: string;
+  players: number;
+  status: string;
+  paymentMode: string;
+  amount: number;
 }

@@ -121,3 +121,39 @@ export function groupSeries(series: DayPoint[], mode: "daily" | "weekly" | "mont
   }
   return [...buckets.values()];
 }
+
+/** UPI vs Cash revenue for the selected branch + date range. */
+export function PaymentModeChart({
+  upi,
+  cash,
+  unrecorded,
+}: {
+  upi: number;
+  cash: number;
+  unrecorded: number;
+}) {
+  const data = [
+    { label: "UPI", revenue: upi },
+    { label: "Cash", revenue: cash },
+    { label: "Not recorded", revenue: unrecorded },
+  ];
+  if (!data.some((d) => d.revenue > 0)) {
+    return <p className="py-16 text-center text-sm text-muted-foreground">No approved payments in this range yet.</p>;
+  }
+  const colors = ["var(--primary)", "var(--cyan)", "var(--violet)"];
+  return (
+    <ResponsiveContainer width="100%" height={240}>
+      <BarChart data={data} margin={{ left: -12, right: 8, top: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="label" tick={axis} tickLine={false} axisLine={false} />
+        <YAxis tick={axis} tickLine={false} axisLine={false} width={64} />
+        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₹${Number(v).toLocaleString("en-IN")}`} cursor={{ fill: "var(--muted)", opacity: 0.25 }} />
+        <Bar name="Revenue" dataKey="revenue" radius={[8, 8, 0, 0]}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={colors[i]} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
