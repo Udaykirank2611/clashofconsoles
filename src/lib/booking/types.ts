@@ -99,6 +99,24 @@ export interface SessionOption {
   sort_order: number;
 }
 
+/** Branch-owned Group Pass duration + price (books the whole café). */
+export interface GroupPassRate {
+  id: string;
+  branch_id: string;
+  label: string;
+  duration_minutes: number;
+  price: number;
+  sort_order: number;
+}
+
+/** Single Pass = normal booking. Group Pass = whole café reserved for a group. */
+export type BookingType = "single" | "group";
+
+/** Maximum members allowed on a Group Pass. */
+export const GROUP_PASS_MAX_MEMBERS = 10;
+
+
+
 /** A membership plan / unlimited pass / combo offer that can be added to a booking. */
 export interface PassOption {
   id: string;
@@ -172,6 +190,8 @@ export interface BookingSummary {
   branch_address: string;
   station_name: string;
   booking_date: string;
+  booking_type?: BookingType;
+  group_members?: number;
   start_time: string;
   end_time: string;
   players: number;

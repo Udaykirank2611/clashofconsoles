@@ -3,11 +3,18 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, money } from "./primitives";
 import { SessionsPanel } from "./SessionsPanel";
-import type { AdminMenuItem, AdminSessionOption, AdminStation } from "@/lib/admin/useBranchData";
+import { GroupPassPanel } from "./GroupPassPanel";
+import type {
+  AdminGroupPassRate,
+  AdminMenuItem,
+  AdminSessionOption,
+  AdminStation,
+} from "@/lib/admin/useBranchData";
 
 /** All pricing for the signed-in branch. Nothing here is shared with another branch. */
 export function PricingPanel({
   sessions,
+  groupRates,
   stations,
   menu,
   branchId,
@@ -15,6 +22,7 @@ export function PricingPanel({
   onChanged,
 }: {
   sessions: AdminSessionOption[];
+  groupRates: AdminGroupPassRate[];
   stations: AdminStation[];
   menu: AdminMenuItem[];
   branchId: string;
@@ -54,6 +62,8 @@ export function PricingPanel({
   return (
     <div className="space-y-6">
       <SessionsPanel sessions={sessions} branchId={branchId} branchName={branchName} onChanged={onChanged} />
+
+      <GroupPassPanel rates={groupRates} branchId={branchId} branchName={branchName} onChanged={onChanged} />
 
 
 

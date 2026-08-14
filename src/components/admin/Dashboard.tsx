@@ -214,6 +214,8 @@ export function AdminDashboard() {
         {tab === "Sessions & Pricing" ? (
           <PricingPanel
             sessions={data.sessions}
+            groupRates={data.groupRates}
+
             stations={data.stations}
             menu={data.menu}
             branchId={branch.id}

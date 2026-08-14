@@ -58,7 +58,13 @@ import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
 import { ConsoleSelect } from "./ConsoleSelect";
 import type { CouponCategory } from "@/lib/booking/pricing";
 import { BillSummary, durationLabel, type BillLine } from "./BillSummary";
-import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
+import {
+  GROUP_PASS_MAX_MEMBERS,
+  type BookingType,
+  type CartLine,
+  type CouponResult,
+  type Station,
+} from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
 
@@ -180,6 +186,10 @@ interface StoredHold {
     extraHours?: number;
   }[];
   passes: Record<string, number>;
+  bookingType?: BookingType;
+  groupRateId?: string | null;
+  groupStart?: string | null;
+  groupMembers?: number;
   expiresAt: number;
 }
 
@@ -237,6 +247,13 @@ export function BookingFlow() {
   const [passes, setPasses] = useState<Record<string, number>>({});
   /** Whether the Memberships & Combos group is expanded. */
   const [passesOn, setPassesOn] = useState(false);
+
+  /* Booking type: Single Pass is always the default. A Group Pass books the
+     entire café, so it replaces the per-console selection. */
+  const [bookingType, setBookingType] = useState<BookingType>("single");
+  const [groupMembers, setGroupMembers] = useState(4);
+  const [groupRateId, setGroupRateId] = useState<string | null>(null);
+  const [groupStart, setGroupStart] = useState<string | null>(null);
 
   const [cart, setCart] = useState<CartLine[]>([]);
   const [couponInput, setCouponInput] = useState("");
@@ -337,6 +354,17 @@ export function BookingFlow() {
     () => (catalogue?.sessions ?? []).filter((s) => s.branch_id === branchId),
     [catalogue, branchId],
   );
+  /** Group Pass durations + prices, owned by the selected branch. */
+  const groupRates = useMemo(
+    () =>
+      (catalogue?.groupRates ?? [])
+        .filter((r) => r.branch_id === branchId)
+        .sort((a, b) => a.sort_order - b.sort_order || a.duration_minutes - b.duration_minutes),
+    [catalogue, branchId],
+  );
+  /** Every experience a Group Pass takes over. */
+  const groupStations = useMemo(() => stations.filter((s) => s.status === "available"), [stations]);
+
   /** Admin-managed price tiers per experience station. */
   const stationRates = useMemo(
     () => (catalogue?.stationRates ?? []).filter((r) => r.branch_id === branchId),
@@ -409,12 +437,37 @@ export function BookingFlow() {
   );
 
 
+  const isGroup = bookingType === "group";
+  const groupRate = groupRates.find((r) => r.id === groupRateId) ?? null;
+  /** A Group Pass slot is only offered when every experience is free for it. */
+  const groupSlotBlocked = useCallback(
+    (slot: string, minutes: number) => {
+      if (!groupStations.length) return true;
+      return groupStations.some((st) => slotBlocked(st.id, slot, minutes));
+    },
+    [groupStations, slotBlocked],
+  );
+  const groupSlots = useMemo(
+    () => (groupRate ? slots.filter((s) => !groupSlotBlocked(s, groupRate.duration_minutes)) : []),
+    [slots, groupRate, groupSlotBlocked],
+  );
+
   useEffect(() => {
     setStationId(null);
     setStartTime(null);
     setDurationMinutes(null);
     setExtras({});
+    setGroupStart(null);
   }, [branchId, date]);
+
+  /** Default to the branch's first Group Pass duration. */
+  useEffect(() => {
+    if (!isGroup) return;
+    if (!groupRates.some((r) => r.id === groupRateId)) {
+      setGroupRateId(groupRates[0]?.id ?? null);
+      setGroupStart(null);
+    }
+  }, [isGroup, groupRates, groupRateId]);
 
   /* ---------------- Multi-tab guard ---------------- */
   const [tabBlocked, setTabBlocked] = useState(false);
@@ -494,6 +547,10 @@ export function BookingFlow() {
         extraHours: e.extraHours ?? 0,
       };
     setExtras(restored);
+    setBookingType(p.bookingType ?? "single");
+    setGroupRateId(p.groupRateId ?? null);
+    setGroupStart(p.groupStart ?? null);
+    if (p.groupMembers) setGroupMembers(p.groupMembers);
     setPasses(p.passes ?? {});
     setPassesOn(Object.keys(p.passes ?? {}).length > 0);
     setExpiresAt(p.expiresAt);
@@ -501,8 +558,12 @@ export function BookingFlow() {
   }, [branchId, date]);
 
 
-  const sessionAmount =
-    startTime && durationMinutes ? rateFor(rates, players, durationMinutes) : 0;
+  const groupAmount = isGroup && groupStart && groupRate ? Math.round(Number(groupRate.price)) : 0;
+  const sessionAmount = isGroup
+    ? groupAmount
+    : startTime && durationMinutes
+      ? rateFor(rates, players, durationMinutes)
+      : 0;
   /* Loyalty reward: free play time added on top of the booked session.
      It never reduces the bill — the guest pays for the duration they booked. */
   const rewardMinutes = customer?.reward?.minutes ?? 0;
@@ -538,7 +599,7 @@ export function BookingFlow() {
     .filter((p) => (passes[p.id] ?? 0) > 0)
     .map((p) => ({ ...p, quantity: passes[p.id]! }));
   const passesAmount = passLines.reduce((s, l) => s + l.price * l.quantity, 0);
-  const cockpitAmount = extrasAmount + passesAmount;
+  const cockpitAmount = (isGroup ? 0 : extrasAmount) + passesAmount;
 
   const foodAmount = cart.reduce((s, l) => s + l.price * l.quantity, 0);
   const gamingSubtotal = sessionAmount + cockpitAmount;
@@ -560,9 +621,17 @@ export function BookingFlow() {
 
   const gamingLines: BillLine[] = [
     ...(sessionAmount
-      ? [{ key: "session", label: station?.name ?? "Gaming session", amount: sessionAmount }]
+      ? [
+          {
+            key: "session",
+            label: isGroup
+              ? `Group Pass · ${groupRate?.label ?? ""}`
+              : (station?.name ?? "Gaming session"),
+            amount: sessionAmount,
+          },
+        ]
       : []),
-    ...selectedExtras
+    ...(isGroup ? [] : selectedExtras)
       .filter((e) => e.station)
       .map((e) => ({
         key: e.station!.id,
@@ -592,14 +661,19 @@ export function BookingFlow() {
   const consoleReady = Boolean(station && startTime && durationMinutes);
   const hasPasses = passLines.length > 0;
   /* Gaming is optional; whatever is picked simply has to be complete. */
-  const gamingComplete = (!consoleTouched || consoleReady) && extrasReady;
-  const hasGaming = consoleReady || selectedExtras.length > 0 || hasPasses;
+  const groupReady = Boolean(isGroup && groupRate && groupStart && groupMembers >= 1);
+  const gamingComplete = isGroup ? groupReady : (!consoleTouched || consoleReady) && extrasReady;
+  const hasGaming = isGroup ? groupReady : consoleReady || selectedExtras.length > 0 || hasPasses;
 
 
   /* ---------------- Reservation lock ---------------- */
   const releasedRef = useRef(false);
   const holdKey =
-    gamingComplete && branch && (consoleReady || selectedExtras.length)
+    isGroup
+      ? groupReady && branch
+        ? ["group", branch!.id, date, groupRate!.id, groupStart!].join("~")
+        : null
+      : gamingComplete && branch && (consoleReady || selectedExtras.length)
       ? [
           branch.id,
           date,
@@ -631,12 +705,18 @@ export function BookingFlow() {
           rateId: e.rateId ?? null,
           extraHours: e.extraHours ?? 0,
         }));
-      const holds = [
-        ...(consoleReady
-          ? [{ stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }]
-          : []),
-        ...extraHolds,
-      ];
+      const holds = isGroup
+        ? groupStations.map((st) => ({
+            stationId: st.id,
+            startTime: groupStart!,
+            durationMinutes: groupRate!.duration_minutes,
+          }))
+        : [
+            ...(consoleReady
+              ? [{ stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }]
+              : []),
+            ...extraHolds,
+          ];
       const res = await holdFn({
         data: { branchId: branch.id, date, sessionToken: sessionToken(), holds },
       });
@@ -645,6 +725,7 @@ export function BookingFlow() {
         toast.error(res.message ?? "This slot has just become unavailable. Please choose another available time.");
         setStartTime(null);
         setDurationMinutes(null);
+        setGroupStart(null);
         setExpiresAt(null);
         setRemaining(0);
         window.localStorage.removeItem(HOLD_KEY);
@@ -661,8 +742,12 @@ export function BookingFlow() {
         startTime: consoleReady ? startTime : null,
         durationMinutes: consoleReady ? durationMinutes : null,
         players,
-        extras: extraHolds,
+        extras: isGroup ? [] : extraHolds,
         passes,
+        bookingType,
+        groupRateId,
+        groupStart,
+        groupMembers,
         expiresAt: until,
       };
       window.localStorage.setItem(HOLD_KEY, JSON.stringify(stored));
@@ -750,7 +835,7 @@ export function BookingFlow() {
     if (Object.keys(next).length || !branch) return;
     // Only slot-based bookings depend on a live reservation; a pass on its own
     // blocks nothing, so it needs no hold.
-    const needsHold = consoleReady || selectedExtras.length > 0;
+    const needsHold = isGroup ? groupReady : consoleReady || selectedExtras.length > 0;
     if (needsHold && (!expiresAt || expiresAt <= Date.now())) {
       toast.error("Your reservation expired", { description: "Please choose your slot again." });
       setStep(1);
@@ -763,13 +848,18 @@ export function BookingFlow() {
       const res = await bookFn({
         data: {
           branchId: branch.id,
-          ...(consoleReady
-            ? { stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }
-            : {}),
+          bookingType,
+          ...(isGroup
+            ? { startTime: groupStart!, groupRateId: groupRate!.id, groupMembers }
+            : consoleReady
+              ? { stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }
+              : {}),
           date,
           players,
           gameTitle: "",
-          extras: selectedExtras
+          extras: isGroup
+            ? []
+            : selectedExtras
             .filter((e) => e.startTime && e.durationMinutes)
             .map((e) => ({
               stationId: e.station!.id,
@@ -1169,7 +1259,125 @@ export function BookingFlow() {
 
 
 
-            {consoles.length ? (
+            <div>
+              <FieldLabel>Booking Type</FieldLabel>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    {
+                      id: "single" as const,
+                      icon: "🎮",
+                      title: "Single Pass",
+                      body: "For individual gaming bookings.",
+                    },
+                    {
+                      id: "group" as const,
+                      icon: "👥",
+                      title: "Group Pass",
+                      body: `Book the entire gaming café exclusively for your group. Up to ${GROUP_PASS_MAX_MEMBERS} members, with access to every gaming experience at this branch.`,
+                    },
+                  ]
+                ).map((opt) => {
+                  const active = bookingType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        if (bookingType === opt.id) return;
+                        setBookingType(opt.id);
+                        setStationId(null);
+                        setStartTime(null);
+                        setDurationMinutes(null);
+                        setConsoleOn(false);
+                        setExtras({});
+                        setGroupStart(null);
+                      }}
+                      className={cn(
+                        "rounded-3xl border border-border bg-surface/60 p-5 text-left backdrop-blur-xl transition-all duration-300",
+                        active
+                          ? "border-transparent shadow-[0_0_0_1px_var(--cyan)]"
+                          : "hover:border-cyan/40",
+                      )}
+                    >
+                      <span className="text-2xl">{opt.icon}</span>
+                      <p className="mt-2 text-sm font-extrabold">{opt.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{opt.body}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {isGroup ? (
+              <div className="space-y-5 rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl">
+                <div>
+                  <FieldLabel>Number of members</FieldLabel>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {Array.from({ length: GROUP_PASS_MAX_MEMBERS }, (_, i) => i + 1).map((n) => (
+                      <Chip key={n} selected={groupMembers === n} onClick={() => setGroupMembers(n)}>
+                        {n}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel>Duration</FieldLabel>
+                  {groupRates.length ? (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      {groupRates.map((r) => (
+                        <DurationCard
+                          key={r.id}
+                          label={r.label}
+                          price={Math.round(Number(r.price))}
+                          selected={groupRateId === r.id}
+                          onClick={() => {
+                            setGroupRateId(r.id);
+                            setGroupStart(null);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Group Pass pricing has not been set up for this branch yet.
+                    </p>
+                  )}
+                </div>
+
+                {groupRate ? (
+                  <div>
+                    <FieldLabel>Start time</FieldLabel>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Only times where every gaming experience is free for the full duration are shown.
+                    </p>
+                    {groupSlots.length ? (
+                      <div className="mt-3">
+                        <SlotGrid
+                          slots={slots}
+                          value={groupStart}
+                          onSelect={setGroupStart}
+                          isDisabled={(slot) => groupSlotBlocked(slot, groupRate.duration_minutes)}
+                        />
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs font-semibold text-amber-300">
+                        No start time on this day has the whole café free for {groupRate.label}. Try
+                        another day or a shorter duration.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                <p className="rounded-2xl border border-border bg-surface/50 px-4 py-3 text-xs text-muted-foreground">
+                  This booking reserves the entire gaming café exclusively for your group during the
+                  selected time.
+                </p>
+              </div>
+            ) : null}
+
+            {!isGroup && consoles.length ? (
               <ConsoleSelect
                 label={consoles[0]!.group_label?.trim() || "Console Gaming"}
                 description={consoles[0]?.description ?? undefined}
@@ -1212,7 +1420,7 @@ export function BookingFlow() {
             ) : null}
 
             <div className="space-y-4">
-              {experienceGroups.filter((g) => !g.isConsole).map((g) => {
+              {(isGroup ? [] : experienceGroups.filter((g) => !g.isConsole)).map((g) => {
                 const isConsole = g.isConsole;
                 const selectedId = isConsole
                   ? stationId
@@ -1781,17 +1989,36 @@ export function BookingFlow() {
                       month: "short",
                     })}
                   />
-                  <Row label="PlayStation" value={station?.name ?? "—"} />
-                  <Row
-                    label="Duration"
-                    value={
-                      startTime && durationMinutes
-                        ? `${formatTime(startTime)} – ${formatTime(addMinutes(startTime, durationMinutes))}`
-                        : "—"
-                    }
-                  />
-                  <Row label="Players" value={String(players)} />
-                  {selectedExtras.map((e) => (
+                  <Row label="Booking type" value={isGroup ? "Group Pass" : "Single Pass"} />
+                  {isGroup ? (
+                    <>
+                      <Row label="Members" value={String(groupMembers)} />
+                      <Row label="Duration" value={groupRate?.label ?? "—"} />
+                      <Row
+                        label="Time"
+                        value={
+                          groupStart && groupRate
+                            ? `${formatTime(groupStart)} – ${formatTime(addMinutes(groupStart, groupRate.duration_minutes))}`
+                            : "—"
+                        }
+                      />
+                      <Row label="Price" value={groupAmount ? inr(groupAmount) : "—"} />
+                    </>
+                  ) : (
+                    <>
+                      <Row label="PlayStation" value={station?.name ?? "—"} />
+                      <Row
+                        label="Duration"
+                        value={
+                          startTime && durationMinutes
+                            ? `${formatTime(startTime)} – ${formatTime(addMinutes(startTime, durationMinutes))}`
+                            : "—"
+                        }
+                      />
+                      <Row label="Players" value={String(players)} />
+                    </>
+                  )}
+                  {(isGroup ? [] : selectedExtras).map((e) => (
                     <Row
                       key={e.station!.id}
                       label={e.station!.name}
@@ -1817,6 +2044,12 @@ export function BookingFlow() {
                     <Row label="Food" value="—" />
                   )}
                 </dl>
+                {isGroup ? (
+                  <p className="mt-4 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3 text-[0.68rem] text-cyan">
+                    This booking reserves the entire gaming café exclusively for your group during the
+                    selected time.
+                  </p>
+                ) : null}
                 <div className="mt-5 border-t border-border pt-4">
                   <BillSummary
                     gamingLines={gamingLines}
@@ -1850,11 +2083,15 @@ export function BookingFlow() {
             <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {[
                 branch?.name,
-                station?.name,
-                startTime && durationMinutes
+                isGroup ? `Group Pass · ${groupMembers} members` : null,
+                isGroup && groupStart && groupRate
+                  ? `${formatTime(groupStart)} · ${groupRate.label}`
+                  : null,
+                isGroup ? null : station?.name,
+                !isGroup && startTime && durationMinutes
                   ? `${formatTime(startTime)} · ${durationMinutes / 60 >= 1 ? `${durationMinutes / 60}h` : "30m"}`
                   : null,
-                selectedExtras.length ? `+ ${selectedExtras.length} experience(s)` : null,
+                !isGroup && selectedExtras.length ? `+ ${selectedExtras.length} experience(s)` : null,
                 passLines.length ? `${passLines.reduce((s, l) => s + l.quantity, 0)} pass(es)` : null,
                 cart.length ? `${cart.reduce((s, l) => s + l.quantity, 0)} food items` : null,
               ]

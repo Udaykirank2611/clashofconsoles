@@ -11,6 +11,7 @@ import type {
   CouponResult,
   MenuItem,
   PassOption,
+  GroupPassRate,
   SessionOption,
   Station,
   StationRate,
@@ -30,13 +31,14 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
     stations: Station[];
     menu: MenuItem[];
     sessions: SessionOption[];
+    groupRates: GroupPassRate[];
     stationRates: StationRate[];
     stationGames: StationGame[];
     passes: PassOption[];
   }> => {
     const { publicClient } = await import("@/lib/booking/repository.server");
     const db = publicClient();
-    const [branches, stations, menu, sessions, stationRates, stationGames, plans, offers] =
+    const [branches, stations, menu, sessions, groupRates, stationRates, stationGames, plans, offers] =
       await Promise.all([
         db.from("branches").select("*").eq("is_active", true).order("sort_order"),
         db.from("gaming_stations").select("*").order("sort_order"),
@@ -44,6 +46,11 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
         db
           .from("session_options")
           .select("id, branch_id, label, duration_minutes, players, price, sort_order")
+          .eq("is_active", true)
+          .order("sort_order"),
+        db
+          .from("group_pass_rates")
+          .select("id, branch_id, label, duration_minutes, price, sort_order")
           .eq("is_active", true)
           .order("sort_order"),
         db.from("station_rates").select("*").eq("is_active", true).order("sort_order"),
@@ -85,6 +92,7 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
       stations: (stations.data ?? []) as unknown as Station[],
       menu: (menu.data ?? []) as unknown as MenuItem[],
       sessions: (sessions.data ?? []) as unknown as SessionOption[],
+      groupRates: (groupRates.data ?? []) as unknown as GroupPassRate[],
       stationRates: (stationRates.data ?? []) as unknown as StationRate[],
       stationGames: (stationGames.data ?? []) as unknown as StationGame[],
       passes,
@@ -150,7 +158,7 @@ export const holdStation = createServerFn({ method: "POST" })
         holds: z
           .array(z.object({ stationId: uuid, startTime: timeStr, durationMinutes: duration }))
           .min(1)
-          .max(6),
+          .max(40),
       })
       .parse(i),
   )
@@ -369,7 +377,12 @@ export const createBooking = createServerFn({ method: "POST" })
         startTime: timeStr.optional().nullable(),
         durationMinutes: duration.optional().nullable(),
         players: z.number().int().min(1).max(4),
+        /** "group" reserves the whole café for one time range. */
+        bookingType: z.enum(["single", "group"]).optional(),
+        groupMembers: z.number().int().min(1).max(10).optional(),
+        groupRateId: uuid.optional(),
         gameTitle: z.string().trim().max(60).optional().or(z.literal("")),
+
         extras: z
           .array(
             z.object({
@@ -423,22 +436,52 @@ export const createBooking = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!branch) return { ok: false, message: "Branch unavailable." };
 
-    const extras = data.extras ?? [];
-    const hasSlot = Boolean(data.stationId && data.startTime && data.durationMinutes);
-    const ids = [...(data.stationId ? [data.stationId] : []), ...extras.map((e) => e.stationId)];
+    /* Group Pass reserves the entire café, so it never carries a single
+       station or extra experiences — only one time range across everything. */
+    const isGroup = data.bookingType === "group";
+    let groupRate: { id: string; label: string; duration_minutes: number; price: number } | null = null;
+    let groupStations: { id: string; name: string }[] = [];
+    if (isGroup) {
+      if (!data.startTime || !data.groupRateId)
+        return { ok: false, message: "Pick a start time and duration for your group pass." };
+      const { data: rate } = await db
+        .from("group_pass_rates")
+        .select("id, label, duration_minutes, price")
+        .eq("id", data.groupRateId)
+        .eq("branch_id", data.branchId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!rate) return { ok: false, message: "That group pass duration is no longer available." };
+      groupRate = { ...rate, price: Math.round(Number(rate.price)) };
+      const { data: all } = await db
+        .from("gaming_stations")
+        .select("id, name")
+        .eq("branch_id", data.branchId)
+        .eq("status", "available");
+      groupStations = all ?? [];
+      if (!groupStations.length)
+        return { ok: false, message: "No gaming experiences are available at this branch right now." };
+    }
+
+    const extras = isGroup ? [] : (data.extras ?? []);
+    const hasSlot = !isGroup && Boolean(data.stationId && data.startTime && data.durationMinutes);
+    const ids = isGroup
+      ? []
+      : [...(data.stationId ? [data.stationId] : []), ...extras.map((e) => e.stationId)];
     const { data: stations } = ids.length
       ? await db.from("gaming_stations").select("*").in("id", ids)
       : { data: [] as any[] };
     const station = stations?.find((s) => s.id === data.stationId);
     if (hasSlot && (!station || station.status !== "available"))
       return { ok: false, message: "This station is no longer available." };
-    if (!hasSlot && !extras.length && !(data.passes ?? []).length)
+    if (!isGroup && !hasSlot && !extras.length && !(data.passes ?? []).length)
       return { ok: false, message: "Add a gaming session or a pass before confirming." };
     for (const e of extras) {
       const st = stations?.find((s) => s.id === e.stationId);
       if (!st || st.status !== "available")
         return { ok: false, message: "One of the selected experiences is no longer available." };
     }
+
 
     // Final conflict check, ignoring this visitor's own active locks.
     const { data: busyRows } = await db.rpc("get_slot_availability", {
@@ -501,6 +544,18 @@ export const createBooking = createServerFn({ method: "POST" })
       if (isRangeBusy(busy, e.stationId, e.startTime, minutes)) return { ok: false, message: TAKEN };
     }
 
+    /* Group Pass: every gaming experience at the branch must be free for the
+       whole duration, and the range must fit inside opening hours. */
+    if (isGroup) {
+      const minutes = groupRate!.duration_minutes;
+      const gStart = Number(data.startTime!.slice(0, 2)) * 60 + Number(data.startTime!.slice(3, 5));
+      const closeM =
+        Number(String(branch.closes_at).slice(0, 2)) * 60 + Number(String(branch.closes_at).slice(3, 5));
+      if (closeM > gStart && gStart + minutes > closeM) return { ok: false, message: TAKEN };
+      for (const st of groupStations)
+        if (isRangeBusy(busy, st.id, data.startTime!, minutes)) return { ok: false, message: TAKEN };
+    }
+
     // The same phone number may not hold two overlapping bookings.
     const { data: samePhone } = await db
       .from("bookings")
@@ -508,18 +563,21 @@ export const createBooking = createServerFn({ method: "POST" })
       .eq("customer_phone", data.customer.phone)
       .eq("booking_date", data.date)
       .in("status", ["pending", "confirmed", "awaiting_payment", "payment_pending"]);
-    const startMin = hasSlot
+    const occupiesTime = hasSlot || isGroup;
+    const blockMinutes = isGroup ? groupRate!.duration_minutes : slotMinutes;
+    const startMin = occupiesTime
       ? Number(data.startTime!.slice(0, 2)) * 60 + Number(data.startTime!.slice(3, 5))
       : 0;
-    const endMin = startMin + slotMinutes;
+    const endMin = startMin + blockMinutes;
     const clashes =
-      hasSlot &&
+      occupiesTime &&
       (samePhone ?? []).some((b) => {
         if (!b.start_time || !b.end_time) return false;
         const bs = Number(b.start_time.slice(0, 2)) * 60 + Number(b.start_time.slice(3, 5));
         const be = Number(b.end_time.slice(0, 2)) * 60 + Number(b.end_time.slice(3, 5));
         return startMin < be && bs < endMin;
       });
+
     if (clashes)
       return {
         ok: false,
@@ -542,8 +600,9 @@ export const createBooking = createServerFn({ method: "POST" })
       : rateFor(rateRows, data.players, data.durationMinutes ?? 0);
 
     // The reward is free play time, never a discount: the guest still pays the
-    // full price of the duration they booked.
-    const sessionAmount = fullSessionAmount;
+    // full price of the duration they booked. A Group Pass is a flat branch rate.
+    const sessionAmount = isGroup ? groupRate!.price : fullSessionAmount;
+
 
 
     // Tiered experience prices (theatre / cockpit / snooker / lounge) are priced
@@ -752,12 +811,18 @@ export const createBooking = createServerFn({ method: "POST" })
       .insert({
         reference,
         branch_id: data.branchId,
-        station_id: data.stationId ?? null,
+        station_id: isGroup ? null : (data.stationId ?? null),
         booking_date: data.date,
-        start_time: hasSlot ? data.startTime! : null,
-        end_time: hasSlot ? addMinutes(data.startTime!, slotMinutes) : null,
+        booking_type: isGroup ? "group" : "single",
+        group_members: isGroup ? (data.groupMembers ?? 1) : 0,
+        start_time: isGroup ? data.startTime! : hasSlot ? data.startTime! : null,
+        end_time: isGroup
+          ? addMinutes(data.startTime!, groupRate!.duration_minutes)
+          : hasSlot
+            ? addMinutes(data.startTime!, slotMinutes)
+            : null,
         reward_minutes: hasSlot ? rewardMinutes : 0,
-        players: data.players,
+        players: isGroup ? Math.min(4, data.groupMembers ?? 1) : data.players,
         game_title: data.gameTitle || null,
         customer_name: data.customer.fullName,
         customer_phone: data.customer.phone,
@@ -818,6 +883,24 @@ export const createBooking = createServerFn({ method: "POST" })
         extra_hours: l.extra_hours,
         extra_hour_price: l.extra_hour_price,
       })),
+      /* A Group Pass blocks every experience for its window; the price sits on
+         the booking itself, so these lines are zero-value placeholders. */
+      ...(isGroup
+        ? groupStations.map((st) => ({
+            booking_id: booking.id,
+            kind: "addon" as const,
+            menu_item_id: null,
+            station_id: st.id,
+            label: `${st.name} · Group Pass`,
+            unit_price: 0,
+            quantity: 1,
+            line_total: 0,
+            start_time: data.startTime!,
+            end_time: addMinutes(data.startTime!, groupRate!.duration_minutes),
+            extra_hours: 0,
+            extra_hour_price: 0,
+          }))
+        : []),
       ...passLines.map((l) => ({
         booking_id: booking.id,
         kind: "addon" as const,
@@ -1027,6 +1110,8 @@ export const getBooking = createServerFn({ method: "POST" })
       branch_address: row["branches"]?.address ?? "",
       station_name: row["gaming_stations"]?.name ?? "",
       booking_date: row["booking_date"],
+      booking_type: row["booking_type"] === "group" ? "group" : "single",
+      group_members: Number(row["group_members"] ?? 0),
       start_time: row["start_time"],
       end_time: row["end_time"],
       players: Number(row["players"] ?? 1),
