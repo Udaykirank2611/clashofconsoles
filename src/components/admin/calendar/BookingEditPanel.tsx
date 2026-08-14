@@ -179,7 +179,7 @@ export function BookingEditPanel({
 
       <div className="mt-6 flex gap-2">
         <AdminButton onClick={onClose}>Cancel</AdminButton>
-        <AdminButton tone="primary" disabled={saving} onClick={() => void submit()}>
+        <AdminButton variant="primary" disabled={saving} onClick={() => void submit()}>
           {saving ? "Saving…" : "Save changes"}
         </AdminButton>
       </div>
