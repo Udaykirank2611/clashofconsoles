@@ -52,6 +52,8 @@ export interface RawBooking {
   payment_mode: string | null;
   booking_type?: string | null;
   group_members?: number | null;
+  pass_id?: string | null;
+  pass_minutes?: number | null;
   payment_submitted_at: string | null;
   created_at: string;
   gaming_stations: { name: string; station_type: string } | null;
@@ -220,6 +222,14 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
     cashRevenue: Math.round(
       revenueRows.filter((b) => b.payment_mode === "cash").reduce((s2, b) => s2 + n(b.total_amount), 0),
     ),
+    ...(() => {
+      /* Membership passes redeemed instead of paying for the session. */
+      const passRows = counted.filter((b) => Boolean(b.pass_id));
+      return {
+        passRedemptions: passRows.length,
+        passMinutes: passRows.reduce((s2, b) => s2 + n(b.pass_minutes), 0),
+      };
+    })(),
     ...(() => {
       /* Group Pass: whole-café bookings, tracked separately from single passes. */
       const groupCounted = counted.filter((b) => b.booking_type === "group");

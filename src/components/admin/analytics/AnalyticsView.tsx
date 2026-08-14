@@ -60,6 +60,20 @@ export function AnalyticsView({
             <StatCard label="UPI revenue" value={money(data.kpis.upiRevenue)} tone="good" hint="Approved as UPI" />
             <StatCard label="Cash revenue" value={money(data.kpis.cashRevenue)} tone="good" hint="Approved as cash" />
             <StatCard label="UTR submitted" value={data.payments.utrSubmitted} />
+            <StatCard
+              label="Pass redemptions"
+              value={data.kpis.passRedemptions}
+              hint="Membership / combo passes used"
+            />
+            <StatCard
+              label="Pass play time"
+              value={
+                data.kpis.passMinutes
+                  ? `${Math.round((data.kpis.passMinutes / 60) * 10) / 10}h`
+                  : "—"
+              }
+              hint="Hours covered by passes"
+            />
             <StatCard label="Group pass bookings" value={data.kpis.groupBookings} hint="Whole café reserved" />
             <StatCard label="Group pass revenue" value={money(data.kpis.groupRevenue)} tone="good" />
             <StatCard label="Avg group size" value={data.kpis.avgGroupSize || "—"} hint="Members per group" />

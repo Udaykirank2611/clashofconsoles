@@ -18,7 +18,7 @@ import type { AnalyticsResult, DrilldownRow, ReportRow, ReportType } from "./typ
 type Client = SupabaseClient<Database>;
 
 const BOOKING_SELECT =
-  "id, reference, branch_id, station_id, booking_date, start_time, end_time, players, booking_type, group_members, status, customer_name, customer_phone, coupon_code, session_amount, addons_amount, food_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, discount_amount, student_discount, student_discount_amount, tax_amount, total_amount, payment_utr, payment_mode, payment_submitted_at, created_at, gaming_stations(name, station_type), booking_items(kind, label, quantity, line_total, unit_price, menu_item_id, station_id, start_time, end_time)";
+  "id, reference, branch_id, station_id, booking_date, start_time, end_time, players, booking_type, group_members, status, customer_name, customer_phone, coupon_code, session_amount, addons_amount, food_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, discount_amount, student_discount, student_discount_amount, tax_amount, total_amount, payment_utr, payment_mode, pass_id, pass_minutes, payment_submitted_at, created_at, gaming_stations(name, station_type), booking_items(kind, label, quantity, line_total, unit_price, menu_item_id, station_id, start_time, end_time)";
 
 /** Branch ids this admin may read, or null when the account has no admin role. */
 async function resolveScope(supabase: Client, userId: string, branchId: string | null) {

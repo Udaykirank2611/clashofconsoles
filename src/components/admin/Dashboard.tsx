@@ -4,6 +4,7 @@ import { useBranchData } from "@/lib/admin/useBranchData";
 import { AdminButton, Panel, StatCard, money } from "./primitives";
 import { BookingsPanel, StatusPill } from "./BookingsPanel";
 import { CustomersPanel } from "./CustomersPanel";
+import { MembershipPassesPanel } from "./MembershipPassesPanel";
 import { StationsPanel } from "./StationsPanel";
 import { PricingPanel } from "./PricingPanel";
 import { CouponsPanel } from "./CouponsPanel";
@@ -26,6 +27,7 @@ const BRANCH_TABS = [
   "Dashboard",
   "Bookings",
   "Customers",
+  "Memberships",
   "Analytics",
   "Reports",
   "Stations",
@@ -192,6 +194,8 @@ export function AdminDashboard() {
         ) : null}
 
         {tab === "Customers" ? <CustomersPanel /> : null}
+
+        {tab === "Memberships" ? <MembershipPassesPanel branchId={branch.id} /> : null}
 
         {tab === "Analytics" ? (
           <AnalyticsView branches={branches} isOwner={isOwner} defaultBranchId={branch.id} />

@@ -400,6 +400,8 @@ export const createBooking = createServerFn({ method: "POST" })
           .max(10)
           .optional(),
         cart: z.array(z.object({ menuItemId: uuid, quantity: z.number().int().min(1).max(20) })),
+        /** Redeem a membership / combo / unlimited pass instead of paying for gaming. */
+        passCode: z.string().trim().toUpperCase().max(24).optional().or(z.literal("")),
         couponCode: z.string().trim().max(32).optional(),
         studentDiscount: z.boolean().optional(),
         /** Redeem an available loyalty reward: it extends the console session for free. */
@@ -435,6 +437,53 @@ export const createBooking = createServerFn({ method: "POST" })
       .eq("id", data.branchId)
       .maybeSingle();
     if (!branch) return { ok: false, message: "Branch unavailable." };
+
+    /* ---- Membership pass redemption ------------------------------------
+       A pass funds the gaming portion of this booking. The slot is still
+       reserved exactly like a paid booking, so nobody else can take it. */
+    let pass:
+      | {
+          id: string;
+          code: string;
+          pass_type: string;
+          plan_name: string;
+          remaining_minutes: number | null;
+          remaining_uses: number | null;
+          branch_id: string;
+        }
+      | null = null;
+    if (data.passCode) {
+      await db.rpc("expire_membership_passes");
+      const { data: row } = await db
+        .from("membership_passes")
+        .select("id, code, pass_type, plan_name, remaining_minutes, remaining_uses, branch_id, status, expires_on")
+        .eq("code", data.passCode)
+        .maybeSingle();
+      if (!row) return { ok: false, message: "No pass found with that Pass ID." };
+      if (row.branch_id !== data.branchId)
+        return { ok: false, message: "This pass belongs to a different branch." };
+      if (row.status === "used") return { ok: false, message: "This pass has already been fully used." };
+      const today = new Date().toISOString().slice(0, 10);
+      if (row.status === "expired" || String(row.expires_on) < today)
+        return { ok: false, message: "This pass has expired." };
+      if (row.remaining_minutes !== null && Number(row.remaining_minutes) <= 0)
+        return { ok: false, message: "This pass has no remaining hours." };
+      if (row.remaining_uses !== null && Number(row.remaining_uses) <= 0)
+        return { ok: false, message: "This pass has no remaining uses." };
+      pass = {
+        id: row.id,
+        code: row.code,
+        pass_type: row.pass_type as string,
+        plan_name: row.plan_name,
+        remaining_minutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
+        remaining_uses: row.remaining_uses === null ? null : Number(row.remaining_uses),
+        branch_id: row.branch_id,
+      };
+      if (data.bookingType === "group")
+        return { ok: false, message: "A membership pass cannot be used for a Group Pass booking." };
+      if ((data.passes ?? []).length)
+        return { ok: false, message: "You cannot buy a new pass while redeeming one." };
+    }
 
     /* Group Pass reserves the entire café, so it never carries a single
        station or extra experiences — only one time range across everything. */
@@ -482,6 +531,28 @@ export const createBooking = createServerFn({ method: "POST" })
         return { ok: false, message: "One of the selected experiences is no longer available." };
     }
 
+
+    /* Pass rules: Bronze/Silver/Gold cover PS5 console play only, the
+       Unlimited Pass allows a single hour per booking, and a metered pass can
+       never book more time than it has left. */
+    if (pass) {
+      const minutes = data.durationMinutes ?? 0;
+      if (!hasSlot) return { ok: false, message: "Pick a console, date and time to redeem your pass." };
+      const { isConsoleOnlyPass, UNLIMITED_MAX_MINUTES } = await import("@/lib/passes");
+      if (isConsoleOnlyPass(pass.pass_type as never)) {
+        if (station?.station_type !== "console")
+          return { ok: false, message: "This membership can only be used for PS5 console sessions." };
+        if (extras.length)
+          return { ok: false, message: "This membership covers PS5 console play only." };
+      }
+      if (pass.pass_type === "unlimited" && minutes > UNLIMITED_MAX_MINUTES)
+        return { ok: false, message: "The Unlimited Pass allows a maximum of 1 hour per booking." };
+      if (pass.remaining_minutes !== null && minutes > pass.remaining_minutes)
+        return {
+          ok: false,
+          message: `This pass has only ${Math.round((pass.remaining_minutes / 60) * 10) / 10} hours left.`,
+        };
+    }
 
     // Final conflict check, ignoring this visitor's own active locks.
     const { data: busyRows } = await db.rpc("get_slot_availability", {
@@ -601,7 +672,7 @@ export const createBooking = createServerFn({ method: "POST" })
 
     // The reward is free play time, never a discount: the guest still pays the
     // full price of the duration they booked. A Group Pass is a flat branch rate.
-    const sessionAmount = isGroup ? groupRate!.price : fullSessionAmount;
+    const sessionAmount = pass ? 0 : isGroup ? groupRate!.price : fullSessionAmount;
 
 
 
@@ -841,8 +912,10 @@ export const createBooking = createServerFn({ method: "POST" })
         student_discount_amount: studentDiscount,
         tax_amount: tax,
         total_amount: total,
-        status: "awaiting_payment",
-        payment_expires_at: paymentExpiresAt,
+        pass_id: pass?.id ?? null,
+        pass_minutes: pass ? (data.durationMinutes ?? 0) : 0,
+        status: pass && total <= 0 ? "confirmed" : "awaiting_payment",
+        payment_expires_at: pass && total <= 0 ? null : paymentExpiresAt,
       })
       .select("id, reference")
       .maybeSingle();
@@ -933,6 +1006,24 @@ export const createBooking = createServerFn({ method: "POST" })
         .eq("id", rewardId)
         .eq("status", "available");
     }
+    /* Deduct from the pass only once the slot is safely reserved. */
+    if (pass) {
+      const minutes = data.durationMinutes ?? 0;
+      if (pass.remaining_minutes !== null) {
+        const left = Math.max(0, pass.remaining_minutes - minutes);
+        await db
+          .from("membership_passes")
+          .update({ remaining_minutes: left, status: left <= 0 ? "used" : "active" })
+          .eq("id", pass.id);
+      } else if (pass.remaining_uses !== null) {
+        const left = Math.max(0, pass.remaining_uses - 1);
+        await db
+          .from("membership_passes")
+          .update({ remaining_uses: left, status: left <= 0 ? "used" : "active" })
+          .eq("id", pass.id);
+      }
+    }
+
     if (couponId) {
       const { data: c } = await db
         .from("coupons")
