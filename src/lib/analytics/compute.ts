@@ -52,6 +52,8 @@ export interface RawBooking {
   payment_mode: string | null;
   booking_type?: string | null;
   group_members?: number | null;
+  pass_id?: string | null;
+  pass_minutes?: number | null;
   payment_submitted_at: string | null;
   created_at: string;
   gaming_stations: { name: string; station_type: string } | null;

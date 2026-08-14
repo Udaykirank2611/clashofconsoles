@@ -85,6 +85,9 @@ export function resolveRange(preset: RangePreset, custom?: { from: string; to: s
 }
 
 export interface Kpis {
+  /** Bookings whose gaming was covered by a membership / combo pass. */
+  passRedemptions: number;
+  passMinutes: number;
   totalRevenue: number;
   gamingRevenue: number;
   foodRevenue: number;
