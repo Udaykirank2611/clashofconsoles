@@ -377,7 +377,12 @@ export const createBooking = createServerFn({ method: "POST" })
         startTime: timeStr.optional().nullable(),
         durationMinutes: duration.optional().nullable(),
         players: z.number().int().min(1).max(4),
+        /** "group" reserves the whole café for one time range. */
+        bookingType: z.enum(["single", "group"]).optional(),
+        groupMembers: z.number().int().min(1).max(10).optional(),
+        groupRateId: uuid.optional(),
         gameTitle: z.string().trim().max(60).optional().or(z.literal("")),
+
         extras: z
           .array(
             z.object({
