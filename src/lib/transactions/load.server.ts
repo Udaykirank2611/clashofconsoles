@@ -31,7 +31,11 @@ export async function loadTransactions(
   input: { branchId: string | null; from: string; to: string },
 ): Promise<TransactionsPayload> {
   // Finished sessions become completed first; a running/future session is not yet money.
-  await supabase.rpc("complete_past_bookings");
+  {
+    // Runs with server privileges: the routine is not exposed to signed-in clients.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.rpc("complete_past_bookings");
+  }
   let q = supabase
     .from("bookings")
     .select(
