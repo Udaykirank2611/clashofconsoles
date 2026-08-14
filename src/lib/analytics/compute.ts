@@ -49,6 +49,7 @@ export interface RawBooking {
   tax_amount: number;
   total_amount: number;
   payment_utr: string | null;
+  payment_mode: string | null;
   payment_submitted_at: string | null;
   created_at: string;
   gaming_stations: { name: string; station_type: string } | null;
@@ -88,6 +89,10 @@ export const SERVICE_LABELS: Record<string, string> = {
   private_theatre: "Private Theatre",
   private_lounge: "Private Gaming Lounge",
 };
+
+/** Normalised payment-mode label used everywhere in analytics + reports. */
+export const paymentModeLabel = (mode?: string | null) =>
+  mode === "upi" ? "UPI" : mode === "cash" ? "Cash" : "Not recorded";
 
 const minutes = (t?: string | null) => {
   if (!t) return null;
@@ -207,6 +212,26 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
     expired: bookings.filter((b) => b.status === "expired").length,
     pending: pendingRows.length,
     avgValue: revenueRows.length ? Math.round(totalRevenue / revenueRows.length) : 0,
+    upiRevenue: Math.round(
+      revenueRows.filter((b) => b.payment_mode === "upi").reduce((s2, b) => s2 + n(b.total_amount), 0),
+    ),
+    cashRevenue: Math.round(
+      revenueRows.filter((b) => b.payment_mode === "cash").reduce((s2, b) => s2 + n(b.total_amount), 0),
+    ),
+  };
+
+  // ---- payment modes ------------------------------------------------------
+  const modeRow = (mode: "upi" | "cash" | null) => {
+    const rows = revenueRows.filter((b) => (b.payment_mode ?? null) === mode);
+    return {
+      revenue: Math.round(rows.reduce((s2, b) => s2 + n(b.total_amount), 0)),
+      bookings: rows.length,
+    };
+  };
+  const paymentModes = {
+    upi: modeRow("upi"),
+    cash: modeRow("cash"),
+    unrecorded: modeRow(null),
   };
 
   // ---- daily series -------------------------------------------------------
@@ -494,6 +519,7 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
       expired: bookings.filter((b) => b.status === "expired").length,
       utrSubmitted: bookings.filter((b) => !!b.payment_utr).length,
     },
+    paymentModes,
     branchComparison,
   };
 }
@@ -533,6 +559,7 @@ export function buildReportRows(
         finalAmount: Math.round(split.gaming),
         status: b.status,
         paymentStatus: paymentStatus(b),
+        paymentMode: paymentModeLabel(b.payment_mode),
       });
     }
     if (type !== "gaming" && split.foodGross > 0) {
@@ -553,6 +580,7 @@ export function buildReportRows(
         finalAmount: Math.round(split.food),
         status: b.status,
         paymentStatus: paymentStatus(b),
+        paymentMode: paymentModeLabel(b.payment_mode),
       });
     }
   }
