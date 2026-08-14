@@ -180,7 +180,9 @@ export function ConsoleSelect({
   onToggle,
   slotBlocked,
   timeBlocked,
+  extraMinutes,
 }: {
+
   label: string;
   description?: string | undefined;
   consoles: Station[];
@@ -205,15 +207,19 @@ export function ConsoleSelect({
   slotBlocked: (stationId: string, slot: string, minutes: number) => boolean;
   /** Is this start time impossible for every console (past / after closing)? */
   timeBlocked: (slot: string, minutes: number) => boolean;
+  /** Extra free minutes (loyalty reward) that must also fit after the paid slot. */
+  extraMinutes?: number;
 }) {
   const minutes = durationMinutes ?? durations[0]?.minutes ?? 60;
+  const needed = minutes + (extraMinutes ?? 0);
   const bookable = consoles.filter((s) => s.status === "available");
 
   const statusOf = (s: Station): Availability => {
     if (s.status !== "available") return "maintenance";
-    if (startTime && slotBlocked(s.id, startTime, minutes)) return "occupied";
+    if (startTime && slotBlocked(s.id, startTime, needed)) return "occupied";
     return "available";
   };
+
 
   return (
     <div
@@ -289,11 +295,19 @@ export function ConsoleSelect({
           {stationId ? (
             <div className="space-y-7 animate-[step-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]">
               <div>
-                <Label>Start time</Label>
+                <Label>
+                  Start time
+                  {extraMinutes ? (
+                    <span className="ml-2 normal-case tracking-normal text-emerald-300">
+                      only slots that fit your free {extraMinutes} min extension
+                    </span>
+                  ) : null}
+                </Label>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">
                   {slots.map((slot) => {
                     const blocked =
-                      timeBlocked(slot, minutes) || slotBlocked(stationId, slot, minutes);
+                      timeBlocked(slot, needed) || slotBlocked(stationId, slot, needed);
+
                     const on = startTime === slot;
                     return (
                       <button
