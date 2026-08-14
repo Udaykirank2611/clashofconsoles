@@ -538,6 +538,8 @@ export const createBooking = createServerFn({ method: "POST" })
     if (pass) {
       const minutes = data.durationMinutes ?? 0;
       if (!hasSlot) return { ok: false, message: "Pick a console, date and time to redeem your pass." };
+      if (data.players !== 1)
+        return { ok: false, message: "A pass covers a single player only — book 1 player." };
       const { isConsoleOnlyPass, UNLIMITED_MAX_MINUTES } = await import("@/lib/passes");
       if (isConsoleOnlyPass(pass.pass_type as never)) {
         if (station?.station_type !== "console")

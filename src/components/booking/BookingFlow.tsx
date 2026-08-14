@@ -27,7 +27,7 @@ import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 import { PassRedeem, type AppliedPass } from "./PassRedeem";
-import { PASS_TYPE_LABELS } from "@/lib/passes";
+import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
 
 
 import {
@@ -578,6 +578,8 @@ export function BookingFlow() {
   const groupAmount = isGroup && groupStart && groupRate ? Math.round(Number(groupRate.price)) : 0;
   /** A redeemed pass funds the console session, so it is never charged. */
   const passCoversSession = Boolean(appliedPass) && !isGroup;
+  /** Bronze / Silver / Gold memberships cover PS5 console play for one player only. */
+  const passConsoleOnly = appliedPass ? isConsoleOnlyPass(appliedPass.pass.passType) : false;
   const fullSessionAmount = isGroup
     ? groupAmount
     : startTime && durationMinutes
@@ -1116,6 +1118,8 @@ export function BookingFlow() {
               {...(initialPassCode ? { initialCode: initialPassCode } : {})}
               onApply={(a) => {
                 setAppliedPass(a);
+                setPlayers(1);
+                setExtras({});
                 setBookingType("single");
                 setPasses({});
                 setPassesOn(false);
@@ -1457,7 +1461,7 @@ export function BookingFlow() {
                 durations={durations}
                 priceFor={(m) => rateFor(rates, players, m)}
                 players={players}
-                playerOptions={PLAYER_OPTIONS}
+                playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
                 playerPrice={(p) => rateFor(rates, p, 60)}
                 onPlayers={setPlayers}
                 startTime={startTime}
@@ -1492,7 +1496,10 @@ export function BookingFlow() {
             ) : null}
 
             <div className="space-y-4">
-              {(isGroup ? [] : experienceGroups.filter((g) => !g.isConsole)).map((g) => {
+              {(isGroup || passConsoleOnly
+                ? []
+                : experienceGroups.filter((g) => !g.isConsole)
+              ).map((g) => {
                 const isConsole = g.isConsole;
                 const selectedId = isConsole
                   ? stationId
