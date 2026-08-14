@@ -30,6 +30,8 @@ export async function loadTransactions(
   supabase: Client,
   input: { branchId: string | null; from: string; to: string },
 ): Promise<TransactionsPayload> {
+  // Finished sessions become completed first; a running/future session is not yet money.
+  await supabase.rpc("complete_past_bookings");
   let q = supabase
     .from("bookings")
     .select(
@@ -66,7 +68,10 @@ export async function loadTransactions(
     supabase.from("customers").select("phone, total_visits"),
   ]);
 
-  const bookings = (bookingsRes.data ?? []) as unknown as (Record<string, unknown> & {
+  const bookings = ((bookingsRes.data ?? []) as unknown[]).filter((row) => {
+    const b = row as { status: string; station_id: string | null };
+    return b.status !== "confirmed" || !b.station_id;
+  }) as unknown as (Record<string, unknown> & {
     branches: { name: string } | null;
     gaming_stations: { name: string; station_type: string } | null;
   })[];

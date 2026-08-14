@@ -15,14 +15,15 @@ export async function loadReconciliation(
   supabase: Client,
   input: { branchId: string | null; from: string; to: string },
 ): Promise<ReconciliationPayload> {
+  await supabase.rpc("complete_past_bookings");
   let bq = supabase
     .from("bookings")
     .select(
-      "id, reference, booking_date, branch_id, customer_name, total_amount, payment_mode, status, branches(name)",
+      "id, reference, booking_date, branch_id, customer_name, total_amount, payment_mode, status, station_id, branches(name)",
     )
     .gte("booking_date", input.from)
     .lte("booking_date", input.to)
-    .in("status", ["confirmed", "completed"])
+    .or("status.eq.completed,and(status.eq.confirmed,station_id.is.null)")
     .order("booking_date", { ascending: true })
     .limit(5000);
   if (input.branchId) bq = bq.eq("branch_id", input.branchId);

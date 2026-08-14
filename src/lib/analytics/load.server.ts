@@ -7,6 +7,7 @@ import {
   hasGaming,
   isFoodOnly,
   isPending,
+  isRealized,
   SERVICE_LABELS,
   type RawBooking,
   type RawBranch,
@@ -42,6 +43,8 @@ async function resolveScope(supabase: Client, userId: string, branchId: string |
 }
 
 async function fetchBookings(supabase: Client, ids: string[], from: string, to: string) {
+  // Flip finished sessions to completed so revenue only lands after the slot ends.
+  await supabase.rpc("complete_past_bookings");
   const { data } = await supabase
     .from("bookings")
     .select(BOOKING_SELECT)
@@ -259,7 +262,7 @@ export async function loadTodayOverview(
     pendingFoodOrders: bookings.filter((b) => isFoodOnly(b) && isPending(b.status)).length,
     todaysRevenue: Math.round(
       bookings
-        .filter((b) => b.status === "confirmed" || b.status === "completed")
+        .filter(isRealized)
         .reduce((s, b) => s + Number(b.total_amount), 0),
     ),
     todaysBookings: live.filter(hasGaming).length,
