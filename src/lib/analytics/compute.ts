@@ -225,7 +225,10 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
       const groupCounted = counted.filter((b) => b.booking_type === "group");
       const groupRevenueRows = revenueRows.filter((b) => b.booking_type === "group");
       const members = groupCounted.reduce((s2, b) => s2 + n(b.group_members), 0);
-      const minutes = groupCounted.reduce((s2, b) => s2 + stationMinutes(b), 0);
+      const minutes = groupCounted.reduce(
+        (s2, b) => s2 + [...stationMinutes(b).values()].reduce((a, m) => a + m, 0),
+        0,
+      );
       return {
         groupBookings: groupCounted.length,
         groupRevenue: Math.round(
