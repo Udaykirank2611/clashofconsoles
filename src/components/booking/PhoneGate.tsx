@@ -7,6 +7,7 @@ import {
   lookupCustomer,
   registerCustomer,
   VISITS_PER_REWARD,
+  rewardLabel,
   type LoyaltyCustomer,
 } from "@/lib/loyalty.functions";
 import { Field } from "./ui";
@@ -124,7 +125,7 @@ export function PhoneGate({ onReady }: { onReady: (customer: LoyaltyCustomer) =>
 
         <p className="mt-6 flex items-center gap-2 rounded-2xl border border-border bg-background/40 px-4 py-3 text-[0.68rem] text-muted-foreground">
           <Gift className="size-3.5 shrink-0 text-cyan" />
-          Play {VISITS_PER_REWARD} gaming sessions and get 30 minutes free.
+          {VISITS_PER_REWARD}th completed visit → 30 Minutes FREE · 10th completed visit → 1 Hour FREE.
         </p>
       </div>
     </div>
@@ -145,13 +146,18 @@ export function LoyaltyStrip({ customer }: { customer: LoyaltyCustomer }) {
         </span>
         {eligible ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-3 py-1 text-[0.65rem] font-bold text-emerald-300">
-            <Sparkles className="size-3" /> 🎉 You have a FREE 30 Minute Gaming Reward available.
+            <Sparkles className="size-3" /> 🎉 You have a FREE {rewardLabel(customer.reward?.minutes ?? 30)}{" "}
+            Gaming Reward available
+            {customer.reward?.expiresAtVisit
+              ? ` · expires at visit ${customer.reward.expiresAtVisit}`
+              : ""}
+            .
           </span>
         ) : (
           <span className="flex items-center gap-2 text-[0.68rem] font-semibold text-cyan">
             {customer.cycleProgress} / {VISITS_PER_REWARD} visits
             <span className="text-muted-foreground">
-              · {customer.visitsToReward} more for 30 free minutes
+              · {customer.visitsToReward} more for {rewardLabel(customer.nextRewardMinutes)} free
             </span>
           </span>
         )}

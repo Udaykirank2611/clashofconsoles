@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Gift, Phone } from "lucide-react";
 import { listCustomers } from "@/lib/admin.functions";
+import { rewardLabel } from "@/lib/loyalty.functions";
 import { Panel } from "./primitives";
 
 /** Read-only loyalty roster: name, phone, visits and available rewards. */
@@ -36,17 +37,22 @@ export function CustomersPanel() {
                 </a>
               </div>
               <span className="text-xs text-muted-foreground">
-                <strong className="text-sm font-black text-foreground">{c.totalVisits}</strong> visits
+                <strong className="text-sm font-black text-foreground">{c.totalVisits}</strong> completed
+                visits
               </span>
-              <span
-                className={
-                  c.rewardsAvailable
-                    ? "inline-flex items-center gap-1 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-300"
-                    : "inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
-                }
-              >
-                <Gift className="size-3" /> {c.rewardsAvailable} reward{c.rewardsAvailable === 1 ? "" : "s"}
-              </span>
+              {c.rewardStatus === "available" ? (
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-300">
+                  <Gift className="size-3" />
+                  {rewardLabel(c.rewardMinutes ?? 30)}
+                  <span className="font-medium normal-case tracking-normal text-muted-foreground">
+                    Available · expires at {c.rewardExpiresAtVisit}th visit
+                  </span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  <Gift className="size-3" /> No active reward
+                </span>
+              )}
             </div>
           ))}
         </div>

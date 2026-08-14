@@ -170,6 +170,7 @@ export type Database = {
           payment_utr: string | null
           players: number
           reference: string
+          reward_minutes: number
           session_amount: number
           special_instructions: string | null
           start_time: string | null
@@ -206,6 +207,7 @@ export type Database = {
           payment_utr?: string | null
           players?: number
           reference: string
+          reward_minutes?: number
           session_amount?: number
           special_instructions?: string | null
           start_time?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           payment_utr?: string | null
           players?: number
           reference?: string
+          reward_minutes?: number
           session_amount?: number
           special_instructions?: string | null
           start_time?: string | null
@@ -1095,19 +1098,31 @@ export type Database = {
       rewards: {
         Row: {
           booking_id: string | null
+          created_at: string
+          earned_at_visit: number | null
+          expires_at_visit: number | null
           id: string
+          minutes: number
           phone: string
           status: Database["public"]["Enums"]["reward_status"]
         }
         Insert: {
           booking_id?: string | null
+          created_at?: string
+          earned_at_visit?: number | null
+          expires_at_visit?: number | null
           id?: string
+          minutes?: number
           phone: string
           status?: Database["public"]["Enums"]["reward_status"]
         }
         Update: {
           booking_id?: string | null
+          created_at?: string
+          earned_at_visit?: number | null
+          expires_at_visit?: number | null
           id?: string
+          minutes?: number
           phone?: string
           status?: Database["public"]["Enums"]["reward_status"]
         }
@@ -1401,7 +1416,7 @@ export type Database = {
         | "payment_pending"
       coupon_category: "gaming" | "food" | "entire_bill"
       discount_type: "flat" | "percent"
-      reward_status: "available" | "used"
+      reward_status: "available" | "used" | "expired"
       station_status: "available" | "maintenance" | "blocked"
       station_type:
         | "console"
@@ -1550,7 +1565,7 @@ export const Constants = {
       ],
       coupon_category: ["gaming", "food", "entire_bill"],
       discount_type: ["flat", "percent"],
-      reward_status: ["available", "used"],
+      reward_status: ["available", "used", "expired"],
       station_status: ["available", "maintenance", "blocked"],
       station_type: [
         "console",
