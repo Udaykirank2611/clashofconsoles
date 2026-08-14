@@ -1760,6 +1760,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_past_bookings: { Args: never; Returns: undefined }
       expire_membership_passes: { Args: never; Returns: undefined }
       expire_stale_bookings: { Args: never; Returns: undefined }
       get_slot_availability: {
