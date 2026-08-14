@@ -1,79 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { LiveBranchAvailability } from "@/lib/availability";
+
+export type { LiveBranchAvailability, LiveService } from "@/lib/availability";
 
 /**
  * Live availability for the home page.
- * Everything is derived: working units come from the station catalogue the
- * admin manages (maintenance/blocked units are never counted) and occupied
- * units come from live bookings and active holds. No manual editing.
+ * Working units come from the station catalogue (maintenance/blocked units are
+ * never counted); occupied units come from live bookings and active holds.
  */
-
-export interface LiveService {
-  station_type: string;
-  label: string;
-  total: number;
-  available: number;
-  /** "18:30" — earliest time a unit frees up when fully booked. */
-  next_available: string | null;
-}
-
-export interface LiveBranchAvailability {
-  id: string;
-  slug: string;
-  name: string;
-  city: string;
-  opens_at: string;
-  closes_at: string;
-  is_open: boolean;
-  status: "open" | "closed" | "few" | "full";
-  services: LiveService[];
-}
-
-const LABELS: Record<string, string> = {
-  console: "PS5 Gaming",
-  driving_simulator: "Racing Cockpit",
-  vr: "VR Gaming",
-  snooker: "Snooker",
-  private_theatre: "Private Theatre",
-  private_lounge: "Gaming Lounge",
-};
-
-const ORDER = [
-  "console",
-  "driving_simulator",
-  "vr",
-  "snooker",
-  "private_theatre",
-  "private_lounge",
-];
-
-const toMin = (t: string) => {
-  const [h = "0", m = "0"] = t.split(":");
-  return Number(h) * 60 + Number(m);
-};
-const toHHMM = (mins: number) =>
-  `${String(Math.floor(mins / 60) % 24).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
-
-/** Current date + minute-of-day in the venue's timezone (IST). */
-function nowInIst() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
-  return {
-    date: `${get("year")}-${get("month")}-${get("day")}`,
-    minutes: (Number(get("hour")) % 24) * 60 + Number(get("minute")),
-  };
-}
-
 export const getLiveAvailability = createServerFn({ method: "GET" }).handler(
   async (): Promise<LiveBranchAvailability[]> => {
     const { adminClient } = await import("@/lib/booking/repository.server");
+    const { LABELS, ORDER, toMin, toHHMM, nowInIst } = await import("@/lib/availability");
     const db = await adminClient();
     const { date, minutes } = nowInIst();
 
@@ -103,12 +41,12 @@ export const getLiveAvailability = createServerFn({ method: "GET" }).handler(
 
       const open = toMin(b.opens_at);
       const close = toMin(b.closes_at);
-      const isOpen = close > open ? minutes >= open && minutes < close : minutes >= open || minutes < close;
+      const isOpen =
+        close > open ? minutes >= open && minutes < close : minutes >= open || minutes < close;
 
-      // Working units only — maintenance and blocked consoles never count.
       const working = stations.filter((s) => s.branch_id === b.id && s.status === "available");
 
-      const services: LiveService[] = [];
+      const services = [];
       for (const type of ORDER) {
         const units = working.filter((s) => s.station_type === type);
         if (!units.length) continue;
@@ -118,9 +56,7 @@ export const getLiveAvailability = createServerFn({ method: "GET" }).handler(
         for (const u of units) {
           const covering = busy.filter(
             (r) =>
-              r.station_id === u.id &&
-              toMin(r.start_time) <= minutes &&
-              toMin(r.end_time) > minutes,
+              r.station_id === u.id && toMin(r.start_time) <= minutes && toMin(r.end_time) > minutes,
           );
           if (!covering.length) continue;
           occupied += 1;
