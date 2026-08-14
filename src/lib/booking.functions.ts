@@ -544,6 +544,18 @@ export const createBooking = createServerFn({ method: "POST" })
       if (isRangeBusy(busy, e.stationId, e.startTime, minutes)) return { ok: false, message: TAKEN };
     }
 
+    /* Group Pass: every gaming experience at the branch must be free for the
+       whole duration, and the range must fit inside opening hours. */
+    if (isGroup) {
+      const minutes = groupRate!.duration_minutes;
+      const gStart = Number(data.startTime!.slice(0, 2)) * 60 + Number(data.startTime!.slice(3, 5));
+      const closeM =
+        Number(String(branch.closes_at).slice(0, 2)) * 60 + Number(String(branch.closes_at).slice(3, 5));
+      if (closeM > gStart && gStart + minutes > closeM) return { ok: false, message: TAKEN };
+      for (const st of groupStations)
+        if (isRangeBusy(busy, st.id, data.startTime!, minutes)) return { ok: false, message: TAKEN };
+    }
+
     // The same phone number may not hold two overlapping bookings.
     const { data: samePhone } = await db
       .from("bookings")
@@ -551,18 +563,21 @@ export const createBooking = createServerFn({ method: "POST" })
       .eq("customer_phone", data.customer.phone)
       .eq("booking_date", data.date)
       .in("status", ["pending", "confirmed", "awaiting_payment", "payment_pending"]);
-    const startMin = hasSlot
+    const occupiesTime = hasSlot || isGroup;
+    const blockMinutes = isGroup ? groupRate!.duration_minutes : slotMinutes;
+    const startMin = occupiesTime
       ? Number(data.startTime!.slice(0, 2)) * 60 + Number(data.startTime!.slice(3, 5))
       : 0;
-    const endMin = startMin + slotMinutes;
+    const endMin = startMin + blockMinutes;
     const clashes =
-      hasSlot &&
+      occupiesTime &&
       (samePhone ?? []).some((b) => {
         if (!b.start_time || !b.end_time) return false;
         const bs = Number(b.start_time.slice(0, 2)) * 60 + Number(b.start_time.slice(3, 5));
         const be = Number(b.end_time.slice(0, 2)) * 60 + Number(b.end_time.slice(3, 5));
         return startMin < be && bs < endMin;
       });
+
     if (clashes)
       return {
         ok: false,
