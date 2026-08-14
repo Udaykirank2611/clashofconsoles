@@ -101,6 +101,49 @@
   --ease-silk: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/*
+ * Home page palette — neon pink + electric blue.
+ * Scoped so the rest of the app keeps the original arena tokens.
+ */
+.theme-neon-pink {
+  /* Electric blue stays the lead action colour, slightly deeper for contrast */
+  --primary: oklch(0.64 0.21 262);
+  --primary-foreground: oklch(0.14 0.01 260);
+  /* Neon pink replaces the purple accent */
+  --violet: oklch(0.68 0.27 350);
+  /* Hot magenta replaces the soft cyan highlight */
+  --cyan: oklch(0.75 0.23 340);
+  --accent: oklch(0.68 0.27 350);
+  --accent-foreground: oklch(0.99 0.003 350);
+  --ring: oklch(0.68 0.27 350);
+
+  --background: oklch(0.12 0.012 300);
+  --surface: oklch(0.16 0.016 305);
+  --surface-2: oklch(0.2 0.02 310);
+  --card: oklch(0.16 0.016 305);
+  --popover: oklch(0.16 0.016 305);
+  --secondary: oklch(0.23 0.02 310);
+  --muted: oklch(0.21 0.018 308);
+  --muted-foreground: oklch(0.74 0.03 320);
+  --border: oklch(0.85 0.12 340 / 14%);
+  --input: oklch(0.85 0.12 340 / 18%);
+
+  --gradient-arena: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--primary) 42%, transparent),
+    color-mix(in oklab, var(--violet) 38%, transparent) 55%,
+    color-mix(in oklab, var(--cyan) 26%, transparent)
+  );
+  --gradient-text: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--primary) 65%, white),
+    oklch(0.99 0 0) 40%,
+    color-mix(in oklab, var(--violet) 78%, white)
+  );
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--violet) 40%, transparent),
+    0 18px 60px -18px color-mix(in oklab, var(--violet) 60%, transparent);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
