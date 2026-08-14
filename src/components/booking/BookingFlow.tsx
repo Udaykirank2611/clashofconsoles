@@ -27,7 +27,11 @@ import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 
-import type { LoyaltyCustomer } from "@/lib/loyalty.functions";
+import {
+  REWARD_MIN_BOOKING_MINUTES,
+  rewardLabel,
+  type LoyaltyCustomer,
+} from "@/lib/loyalty.functions";
 import {
   createBooking,
   getActiveHold,
