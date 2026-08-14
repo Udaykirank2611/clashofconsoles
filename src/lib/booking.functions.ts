@@ -585,10 +585,10 @@ export const createBooking = createServerFn({ method: "POST" })
         .select("id, minutes")
         .eq("phone", loyaltyPhone)
         .eq("status", "available")
-        .is("booking_id", null)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
       if (reward) {
         rewardId = reward.id;
         rewardMinutes = Number(reward.minutes ?? 30);
