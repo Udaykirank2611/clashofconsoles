@@ -199,7 +199,13 @@ function PaymentPage() {
                       ? `${formatTime(booking.start_time)} – ${formatTime(booking.end_time)}`
                       : "—"
                   }
+                  sub={
+                    booking.reward_minutes
+                      ? `Includes ${booking.reward_minutes} min loyalty free time`
+                      : undefined
+                  }
                 />
+
                 <Info label="Players" value={`${booking.players} ${booking.players === 1 ? "player" : "players"}`} />
                 <Info label="Guest" value={booking.customer_name} sub={booking.customer_phone} />
               </div>
