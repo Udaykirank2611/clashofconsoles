@@ -58,7 +58,13 @@ import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
 import { ConsoleSelect } from "./ConsoleSelect";
 import type { CouponCategory } from "@/lib/booking/pricing";
 import { BillSummary, durationLabel, type BillLine } from "./BillSummary";
-import type { CartLine, CouponResult, Station } from "@/lib/booking/types";
+import {
+  GROUP_PASS_MAX_MEMBERS,
+  type BookingType,
+  type CartLine,
+  type CouponResult,
+  type Station,
+} from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
 
@@ -1253,7 +1259,125 @@ export function BookingFlow() {
 
 
 
-            {consoles.length ? (
+            <div>
+              <FieldLabel>Booking Type</FieldLabel>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    {
+                      id: "single" as const,
+                      icon: "🎮",
+                      title: "Single Pass",
+                      body: "For individual gaming bookings.",
+                    },
+                    {
+                      id: "group" as const,
+                      icon: "👥",
+                      title: "Group Pass",
+                      body: `Book the entire gaming café exclusively for your group. Up to ${GROUP_PASS_MAX_MEMBERS} members, with access to every gaming experience at this branch.`,
+                    },
+                  ]
+                ).map((opt) => {
+                  const active = bookingType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        if (bookingType === opt.id) return;
+                        setBookingType(opt.id);
+                        setStationId(null);
+                        setStartTime(null);
+                        setDurationMinutes(null);
+                        setConsoleOn(false);
+                        setExtras({});
+                        setGroupStart(null);
+                      }}
+                      className={cn(
+                        "rounded-3xl border border-border bg-surface/60 p-5 text-left backdrop-blur-xl transition-all duration-300",
+                        active
+                          ? "border-transparent shadow-[0_0_0_1px_var(--cyan)]"
+                          : "hover:border-cyan/40",
+                      )}
+                    >
+                      <span className="text-2xl">{opt.icon}</span>
+                      <p className="mt-2 text-sm font-extrabold">{opt.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{opt.body}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {isGroup ? (
+              <div className="space-y-5 rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl">
+                <div>
+                  <FieldLabel>Number of members</FieldLabel>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {Array.from({ length: GROUP_PASS_MAX_MEMBERS }, (_, i) => i + 1).map((n) => (
+                      <Chip key={n} active={groupMembers === n} onClick={() => setGroupMembers(n)}>
+                        {n}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel>Duration</FieldLabel>
+                  {groupRates.length ? (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      {groupRates.map((r) => (
+                        <DurationCard
+                          key={r.id}
+                          label={r.label}
+                          price={inr(Math.round(Number(r.price)))}
+                          active={groupRateId === r.id}
+                          onClick={() => {
+                            setGroupRateId(r.id);
+                            setGroupStart(null);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Group Pass pricing has not been set up for this branch yet.
+                    </p>
+                  )}
+                </div>
+
+                {groupRate ? (
+                  <div>
+                    <FieldLabel>Start time</FieldLabel>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Only times where every gaming experience is free for the full duration are shown.
+                    </p>
+                    {groupSlots.length ? (
+                      <div className="mt-3">
+                        <SlotGrid
+                          slots={slots}
+                          value={groupStart}
+                          onChange={setGroupStart}
+                          blocked={(slot) => groupSlotBlocked(slot, groupRate.duration_minutes)}
+                        />
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs font-semibold text-amber-300">
+                        No start time on this day has the whole café free for {groupRate.label}. Try
+                        another day or a shorter duration.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                <p className="rounded-2xl border border-border bg-surface/50 px-4 py-3 text-xs text-muted-foreground">
+                  This booking reserves the entire gaming café exclusively for your group during the
+                  selected time.
+                </p>
+              </div>
+            ) : null}
+
+            {!isGroup && consoles.length ? (
               <ConsoleSelect
                 label={consoles[0]!.group_label?.trim() || "Console Gaming"}
                 description={consoles[0]?.description ?? undefined}
@@ -1296,7 +1420,7 @@ export function BookingFlow() {
             ) : null}
 
             <div className="space-y-4">
-              {experienceGroups.filter((g) => !g.isConsole).map((g) => {
+              {(isGroup ? [] : experienceGroups.filter((g) => !g.isConsole)).map((g) => {
                 const isConsole = g.isConsole;
                 const selectedId = isConsole
                   ? stationId
