@@ -90,7 +90,10 @@ export const listPasses = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ branchId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<PassInfo[]> => {
-    await context.supabase.rpc("expire_membership_passes");
+    {
+      const { adminClient } = await import("@/lib/booking/repository.server");
+      await (await adminClient()).rpc("expire_membership_passes");
+    }
     const { data: rows } = await context.supabase
       .from("membership_passes")
       .select("*, branches(name)")
