@@ -1,87 +1,122 @@
 import type { DailyClosingSummary } from "@/lib/closing/types";
+import { download, formatDuration, inr, printReport, section } from "@/lib/reporting/format";
 
-/** Flat label/value pairs — every statistic shown on the Daily Closing page. */
-export function closingRows(s: DailyClosingSummary): [string, string | number][] {
+type Row = [string, string | number];
+
+/** Ordered sections of the Daily Closing report, with display-ready values. */
+export function closingSections(s: DailyClosingSummary): { title: string; rows: Row[] }[] {
   const t = s.totals;
   return [
-    ["Branch", s.branchName],
-    ["Date", s.date],
-    ["Total bookings", t.totalBookings],
-    ["Completed bookings", t.completedBookings],
-    ["Cancelled bookings", t.cancelledBookings],
-    ["Pending bookings", t.pendingBookings],
-    ["Total customers", t.totalCustomers],
-    ["Walk-in customers", t.walkInCustomers],
-    ["Website bookings", t.websiteBookings],
-    ["Gaming revenue", t.gamingRevenue],
-    ["Food revenue", t.foodRevenue],
-    ["Membership revenue", t.membershipRevenue],
-    ["Coupon discounts", t.couponDiscounts],
-    ["Student discounts", t.studentDiscounts],
-    ["Cash revenue", t.cashRevenue],
-    ["UPI revenue", t.upiRevenue],
-    ["Total revenue", t.totalRevenue],
-    ["Most booked console", s.popular.console],
-    ["Most played game", s.popular.game],
-    ["Most ordered food", s.popular.food],
-    ["Most used coupon", s.popular.coupon],
-    ["Most popular membership", s.popular.membership],
-    ["Peak booking hour", s.insights.peakHour],
-    ["Average booking duration (min)", s.insights.avgDurationMinutes],
-    ["Average customer spend", s.insights.avgCustomerSpend],
-    ["Most active branch", s.insights.mostActiveBranch],
-    ["Console utilisation %", s.insights.consoleUtilization],
+    {
+      title: "Booking summary",
+      rows: [
+        ["Total bookings", t.totalBookings],
+        ["Completed bookings", t.completedBookings],
+        ["Cancelled bookings", t.cancelledBookings],
+        ["Pending bookings", t.pendingBookings],
+        ["Total customers", t.totalCustomers],
+        ["Walk-in customers", t.walkInCustomers],
+        ["Website bookings", t.websiteBookings],
+      ],
+    },
+    {
+      title: "Revenue",
+      rows: [
+        ["Gaming revenue", inr(t.gamingRevenue)],
+        ["Food revenue", inr(t.foodRevenue)],
+        ["Membership revenue", inr(t.membershipRevenue)],
+        ["Cash revenue", inr(t.cashRevenue)],
+        ["UPI revenue", inr(t.upiRevenue)],
+        ["Total revenue", inr(t.totalRevenue)],
+      ],
+    },
+    {
+      title: "Discounts",
+      rows: [
+        ["Coupon discounts", inr(t.couponDiscounts)],
+        ["Student discounts", inr(t.studentDiscounts)],
+      ],
+    },
+    {
+      title: "Popular services",
+      rows: [
+        ["Most booked console", s.popular.console],
+        ["Most played game", s.popular.game],
+        ["Most ordered food", s.popular.food],
+        ["Most used coupon", s.popular.coupon],
+        ["Most popular membership", s.popular.membership],
+      ],
+    },
+    {
+      title: "Business insights",
+      rows: [
+        ["Peak booking hour", s.insights.peakHour],
+        ["Average booking duration", formatDuration(s.insights.avgDurationMinutes)],
+        ["Average customer spend", inr(s.insights.avgCustomerSpend)],
+        ["Most active branch", s.insights.mostActiveBranch],
+        ["Console utilisation", `${s.insights.consoleUtilization}%`],
+      ],
+    },
   ];
 }
 
-function download(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+/** Flat label/value pairs — kept for the on-screen history dialog. */
+export function closingRows(s: DailyClosingSummary): Row[] {
+  return closingSections(s).flatMap((sec) => sec.rows);
 }
+
+const fileBase = (s: DailyClosingSummary) => `daily-closing-${s.date}`;
 
 export function exportClosingCsv(s: DailyClosingSummary) {
   const esc = (v: string | number) => `"${String(v).replaceAll('"', '""')}"`;
-  const csv = ["Statistic,Value", ...closingRows(s).map(([k, v]) => `${esc(k)},${esc(v)}`)].join("\n");
-  download(new Blob([csv], { type: "text/csv;charset=utf-8" }), `daily-closing-${s.date}.csv`);
+  const lines: string[] = [
+    esc("Clash of Consoles — Daily Closing Report"),
+    esc(`${s.branchName} · ${s.date}`),
+    esc(`Generated ${new Date().toLocaleString("en-IN")}`),
+  ];
+  for (const sec of closingSections(s)) {
+    lines.push("", esc(sec.title.toUpperCase()), `${esc("Statistic")},${esc("Value")}`);
+    for (const [k, v] of sec.rows) lines.push(`${esc(k)},${esc(v)}`);
+  }
+  download(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" }), `${fileBase(s)}.csv`);
 }
 
 export async function exportClosingXlsx(s: DailyClosingSummary) {
   const writeXlsxFile = (await import("write-excel-file/browser")).default;
-  const data = [
-    [
-      { value: "Statistic", fontWeight: "bold" as const },
-      { value: "Value", fontWeight: "bold" as const },
-    ],
-    ...closingRows(s).map(([k, v]) => [
-      { type: String, value: String(k) },
-      typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) },
-    ]),
+  const bold = { fontWeight: "bold" as const };
+  const data: unknown[][] = [
+    [{ value: "Clash of Consoles — Daily Closing Report", ...bold, fontSize: 14 }],
+    [{ value: `${s.branchName} · ${s.date}` }],
+    [{ value: `Generated ${new Date().toLocaleString("en-IN")}` }],
   ];
-  await writeXlsxFile(data as never, { fontFamily: "Arial", fontSize: 11 }).toFile(`daily-closing-${s.date}.xlsx`);
+  for (const sec of closingSections(s)) {
+    data.push([]);
+    data.push([{ value: sec.title.toUpperCase(), ...bold }]);
+    data.push([
+      { value: "Statistic", ...bold },
+      { value: "Value", ...bold },
+    ]);
+    for (const [k, v] of sec.rows) {
+      data.push([
+        { type: String, value: String(k) },
+        typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) },
+      ]);
+    }
+  }
+  await writeXlsxFile(data as never, { fontFamily: "Arial", fontSize: 11 }).toFile(`${fileBase(s)}.xlsx`);
 }
 
-/** Print-to-PDF of the same statistics, using the browser's print dialog. */
+/** Branded, print-to-PDF version of the Daily Closing report. */
 export function exportClosingPdf(s: DailyClosingSummary) {
-  const rows = closingRows(s)
-    .map(
-      ([k, v]) =>
-        `<tr><td style="padding:6px 10px;border-bottom:1px solid #ddd">${k}</td><td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right">${v}</td></tr>`,
+  const body = closingSections(s)
+    .map((sec) =>
+      section(
+        sec.title,
+        `<table class="pairs">${sec.rows
+          .map(([k, v]) => `<tr><td>${k}</td><td class="right">${v}</td></tr>`)
+          .join("")}</table>`,
+      ),
     )
     .join("");
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Daily Closing ${s.date}</title></head>
-<body style="font-family:Arial,sans-serif;padding:28px;color:#111">
-<h1 style="font-size:20px;margin:0">Daily Closing Report</h1>
-<p style="margin:4px 0 18px;color:#555">${s.branchName} · ${s.date}</p>
-<table style="width:100%;border-collapse:collapse;font-size:13px">${rows}</table>
-</body></html>`;
-  const win = window.open("", "_blank", "width=900,height=1000");
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  win.print();
+  printReport({ title: "Daily Closing Report", subtitle: `${s.branchName} · ${s.date}`, body });
 }
