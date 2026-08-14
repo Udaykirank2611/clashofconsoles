@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Home, Loader2, PartyPopper } from "lucide-react";
+import { CheckCircle2, Copy, Home, Loader2, PartyPopper, Ticket } from "lucide-react";
+import { toast } from "sonner";
+import { PASS_TYPE_LABELS, hoursLabel, type PassKind } from "@/lib/passes";
 import { AmbientBackground } from "@/components/site/AmbientBackground";
 import { getBooking } from "@/lib/booking.functions";
 import { formatTime, inr } from "@/lib/booking/pricing";
