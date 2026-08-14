@@ -148,7 +148,7 @@ export async function loadReconciliation(
     .reduce((s, e) => s + num(e.amount), 0);
 
   const opening = ((openingRes.data ?? []) as Record<string, unknown>[]).reduce(
-    (acc, r) => ({
+    (acc: { cash: number; bank: number }, r) => ({
       cash: acc.cash + num(r['opening_cash']),
       bank: acc.bank + num(r['opening_bank']),
     }),
