@@ -600,8 +600,9 @@ export const createBooking = createServerFn({ method: "POST" })
       : rateFor(rateRows, data.players, data.durationMinutes ?? 0);
 
     // The reward is free play time, never a discount: the guest still pays the
-    // full price of the duration they booked.
-    const sessionAmount = fullSessionAmount;
+    // full price of the duration they booked. A Group Pass is a flat branch rate.
+    const sessionAmount = isGroup ? groupRate!.price : fullSessionAmount;
+
 
 
     // Tiered experience prices (theatre / cockpit / snooker / lounge) are priced
