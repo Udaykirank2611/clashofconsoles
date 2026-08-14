@@ -13,6 +13,7 @@ const HEADERS = [
   "Final amount",
   "Booking status",
   "Payment status",
+  "Payment mode",
 ] as const;
 
 const values = (r: ReportRow) => [
@@ -28,6 +29,7 @@ const values = (r: ReportRow) => [
   r.finalAmount,
   r.status,
   r.paymentStatus,
+  r.paymentMode,
 ];
 
 function download(blob: Blob, filename: string) {
