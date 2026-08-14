@@ -1315,7 +1315,7 @@ export function BookingFlow() {
                   <FieldLabel>Number of members</FieldLabel>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {Array.from({ length: GROUP_PASS_MAX_MEMBERS }, (_, i) => i + 1).map((n) => (
-                      <Chip key={n} active={groupMembers === n} onClick={() => setGroupMembers(n)}>
+                      <Chip key={n} selected={groupMembers === n} onClick={() => setGroupMembers(n)}>
                         {n}
                       </Chip>
                     ))}
@@ -1330,8 +1330,8 @@ export function BookingFlow() {
                         <DurationCard
                           key={r.id}
                           label={r.label}
-                          price={inr(Math.round(Number(r.price)))}
-                          active={groupRateId === r.id}
+                          price={Math.round(Number(r.price))}
+                          selected={groupRateId === r.id}
                           onClick={() => {
                             setGroupRateId(r.id);
                             setGroupStart(null);
@@ -1357,8 +1357,8 @@ export function BookingFlow() {
                         <SlotGrid
                           slots={slots}
                           value={groupStart}
-                          onChange={setGroupStart}
-                          blocked={(slot) => groupSlotBlocked(slot, groupRate.duration_minutes)}
+                          onSelect={setGroupStart}
+                          isDisabled={(slot) => groupSlotBlocked(slot, groupRate.duration_minutes)}
                         />
                       </div>
                     ) : (
