@@ -578,6 +578,8 @@ export function BookingFlow() {
   const groupAmount = isGroup && groupStart && groupRate ? Math.round(Number(groupRate.price)) : 0;
   /** A redeemed pass funds the console session, so it is never charged. */
   const passCoversSession = Boolean(appliedPass) && !isGroup;
+  /** Bronze / Silver / Gold memberships cover PS5 console play for one player only. */
+  const passConsoleOnly = appliedPass ? isConsoleOnlyPass(appliedPass.pass.passType) : false;
   const fullSessionAmount = isGroup
     ? groupAmount
     : startTime && durationMinutes
