@@ -287,13 +287,19 @@ export function TransactionsView({
             date={from}
             onAdd={async (input) => {
               const res = await createExpense({ data: input });
-              if (!res.ok) return toast.error(res.message ?? "Could not save the expense.");
+              if (!res.ok) {
+                toast.error(res.message ?? "Could not save the expense.");
+                return;
+              }
               toast.success("Expense added.");
               void load();
             }}
             onDelete={async (id) => {
               const res = await removeExpense({ data: { id } });
-              if (!res.ok) return toast.error(res.message ?? "Could not delete the expense.");
+              if (!res.ok) {
+                toast.error(res.message ?? "Could not delete the expense.");
+                return;
+              }
               void load();
             }}
           />
@@ -306,7 +312,10 @@ export function TransactionsView({
               const res = await saveOpening({
                 data: { branchId, date: from, openingCash, openingBank },
               });
-              if (!res.ok) return toast.error(res.message ?? "Could not save the opening balance.");
+              if (!res.ok) {
+                toast.error(res.message ?? "Could not save the opening balance.");
+                return;
+              }
               toast.success("Opening balance saved.");
               void load();
             }}
@@ -331,7 +340,10 @@ export function TransactionsView({
                 notes: patch.notes,
               },
             });
-            if (!res.ok) return toast.error(res.message ?? "Could not save.");
+            if (!res.ok) {
+              toast.error(res.message ?? "Could not save.");
+              return;
+            }
             toast.success("Transaction updated.");
             setEditing(null);
             void load();
@@ -400,7 +412,10 @@ function ExpensesPanel({
             <AdminButton
               variant="primary"
               onClick={() => {
-                if (!name.trim()) return toast.error("Add an expense name.");
+                if (!name.trim()) {
+                  toast.error("Add an expense name.");
+                  return;
+                }
                 void onAdd({
                   branchId,
                   date,
