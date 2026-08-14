@@ -24,14 +24,17 @@ import { ReportsView } from "./analytics/ReportsView";
 import { TodayPanel } from "./analytics/TodayPanel";
 import { BookingCalendar } from "./calendar/BookingCalendar";
 import { DailyClosingView } from "./closing/DailyClosingView";
+import { TransactionsView } from "./transactions/TransactionsView";
 
 const BRANCH_TABS = [
   "Dashboard",
   "Booking Calendar",
   "Bookings",
+  "Transactions",
   "Customers",
   "Memberships",
   "Daily Closing",
+
   "Analytics",
   "Reports",
 
