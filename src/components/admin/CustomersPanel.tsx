@@ -57,6 +57,13 @@ export function CustomersPanel() {
                   <Gift className="size-3" /> No active reward
                 </span>
               )}
+              <ThankYouActions
+                name={c.name}
+                phone={c.phone}
+                visits={c.totalVisits}
+                rewardAvailable={c.rewardStatus === "available"}
+                rewardMinutes={c.rewardMinutes ?? null}
+              />
             </div>
           ))}
         </div>
@@ -64,3 +71,60 @@ export function CustomersPanel() {
     </Panel>
   );
 }
+
+function ThankYouActions({
+  name,
+  phone,
+  visits,
+  rewardAvailable,
+  rewardMinutes,
+}: {
+  name: string;
+  phone: string;
+  visits: number;
+  rewardAvailable: boolean;
+  rewardMinutes: number | null;
+}) {
+  const [copied, setCopied] = useState(false);
+  const message = loyaltyMessage({ name, visits, rewardAvailable, rewardMinutes });
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      toast.success("Thank you message copied");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy the message");
+    }
+  };
+
+  return (
+    <div className="flex w-full items-center gap-2 sm:w-auto">
+      <button
+        type="button"
+        onClick={() => void copy()}
+        title={message}
+        className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1.5 text-left text-[0.68rem] text-muted-foreground transition-colors hover:border-cyan/50 hover:text-foreground sm:flex-none sm:max-w-[16rem]"
+      >
+        {copied ? (
+          <Check className="size-3.5 shrink-0 text-emerald-300" />
+        ) : (
+          <Copy className="size-3.5 shrink-0" />
+        )}
+        <span className="truncate">{message}</span>
+      </button>
+      <a
+        href={whatsappLink(phone, message)}
+        target="_blank"
+        rel="noreferrer"
+        title="Open WhatsApp chat"
+        aria-label={`Open WhatsApp chat with ${name}`}
+        className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-400/10 text-emerald-300 transition-colors hover:bg-emerald-400/20"
+      >
+        <MessageCircle className="size-4" />
+      </a>
+    </div>
+  );
+}
+
