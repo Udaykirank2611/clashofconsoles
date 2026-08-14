@@ -73,6 +73,19 @@ export interface AdminBooking {
   created_at: string;
   gaming_stations: { name: string } | null;
   booking_items: AdminBookingItem[];
+  /** Membership / combo / unlimited passes issued from this booking. */
+  membership_passes?: AdminIssuedPass[];
+}
+
+/** A pass issued by a booking, shown in the confirmation message. */
+export interface AdminIssuedPass {
+  code: string;
+  pass_type: string;
+  plan_name: string;
+  expires_on: string;
+  remaining_minutes: number | null;
+  remaining_uses: number | null;
+  status: string;
 }
 
 export interface AdminCoupon {
