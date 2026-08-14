@@ -199,11 +199,10 @@ function PaymentPage() {
                       ? `${formatTime(booking.start_time)} – ${formatTime(booking.end_time)}`
                       : "—"
                   }
-                  sub={
-                    booking.reward_minutes
-                      ? `Includes ${booking.reward_minutes} min loyalty free time`
-                      : undefined
-                  }
+                  {...(booking.reward_minutes
+                    ? { sub: `Includes ${booking.reward_minutes} min loyalty free time` }
+                    : {})}
+
                 />
 
                 <Info label="Players" value={`${booking.players} ${booking.players === 1 ? "player" : "players"}`} />
