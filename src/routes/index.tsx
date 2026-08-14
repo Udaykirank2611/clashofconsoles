@@ -99,7 +99,7 @@ function Index() {
   const content = useSiteContent();
 
   return (
-    <div className="relative">
+    <div className="theme-neon-pink relative bg-background text-foreground">
       <AmbientBackground />
       <CustomCursor />
       <ScrollProgress />
