@@ -50,6 +50,8 @@ export interface RawBooking {
   total_amount: number;
   payment_utr: string | null;
   payment_mode: string | null;
+  booking_type?: string | null;
+  group_members?: number | null;
   payment_submitted_at: string | null;
   created_at: string;
   gaming_stations: { name: string; station_type: string } | null;
@@ -218,6 +220,21 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
     cashRevenue: Math.round(
       revenueRows.filter((b) => b.payment_mode === "cash").reduce((s2, b) => s2 + n(b.total_amount), 0),
     ),
+    ...(() => {
+      /* Group Pass: whole-café bookings, tracked separately from single passes. */
+      const groupCounted = counted.filter((b) => b.booking_type === "group");
+      const groupRevenueRows = revenueRows.filter((b) => b.booking_type === "group");
+      const members = groupCounted.reduce((s2, b) => s2 + n(b.group_members), 0);
+      const minutes = groupCounted.reduce((s2, b) => s2 + stationMinutes(b), 0);
+      return {
+        groupBookings: groupCounted.length,
+        groupRevenue: Math.round(
+          groupRevenueRows.reduce((s2, b) => s2 + splitBooking(b).total, 0),
+        ),
+        avgGroupSize: groupCounted.length ? Math.round((members / groupCounted.length) * 10) / 10 : 0,
+        avgGroupDurationMinutes: groupCounted.length ? Math.round(minutes / groupCounted.length) : 0,
+      };
+    })(),
   };
 
   // ---- payment modes ------------------------------------------------------

@@ -100,6 +100,11 @@ export interface Kpis {
   avgValue: number;
   upiRevenue: number;
   cashRevenue: number;
+  /** Group Pass (whole-café) bookings inside the range. */
+  groupBookings: number;
+  groupRevenue: number;
+  avgGroupSize: number;
+  avgGroupDurationMinutes: number;
 }
 
 export interface PaymentModeStat {
