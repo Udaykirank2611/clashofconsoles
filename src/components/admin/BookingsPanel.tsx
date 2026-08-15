@@ -548,7 +548,7 @@ export function BookingsPanel({
                 onClick={() => {
                   const booking = approving;
                   setApproving(null);
-                  void setStatus(booking, "confirmed", payMode);
+                  void approveWithDiscount(booking, payMode, Number(extraDiscount) || 0);
                 }}
               >
                 Approve Payment
