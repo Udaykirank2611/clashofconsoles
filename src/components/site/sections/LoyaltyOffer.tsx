@@ -25,8 +25,8 @@ export function LoyaltyOffer() {
                 </h2>
                 <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                   {[
-                    { visit: "5th Completed Visit", reward: "30 Minutes FREE" },
-                    { visit: "10th Completed Visit", reward: "1 Hour FREE" },
+                    { visit: "On Your 5th Visit", reward: "30 Minutes FREE" },
+                    { visit: "On Your 10th Visit", reward: "1 Hour FREE" },
                   ].map((m) => (
                     <li
                       key={m.visit}
@@ -41,7 +41,8 @@ export function LoyaltyOffer() {
                 </ul>
                 <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <Smartphone className="size-3.5 shrink-0 text-cyan" aria-hidden="true" />
-                  Progress is automatically tracked using your phone number.
+                  Every game counts — consoles, racing, VR, snooker or theatre. The free time applies
+                  during that visit itself, tracked automatically by your phone number.
                 </p>
               </div>
             </div>
