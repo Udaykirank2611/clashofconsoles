@@ -229,15 +229,7 @@ export function BookingCalendar({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {branches.length > 1 ? (
-            <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className={field}>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          ) : null}
+          {/* Branch is chosen from the admin header selector — no duplicate control here. */}
           <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={field}>
             <option value="all">All booking types</option>
             <option value="single">Single pass</option>
