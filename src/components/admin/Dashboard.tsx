@@ -198,6 +198,7 @@ export function AdminDashboard() {
           <BookingsPanel
             bookings={data.bookings}
             stations={data.stations}
+            menu={data.menu}
             onChanged={data.refresh}
             focusReference={focusReference}
           />

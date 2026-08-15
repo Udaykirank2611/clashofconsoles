@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, Pill, money } from "./primitives";
-import type { AdminBooking, AdminBookingItem, AdminStation } from "@/lib/admin/useBranchData";
+import type { AdminBooking, AdminBookingItem, AdminMenuItem, AdminStation } from "@/lib/admin/useBranchData";
 import { formatTime } from "@/lib/booking/pricing";
-import { ChevronDown, Copy, MessageCircle, Phone, RefreshCw } from "lucide-react";
+import { ChevronDown, Copy, MessageCircle, Phone, RefreshCw, UtensilsCrossed } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
+import { approveBookingPayment } from "@/lib/booking-admin.functions";
+import { AddFoodDialog } from "./AddFoodDialog";
 import { cn } from "@/lib/utils";
 
 const FILTERS = ["payment_pending", "awaiting_payment", "confirmed", "cancelled", "all"] as const;
@@ -112,11 +114,14 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
 export function BookingsPanel({
   bookings,
   stations,
+  menu = [],
   onChanged,
   focusReference,
 }: {
   bookings: AdminBooking[];
   stations: AdminStation[];
+  /** Branch menu, used by the "Add food" flow on confirmed bookings. */
+  menu?: AdminMenuItem[];
   onChanged: () => void;
   /** Booking reference to open automatically (e.g. from a notification). */
   focusReference?: string | null;
@@ -128,6 +133,11 @@ export function BookingsPanel({
   /** Booking awaiting the "how did they pay?" confirmation dialog. */
   const [approving, setApproving] = useState<AdminBooking | null>(null);
   const [payMode, setPayMode] = useState<"upi" | "cash">("upi");
+  /** Last-minute discount the admin can apply while approving. */
+  const [extraDiscount, setExtraDiscount] = useState("");
+  /** Confirmed booking that is having food added to it. */
+  const [addingFood, setAddingFood] = useState<AdminBooking | null>(null);
+  const approvePayment = useServerFn(approveBookingPayment);
   const editHours = useServerFn(updateBookingExtraHours);
 
   useEffect(() => {
@@ -163,6 +173,19 @@ export function BookingsPanel({
     }
   };
 
+
+  /** Approve a payment, applying any last-minute discount server-side first. */
+  const approveWithDiscount = async (booking: AdminBooking, mode: "upi" | "cash", discount: number) => {
+    setBusy(booking.id);
+    const res = await approvePayment({ data: { bookingId: booking.id, paymentMode: mode, extraDiscount: discount } });
+    setBusy(null);
+    if (!res.ok) {
+      toast.error(res.message ?? "Could not approve this booking.");
+      return;
+    }
+    toast.success(discount > 0 ? `Booking confirmed with ${money(discount)} discount.` : "Booking confirmed.");
+    onChanged();
+  };
 
   const setStatus = async (
     booking: AdminBooking,
@@ -295,6 +318,7 @@ export function BookingsPanel({
                           disabled={busy === b.id}
                           onClick={() => {
                             setPayMode("upi");
+                            setExtraDiscount("");
                             setApproving(b);
                           }}
                         >
@@ -313,6 +337,9 @@ export function BookingsPanel({
                       <>
                         <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
                           <Copy className="size-3.5" /> Copy confirmation
+                        </AdminButton>
+                        <AdminButton disabled={busy === b.id} onClick={() => setAddingFood(b)}>
+                          <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         <AdminButton
                           variant="success"
@@ -481,6 +508,29 @@ export function BookingsPanel({
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
 
+            <label className="mt-4 block space-y-1.5">
+              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                Last-minute discount (₹)
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={approving.total_amount}
+                value={extraDiscount}
+                onChange={(e) => setExtraDiscount(e.target.value)}
+                placeholder="0"
+                className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm outline-none focus:border-cyan/50"
+              />
+              <span className="block text-[0.65rem] text-muted-foreground">
+                Payable after discount:{" "}
+                <span className="font-semibold text-foreground">
+                  {money(Math.max(0, approving.total_amount - (Number(extraDiscount) || 0)))}
+                </span>
+              </span>
+            </label>
+
+
+
             <div className="mt-4 space-y-2">
               {(["upi", "cash"] as const).map((m) => (
                 <label
@@ -511,7 +561,7 @@ export function BookingsPanel({
                 onClick={() => {
                   const booking = approving;
                   setApproving(null);
-                  void setStatus(booking, "confirmed", payMode);
+                  void approveWithDiscount(booking, payMode, Number(extraDiscount) || 0);
                 }}
               >
                 Approve Payment
@@ -519,6 +569,15 @@ export function BookingsPanel({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {addingFood ? (
+        <AddFoodDialog
+          booking={addingFood}
+          menu={menu}
+          onClose={() => setAddingFood(null)}
+          onSaved={onChanged}
+        />
       ) : null}
     </Panel>
   );
