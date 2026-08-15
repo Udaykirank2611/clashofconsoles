@@ -4,6 +4,37 @@ import { AdminButton, AdminInput, Panel, Pill } from "./primitives";
 import { toast } from "sonner";
 import type { MembershipPlan, SiteOffer } from "@/lib/site-content";
 
+const TIER_STYLES: Record<string, string> = {
+  bronze:
+    "bg-[linear-gradient(135deg,#b87333,#e6a86b_45%,#8a4b1d)] text-white shadow-[0_6px_16px_-8px_#b87333] ring-1 ring-[#e6a86b]/60",
+  silver:
+    "bg-[linear-gradient(135deg,#9aa4ad,#e8eef3_45%,#7d8892)] text-slate-900 shadow-[0_6px_16px_-8px_#9aa4ad] ring-1 ring-white/70",
+  gold:
+    "bg-[linear-gradient(135deg,#c9992a,#ffe08a_45%,#a87a12)] text-slate-900 shadow-[0_6px_16px_-8px_#c9992a] ring-1 ring-[#ffe08a]/70",
+};
+
+/** Renders Bronze / Silver / Gold words with their metal styling. */
+function TierName({ name }: { name: string }) {
+  const parts = name.split(/(bronze|silver|gold)/gi).filter(Boolean);
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      {parts.map((part, i) => {
+        const style = TIER_STYLES[part.toLowerCase()];
+        return style ? (
+          <span
+            key={`${part}-${i}`}
+            className={`rounded-full px-2.5 py-0.5 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] ${style}`}
+          >
+            {part}
+          </span>
+        ) : (
+          <span key={`${part}-${i}`}>{part.trim()}</span>
+        );
+      })}
+    </span>
+  );
+}
+
 /** Memberships, unlimited pass, combo and student offers — for this branch only. */
 export function OffersPanel({ branchId, branchName }: { branchId: string; branchName: string }) {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
