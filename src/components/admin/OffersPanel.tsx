@@ -83,7 +83,7 @@ export function OffersPanel({ branchId, branchName }: { branchId: string; branch
           {plans.map((plan) => (
             <li key={plan.id} className="rounded-3xl border border-border bg-background/40 p-5">
               <div className="mb-4 flex items-center justify-between gap-2">
-                <h3 className="text-sm font-bold">{plan.name}</h3>
+                <h3 className="text-sm font-bold"><TierName name={plan.name} /></h3>
                 <Pill tone={plan.is_visible ? "good" : "muted"}>{plan.is_visible ? "Visible" : "Hidden"}</Pill>
               </div>
               <div className="space-y-3">
