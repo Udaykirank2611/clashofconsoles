@@ -80,25 +80,27 @@ export function Experiences({
                         <p className="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                           Starting from
                         </p>
-                        <p className="mt-1 flex items-center gap-1.5 text-2xl font-black tracking-tight text-cyan">
-                          {inr(exp.starting_price)}
-                          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            {exp.price_unit}
+                        <p className="mt-1 flex flex-col items-start gap-0.5 text-2xl font-black tracking-tight text-cyan">
+                          <span className="flex items-center gap-1.5">
+                            {inr(exp.starting_price)}
+                            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                              {exp.price_unit}
+                            </span>
                           </span>
                           {exp.name.toLowerCase().includes("ps5") ? (
-                            <span className="group/info relative inline-flex">
-                              <Info
-                                className="size-3.5 cursor-help text-muted-foreground transition-colors hover:text-cyan"
-                                aria-hidden="true"
-                              />
-                              <span className="sr-only">
-                                This rate applies when you purchase a membership plan.
-                              </span>
-                              <span
-                                role="tooltip"
-                                className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-52 -translate-x-1/2 rounded-2xl border border-border bg-surface/95 px-3 py-2 text-[0.68rem] font-medium normal-case leading-relaxed tracking-normal text-muted-foreground opacity-0 shadow-[0_20px_50px_-24px_var(--primary)] backdrop-blur-xl transition-opacity duration-300 group-hover/info:opacity-100"
-                              >
-                                Applicable when purchased with a membership plan.
+                            <span className="flex flex-col items-start">
+                              <span className="group/info relative inline-flex items-center gap-1.5 text-[0.6rem] font-medium tracking-normal text-muted-foreground/60">
+                                <span className="uppercase tracking-[0.05em]">Applicable when purchased with a membership plan</span>
+                                <Info
+                                  className="size-3 cursor-help transition-colors hover:text-cyan"
+                                  aria-hidden="true"
+                                />
+                                <span
+                                  role="tooltip"
+                                  className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 w-52 rounded-2xl border border-border bg-surface/95 px-3 py-2 text-[0.68rem] font-medium normal-case leading-relaxed tracking-normal text-muted-foreground opacity-0 shadow-[0_20px_50px_-24px_var(--primary)] backdrop-blur-xl transition-opacity duration-300 group-hover/info:opacity-100"
+                                >
+                                  This rate applies when you purchase a membership plan.
+                                </span>
                               </span>
                             </span>
                           ) : null}
