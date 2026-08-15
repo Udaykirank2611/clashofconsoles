@@ -1713,23 +1713,20 @@ export function BookingFlow() {
                           />
                         ) : null}
 
-                        {active.games.length ? (
-                          <div>
-                            <FieldLabel>Games you can play here</FieldLabel>
-                            <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
-                              {active.games.map((title) => (
-                                <GameTile
-                                  key={title}
-                                  game={{
-                                    id: title,
-                                    title,
-                                    cover: title.slice(0, 3).toUpperCase(),
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
+                        {(() => {
+                          const libraryGames = gamesFor(active.id);
+                          const games = libraryGames.length
+                            ? libraryGames
+                            : active.games.map((title) => ({
+                                id: title,
+                                station_id: active.id,
+                                branch_id: active.branch_id,
+                                name: title,
+                                image_url: null,
+                                sort_order: 0,
+                              }));
+                          return games.length ? <GamesGrid games={games} /> : null;
+                        })()}
 
                         <div>
                           <FieldLabel>Available start times</FieldLabel>
