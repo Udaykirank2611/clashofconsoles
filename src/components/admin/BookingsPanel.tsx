@@ -495,6 +495,29 @@ export function BookingsPanel({
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
 
+            <label className="mt-4 block space-y-1.5">
+              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                Last-minute discount (₹)
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={approving.total_amount}
+                value={extraDiscount}
+                onChange={(e) => setExtraDiscount(e.target.value)}
+                placeholder="0"
+                className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm outline-none focus:border-cyan/50"
+              />
+              <span className="block text-[0.65rem] text-muted-foreground">
+                Payable after discount:{" "}
+                <span className="font-semibold text-foreground">
+                  {money(Math.max(0, approving.total_amount - (Number(extraDiscount) || 0)))}
+                </span>
+              </span>
+            </label>
+
+
+
             <div className="mt-4 space-y-2">
               {(["upi", "cash"] as const).map((m) => (
                 <label
