@@ -174,6 +174,19 @@ export function BookingsPanel({
   };
 
 
+  /** Approve a payment, applying any last-minute discount server-side first. */
+  const approveWithDiscount = async (booking: AdminBooking, mode: "upi" | "cash", discount: number) => {
+    setBusy(booking.id);
+    const res = await approvePayment({ data: { bookingId: booking.id, paymentMode: mode, extraDiscount: discount } });
+    setBusy(null);
+    if (!res.ok) {
+      toast.error(res.message ?? "Could not approve this booking.");
+      return;
+    }
+    toast.success(discount > 0 ? `Booking confirmed with ${money(discount)} discount.` : "Booking confirmed.");
+    onChanged();
+  };
+
   const setStatus = async (
     booking: AdminBooking,
     status: "confirmed" | "cancelled" | "completed",
@@ -556,6 +569,15 @@ export function BookingsPanel({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {addingFood ? (
+        <AddFoodDialog
+          booking={addingFood}
+          menu={menu}
+          onClose={() => setAddingFood(null)}
+          onSaved={onChanged}
+        />
       ) : null}
     </Panel>
   );
