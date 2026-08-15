@@ -80,11 +80,28 @@ export function Experiences({
                         <p className="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                           Starting from
                         </p>
-                        <p className="mt-1 text-2xl font-black tracking-tight text-cyan">
+                        <p className="mt-1 flex items-center gap-1.5 text-2xl font-black tracking-tight text-cyan">
                           {inr(exp.starting_price)}
-                          <span className="ml-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                             {exp.price_unit}
                           </span>
+                          {exp.name.toLowerCase().includes("ps5") ? (
+                            <span className="group/info relative inline-flex">
+                              <Info
+                                className="size-3.5 cursor-help text-muted-foreground transition-colors hover:text-cyan"
+                                aria-hidden="true"
+                              />
+                              <span className="sr-only">
+                                This rate applies when you purchase a membership plan.
+                              </span>
+                              <span
+                                role="tooltip"
+                                className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-52 -translate-x-1/2 rounded-2xl border border-border bg-surface/95 px-3 py-2 text-[0.68rem] font-medium normal-case leading-relaxed tracking-normal text-muted-foreground opacity-0 shadow-[0_20px_50px_-24px_var(--primary)] backdrop-blur-xl transition-opacity duration-300 group-hover/info:opacity-100"
+                              >
+                                Applicable when purchased with a membership plan.
+                              </span>
+                            </span>
+                          ) : null}
                         </p>
                       </div>
                       <Link
