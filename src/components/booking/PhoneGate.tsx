@@ -17,9 +17,16 @@ import { Field } from "./ui";
  * Existing numbers are recognised instantly; new numbers only need a name.
  * No OTP, no password, no login.
  */
-export function PhoneGate({ onReady }: { onReady: (customer: LoyaltyCustomer) => void }) {
+export function PhoneGate({
+  onReady,
+  onSkip,
+}: {
+  onReady: (customer: LoyaltyCustomer) => void;
+  onSkip?: () => void;
+}) {
   const lookupFn = useServerFn(lookupCustomer);
   const registerFn = useServerFn(registerCustomer);
+
 
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
