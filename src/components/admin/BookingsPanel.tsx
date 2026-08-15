@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, Pill, money } from "./primitives";
 import type { AdminBooking, AdminBookingItem, AdminMenuItem, AdminStation } from "@/lib/admin/useBranchData";
 import { formatTime } from "@/lib/booking/pricing";
-import { ChevronDown, Copy, MessageCircle, Phone, RefreshCw, UtensilsCrossed } from "lucide-react";
+import { ChevronDown, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
 import { approveBookingPayment } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
+import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
 import { cn } from "@/lib/utils";
 
 const FILTERS = ["payment_pending", "awaiting_payment", "confirmed", "cancelled", "all"] as const;
@@ -71,10 +72,13 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
       day: "numeric",
       month: "short",
     })}`,
-    b.start_time && b.end_time
-      ? `Time: ${formatTime(b.start_time)} – ${formatTime(b.end_time)} (${durationLabel(b.start_time, b.end_time)})`
-      : "Passes only",
-    `Console: ${stationName}`,
+    (() => {
+      const w = bookingWindow(b);
+      return w.start && w.end
+        ? `Time: ${formatTime(w.start)} – ${formatTime(w.end)} (${durationLabel(w.start, w.end)})`
+        : "No timed slot";
+    })(),
+    `Booked: ${bookingSummaryLine(b, stationName)}`,
     b.game_title ? `Game: ${b.game_title}` : "",
     `Players: ${b.players}`,
     `Session charge: ${money(b.session_amount)}`,
@@ -187,6 +191,22 @@ export function BookingsPanel({
     onChanged();
   };
 
+  /** Menu id -> category, so receipts can group food lines. */
+  const categories = new Map(menu.map((m) => [m.id, m.category] as const));
+
+  const printReceipt = (b: AdminBooking, stationName: string) =>
+    printBookingReceipt(b, stationName, undefined, categories);
+
+  /**
+   * Voids a booking: it stays visible under "Rejected" but the ledger entry is
+   * cancelled, so its money drops out of reports, analytics and reconciliation.
+   */
+  const removeBooking = async (b: AdminBooking) => {
+    if (!window.confirm(`Remove ${b.reference}? It will be marked cancelled and its money removed from all reports.`))
+      return;
+    await setStatus(b, "cancelled");
+  };
+
   const setStatus = async (
     booking: AdminBooking,
     status: "confirmed" | "cancelled" | "completed",
@@ -207,7 +227,7 @@ export function BookingsPanel({
         ? "Booking confirmed."
         : status === "completed"
           ? "Marked completed — loyalty visit counted."
-          : "Booking rejected — slot released.",
+          : "Removed — kept as cancelled and excluded from all reports.",
     );
     onChanged();
   };
@@ -258,12 +278,13 @@ export function BookingsPanel({
             const food = b.booking_items.filter((i) => i.kind === "food");
             const stationName = b.gaming_stations?.name ?? stations.find((s) => s.id === b.station_id)?.name ?? "—";
             // Pass-only bookings have no gaming slot at all.
-            const hasSlot = Boolean(b.start_time && b.end_time);
+            const slot = bookingWindow(b);
+            const hasSlot = Boolean(slot.start && slot.end);
             const duration = hasSlot
               ? Math.max(
                   30,
-                  (Number(b.end_time!.slice(0, 2)) * 60 + Number(b.end_time!.slice(3, 5))) -
-                    (Number(b.start_time!.slice(0, 2)) * 60 + Number(b.start_time!.slice(3, 5))),
+                  (Number(slot.end!.slice(0, 2)) * 60 + Number(slot.end!.slice(3, 5))) -
+                    (Number(slot.start!.slice(0, 2)) * 60 + Number(slot.start!.slice(3, 5))),
                 )
               : 0;
             return (
@@ -286,10 +307,7 @@ export function BookingsPanel({
                         day: "numeric",
                         month: "short",
                       })}{" "}
-                      {hasSlot
-                        ? ` · ${formatTime(b.start_time!)} · ${duration} min · ${b.players}P · ${stationName}`
-                        : " · Passes only"}
-                      {cockpit.length ? " + Add-ons" : ""}
+                      {` · ${bookingSummaryLine(b, stationName)}`}
                     </p>
                   </div>
                   <div className="text-right">
@@ -348,8 +366,23 @@ export function BookingsPanel({
                         >
                           Mark completed
                         </AdminButton>
-                        <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void setStatus(b, "cancelled")}>
-                          Reject
+                        <AdminButton onClick={() => printReceipt(b, stationName)}>
+                          <Printer className="size-3.5" /> Receipt
+                        </AdminButton>
+                        <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void removeBooking(b)}>
+                          <Trash2 className="size-3.5" /> Remove
+                        </AdminButton>
+                      </>
+                    ) : b.status === "completed" ? (
+                      <>
+                        <AdminButton onClick={() => printReceipt(b, stationName)}>
+                          <Printer className="size-3.5" /> Receipt
+                        </AdminButton>
+                        <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
+                          <Copy className="size-3.5" /> Copy summary
+                        </AdminButton>
+                        <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void removeBooking(b)}>
+                          <Trash2 className="size-3.5" /> Remove
                         </AdminButton>
                       </>
                     ) : null}
@@ -371,18 +404,25 @@ export function BookingsPanel({
                     <div className="grid gap-4 border-t border-border/70 p-4 text-sm sm:grid-cols-2 sm:p-5">
                       <div className="space-y-1.5">
                         <Detail label="Email" value={b.customer_email ?? "—"} />
-                        <Detail label="Station" value={stationName} />
+                        <Detail
+                          label="Station / experience"
+                          value={
+                            b.station_id && stationName !== "—"
+                              ? stationName
+                              : cockpit.filter((c) => c.station_id).map((c) => c.label).join(", ") || stationName
+                          }
+                        />
                         <Detail label="Players" value={`${b.players} ${b.players === 1 ? "player" : "players"}`} />
                         <Detail
                           label="Slot"
                           value={
                             hasSlot
-                              ? `${formatTime(b.start_time!)} – ${formatTime(b.end_time!)} (${durationLabel(b.start_time, b.end_time)})${
+                              ? `${formatTime(slot.start!)} – ${formatTime(slot.end!)} (${durationLabel(slot.start, slot.end)})${
                                   b.reward_minutes
                                     ? ` · incl. ${b.reward_minutes} min loyalty free`
                                     : ""
                                 }`
-                              : "Passes only"
+                              : "No timed slot"
                           }
                         />
 
