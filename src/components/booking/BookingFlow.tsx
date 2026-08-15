@@ -1002,13 +1002,14 @@ export function BookingFlow() {
   
 
 
-  if (!customer) {
+  if (!customer && !skippedPhone) {
     return (
       <PhoneGate
         onReady={(c) => {
           setCustomer(c);
           setForm((f) => ({ ...f, fullName: c.name, phone: c.phone }));
         }}
+        onSkip={() => setSkippedPhone(true)}
       />
     );
   }
@@ -1016,7 +1017,8 @@ export function BookingFlow() {
   return (
     <div className="pb-40">
       <StepProgress step={step} />
-      <LoyaltyStrip customer={customer} />
+      {customer ? <LoyaltyStrip customer={customer} /> : null}
+
 
       {expiresAt ? (
         <div className="mx-auto mt-6 flex w-fit items-center gap-2 rounded-full border border-cyan/30 bg-cyan/5 px-4 py-2 text-xs font-bold text-cyan animate-[scale-in_0.25s_ease-out]">
