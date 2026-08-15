@@ -40,6 +40,12 @@ const durationLabel = (start?: string | null, end?: string | null) => {
     .join(" ");
 };
 
+/** Normalise an Indian mobile number to wa.me E.164 digits. */
+const waNumber = (phone: string) => {
+  const digits = phone.replace(/\D/g, "").replace(/^0+/, "");
+  return digits.length === 10 ? `91${digits}` : digits;
+};
+
 const confirmationText = (b: AdminBooking, stationName: string) => {
   const experiences = b.booking_items.filter((i) => i.kind === "addon" && i.station_id);
   const passes = b.booking_items.filter((i) => i.kind === "addon" && !i.station_id);
@@ -272,7 +278,7 @@ export function BookingsPanel({
                       <Phone className="size-3" /> {b.customer_phone}
                     </a>
                     <a
-                      href={`https://wa.me/${b.customer_phone.replace(/[^\d]/g, "").replace(/^0/, "91")}`}
+                      href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(confirmationText(b, stationName))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ml-2 inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
