@@ -182,12 +182,12 @@ export function Offer() {
                 Members Offer
               </span>
               <h2 className="mt-8 text-balance text-3xl font-extrabold leading-tight sm:text-5xl">
-                Play 5 Times
-                <span className="text-gradient block">Get 1 Session FREE</span>
+                Your 5th Visit
+                <span className="text-gradient block">Comes With Free Play</span>
               </h2>
               <p className="mx-auto mt-5 max-w-lg text-muted-foreground">
-                Track your visits on your player card. Every fifth clash unlocks a free
-                hour in the arena — on the house.
+                Every game counts — consoles, racing, VR, snooker or theatre. Your 5th visit gets 30
+                Minutes FREE and your 10th visit 1 Hour FREE, on that visit itself.
               </p>
               <MagneticButton href="#contact" className="mt-9">
                 Claim Offer
