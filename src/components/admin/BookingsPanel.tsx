@@ -72,10 +72,13 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
       day: "numeric",
       month: "short",
     })}`,
-    b.start_time && b.end_time
-      ? `Time: ${formatTime(b.start_time)} – ${formatTime(b.end_time)} (${durationLabel(b.start_time, b.end_time)})`
-      : "Passes only",
-    `Console: ${stationName}`,
+    (() => {
+      const w = bookingWindow(b);
+      return w.start && w.end
+        ? `Time: ${formatTime(w.start)} – ${formatTime(w.end)} (${durationLabel(w.start, w.end)})`
+        : "No timed slot";
+    })(),
+    `Booked: ${bookingSummaryLine(b, stationName)}`,
     b.game_title ? `Game: ${b.game_title}` : "",
     `Players: ${b.players}`,
     `Session charge: ${money(b.session_amount)}`,
@@ -275,13 +278,13 @@ export function BookingsPanel({
             const food = b.booking_items.filter((i) => i.kind === "food");
             const stationName = b.gaming_stations?.name ?? stations.find((s) => s.id === b.station_id)?.name ?? "—";
             // Pass-only bookings have no gaming slot at all.
-            const window = bookingWindow(b);
-            const hasSlot = Boolean(window.start && window.end);
+            const slot = bookingWindow(b);
+            const hasSlot = Boolean(slot.start && slot.end);
             const duration = hasSlot
               ? Math.max(
                   30,
-                  (Number(window.end!.slice(0, 2)) * 60 + Number(window.end!.slice(3, 5))) -
-                    (Number(window.start!.slice(0, 2)) * 60 + Number(window.start!.slice(3, 5))),
+                  (Number(slot.end!.slice(0, 2)) * 60 + Number(slot.end!.slice(3, 5))) -
+                    (Number(slot.start!.slice(0, 2)) * 60 + Number(slot.start!.slice(3, 5))),
                 )
               : 0;
             return (
@@ -414,7 +417,7 @@ export function BookingsPanel({
                           label="Slot"
                           value={
                             hasSlot
-                              ? `${formatTime(window.start!)} – ${formatTime(window.end!)} (${durationLabel(window.start, window.end)})${
+                              ? `${formatTime(slot.start!)} – ${formatTime(slot.end!)} (${durationLabel(slot.start, slot.end)})${
                                   b.reward_minutes
                                     ? ` · incl. ${b.reward_minutes} min loyalty free`
                                     : ""
