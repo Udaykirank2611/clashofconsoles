@@ -26,7 +26,7 @@ function StatusBadge({ status }: { status: Availability }) {
 }
 
 /** Compact game grid rendered inside an expanded console card. */
-function GamesGrid({ games }: { games: StationGame[] }) {
+export function GamesGrid({ games }: { games: StationGame[] }) {
   return (
     <div className="mt-4 border-t border-border pt-3">
       <p className="mb-2 text-[0.55rem] font-bold uppercase tracking-[0.2em] text-cyan">

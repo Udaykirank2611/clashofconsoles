@@ -402,16 +402,7 @@ export function StationsPanel({
                 />
               </div>
 
-              {s.station_type === "console" ? (
-                <StationGamesPanel stationId={s.id} branchId={branchId} stationName={s.name} />
-              ) : (
-                <AdminInput
-                  label="Games (comma separated)"
-                  value={draftVal(s, "games_text") as string}
-                  onChange={(v) => saveField(s, "games_text", v)}
-                  placeholder="EA FC, Call Of Duty, WWE 2K"
-                />
-              )}
+              <StationGamesPanel stationId={s.id} branchId={branchId} stationName={s.name} />
 
               {s.station_type !== "console" && !rateCounts[s.id] ? (
                 <p className="mt-4 flex items-start gap-2 rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-xs text-red-200">
