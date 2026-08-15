@@ -40,6 +40,12 @@ const durationLabel = (start?: string | null, end?: string | null) => {
     .join(" ");
 };
 
+/** Normalise an Indian mobile number to wa.me E.164 digits. */
+const waNumber = (phone: string) => {
+  const digits = phone.replace(/\D/g, "").replace(/^0+/, "");
+  return digits.length === 10 ? `91${digits}` : digits;
+};
+
 const confirmationText = (b: AdminBooking, stationName: string) => {
   const experiences = b.booking_items.filter((i) => i.kind === "addon" && i.station_id);
   const passes = b.booking_items.filter((i) => i.kind === "addon" && !i.station_id);
