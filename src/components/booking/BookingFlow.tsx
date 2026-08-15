@@ -60,7 +60,7 @@ import {
   upcomingDays,
 } from "@/lib/booking/pricing";
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
-import { ConsoleSelect } from "./ConsoleSelect";
+import { ConsoleSelect, GamesGrid } from "./ConsoleSelect";
 import type { CouponCategory } from "@/lib/booking/pricing";
 import { BillSummary, durationLabel, type BillLine } from "./BillSummary";
 import {
