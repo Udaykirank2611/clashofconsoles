@@ -108,6 +108,9 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
       : "",
     b.payment_utr ? `UTR: ${b.payment_utr}` : "",
     b.special_instructions ? `Notes: ${b.special_instructions}` : "",
+    Number(b.reward_minutes)
+      ? `🎁 Loyalty reward applied: ${Number(b.reward_minutes)} minutes of FREE play added to this session.`
+      : "🎁 Loyalty: every game counts — your 5th visit comes with 30 Minutes FREE and your 10th visit with 1 Hour FREE (used on that visit itself).",
     "Please arrive 10 minutes early. See you at the arena!",
   ]
     .filter(Boolean)
