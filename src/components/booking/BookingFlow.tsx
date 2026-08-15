@@ -890,6 +890,16 @@ export function BookingFlow() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      // Phone step was skipped — make sure the number exists in our customer
+      // roster now (visits are still credited when the session completes).
+      if (!customer) {
+        try {
+          await registerFn({ data: { phone: form.phone.trim(), name: form.fullName.trim() } });
+        } catch {
+          /* non-blocking: the booking itself still records the phone number */
+        }
+      }
+
       const res = await bookFn({
         data: {
           branchId: branch.id,
