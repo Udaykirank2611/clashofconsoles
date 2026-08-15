@@ -1312,7 +1312,7 @@ export function BookingFlow() {
                   <span className="text-sm font-bold text-emerald-200">
                     Use My Reward · {rewardLabel(rewardMinutes)} FREE
                     <span className="mt-0.5 block text-xs font-medium text-muted-foreground">
-                      Book at least 1 hour of PS5 gaming and we add {rewardLabel(rewardMinutes)} of free play
+                      Book at least 1 hour of gaming and we add {rewardLabel(rewardMinutes)} of free play
                       right after your slot.
                     </span>
                   </span>
