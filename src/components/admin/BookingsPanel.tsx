@@ -272,7 +272,7 @@ export function BookingsPanel({
                       <Phone className="size-3" /> {b.customer_phone}
                     </a>
                     <a
-                      href={`https://wa.me/${b.customer_phone.replace(/[^\d]/g, "").replace(/^0/, "91")}`}
+                      href={`https://wa.me/${b.customer_phone.replace(/[^\d]/g, "").replace(/^0/, "91")}?text=${encodeURIComponent(confirmationText(b, stationName))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ml-2 inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
