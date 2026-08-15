@@ -205,3 +205,105 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
     if (error) return { ok: false, message: error.message };
     return { ok: true };
   });
+
+/** Approve a payment, optionally applying a last-minute admin discount. */
+export const approveBookingPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        bookingId: z.string().uuid(),
+        paymentMode: z.enum(["upi", "cash"]),
+        extraDiscount: z.number().min(0).max(1000000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<AdminMoveResult> => {
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("id")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!booking) return { ok: false, message: "You cannot edit this booking." };
+
+    const { recomputeBookingTotals } = await import("@/lib/booking-admin.server");
+    const totals = await recomputeBookingTotals(data.bookingId, data.extraDiscount);
+    if (!totals) return { ok: false, message: "Booking not found." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("bookings")
+      .update({ status: "confirmed", payment_mode: data.paymentMode })
+      .eq("id", data.bookingId);
+    if (error) return { ok: false, message: error.message };
+    return { ok: true };
+  });
+
+/** Add food/drinks to an already confirmed booking and collect payment for it. */
+export const addFoodToBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        bookingId: z.string().uuid(),
+        paymentMode: z.enum(["upi", "cash"]),
+        items: z
+          .array(z.object({ menuItemId: z.string().uuid(), quantity: z.number().int().min(1).max(99) }))
+          .min(1)
+          .max(50),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<AdminMoveResult & { total?: number }> => {
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("id, branch_id, total_amount, payment_mode")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!booking) return { ok: false, message: "You cannot edit this booking." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: menu } = await supabaseAdmin
+      .from("menu_items")
+      .select("id, name, price")
+      .eq("branch_id", booking.branch_id)
+      .in("id", data.items.map((i) => i.menuItemId));
+    if (!menu?.length) return { ok: false, message: "Those items are not on this branch's menu." };
+
+    const rows = data.items
+      .map((i) => {
+        const item = menu.find((m) => m.id === i.menuItemId);
+        if (!item) return null;
+        const unit = Number(item.price);
+        return {
+          booking_id: data.bookingId,
+          kind: "food" as const,
+          menu_item_id: item.id,
+          label: item.name,
+          unit_price: unit,
+          quantity: i.quantity,
+          line_total: Math.round(unit * i.quantity),
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+    if (!rows.length) return { ok: false, message: "Nothing to add." };
+
+    const added = rows.reduce((s, r) => s + r.line_total, 0);
+    const { error: insertError } = await supabaseAdmin.from("booking_items").insert(rows);
+    if (insertError) return { ok: false, message: insertError.message };
+
+    const previousTotal = Number(booking.total_amount ?? 0);
+    const { recomputeBookingTotals, setLedgerSplit } = await import("@/lib/booking-admin.server");
+    const totals = await recomputeBookingTotals(data.bookingId);
+    if (!totals) return { ok: false, message: "Booking not found." };
+
+    // Keep the ledger honest when the food was paid a different way than the session.
+    const foodPaid = Math.max(0, totals.total - previousTotal);
+    const basePaid = Math.max(0, totals.total - foodPaid);
+    const baseMode = booking.payment_mode === "cash" ? "cash" : booking.payment_mode === "upi" ? "upi" : null;
+    const cash = (baseMode === "cash" ? basePaid : 0) + (data.paymentMode === "cash" ? foodPaid : 0);
+    const upi = (baseMode === "upi" ? basePaid : 0) + (data.paymentMode === "upi" ? foodPaid : 0);
+    await setLedgerSplit(data.bookingId, cash, upi);
+
+    return { ok: true, total: added };
+  });
