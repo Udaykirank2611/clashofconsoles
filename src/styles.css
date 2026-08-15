@@ -152,8 +152,65 @@
   --tier-silver: oklch(0.86 0.03 250);
   --tier-silver-2: oklch(0.68 0.05 240);
   --tier-gold: oklch(0.86 0.17 92);
-  --tier-gold-2: oklch(0.7 0.16 70);
 }
+
+/*
+ * Admin console — clean white/light workspace theme.
+ * Scoped to the /admin subtree so the public site stays dark.
+ */
+.theme-admin-light {
+  --background: oklch(0.985 0.002 285);
+  --foreground: oklch(0.22 0.01 285);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.965 0.003 285);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.01 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.01 285);
+
+  --primary: oklch(0.55 0.19 258);
+  --primary-foreground: oklch(0.99 0.002 260);
+  --violet: oklch(0.52 0.21 300);
+  --cyan: oklch(0.6 0.12 210);
+  --orange: oklch(0.68 0.16 55);
+
+  --secondary: oklch(0.95 0.004 285);
+  --secondary-foreground: oklch(0.26 0.01 285);
+  --muted: oklch(0.95 0.004 285);
+  --muted-foreground: oklch(0.5 0.012 285);
+  --accent: oklch(0.52 0.21 300);
+  --accent-foreground: oklch(0.99 0.002 300);
+  --destructive: oklch(0.55 0.21 25);
+  --destructive-foreground: oklch(0.99 0.002 25);
+
+  --border: oklch(0.2 0.01 285 / 12%);
+  --input: oklch(0.2 0.01 285 / 16%);
+  --ring: oklch(0.55 0.19 258);
+
+  --gradient-arena: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--primary) 12%, transparent),
+    color-mix(in oklab, var(--violet) 10%, transparent) 55%,
+    transparent
+  );
+  --gradient-text: linear-gradient(
+    100deg,
+    var(--primary),
+    color-mix(in oklab, var(--violet) 85%, black)
+  );
+  --shadow-lift: 0 18px 40px -24px oklch(0.2 0.02 285 / 0.35);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent),
+    0 12px 34px -18px color-mix(in oklab, var(--primary) 30%, transparent);
+
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.theme-admin-light ::selection {
+  background: color-mix(in oklab, var(--primary) 22%, transparent);
+}
+
 
 
 @layer base {

@@ -94,8 +94,8 @@ export function StationGamesPanel({
   };
 
   return (
-    <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
-      <p className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-white/60">
+    <div className="mt-4 rounded-2xl border border-border bg-surface-2 p-4">
+      <p className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
         Games on {stationName} ({games.length})
       </p>
 
@@ -104,7 +104,7 @@ export function StationGamesPanel({
           <div
             key={g.id}
             className={cn(
-              "grid gap-2 rounded-xl border border-white/10 bg-white/5 p-3 sm:grid-cols-[1fr_1fr_auto]",
+              "grid gap-2 rounded-xl border border-border bg-surface p-3 sm:grid-cols-[1fr_1fr_auto]",
               !g.is_active && "opacity-50",
             )}
           >
@@ -138,7 +138,7 @@ export function StationGamesPanel({
           </div>
         ))}
         {!games.length ? (
-          <p className="text-xs text-white/50">No games yet — add the first one below.</p>
+          <p className="text-xs text-muted-foreground">No games yet — add the first one below.</p>
         ) : null}
       </div>
 
