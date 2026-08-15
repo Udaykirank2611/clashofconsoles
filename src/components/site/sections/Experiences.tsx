@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { Info, Sparkles } from "lucide-react";
 import { Reveal, SectionHeading } from "../primitives";
 import { TiltCard } from "../TiltCard";
 import { inr, type Experience, type SiteBranch } from "@/lib/site-content";
