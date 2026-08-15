@@ -72,7 +72,13 @@ const pairs = (rows: [string, string][]) =>
     .join("")}</table>`;
 
 /** Opens a branded, print-ready invoice for one booking. */
-export function printBookingReceipt(b: AdminBooking, stationName: string, branchName?: string) {
+export function printBookingReceipt(
+  b: AdminBooking,
+  stationName: string,
+  branchName?: string,
+  /** menu item id -> category, used to group the food lines. */
+  categories?: Map<string, string>,
+) {
   const { start, end } = bookingWindow(b);
   const experiences = b.booking_items.filter((i) => i.kind === "addon" && i.station_id);
   const passLines = b.booking_items.filter((i) => i.kind === "addon" && !i.station_id);
@@ -80,7 +86,7 @@ export function printBookingReceipt(b: AdminBooking, stationName: string, branch
 
   const foodByCategory = new Map<string, AdminBookingItem[]>();
   for (const i of food) {
-    const cat = i.category ?? "Food & drinks";
+    const cat = (i.menu_item_id ? categories?.get(i.menu_item_id) : null) ?? "Food & drinks";
     foodByCategory.set(cat, [...(foodByCategory.get(cat) ?? []), i]);
   }
 
