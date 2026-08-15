@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, Pill, money } from "./primitives";
-import type { AdminBooking, AdminBookingItem, AdminStation } from "@/lib/admin/useBranchData";
+import type { AdminBooking, AdminBookingItem, AdminMenuItem, AdminStation } from "@/lib/admin/useBranchData";
 import { formatTime } from "@/lib/booking/pricing";
-import { ChevronDown, Copy, MessageCircle, Phone, RefreshCw } from "lucide-react";
+import { ChevronDown, Copy, MessageCircle, Phone, RefreshCw, UtensilsCrossed } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
+import { approveBookingPayment } from "@/lib/booking-admin.functions";
+import { AddFoodDialog } from "./AddFoodDialog";
 import { cn } from "@/lib/utils";
 
 const FILTERS = ["payment_pending", "awaiting_payment", "confirmed", "cancelled", "all"] as const;
@@ -112,11 +114,14 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
 export function BookingsPanel({
   bookings,
   stations,
+  menu = [],
   onChanged,
   focusReference,
 }: {
   bookings: AdminBooking[];
   stations: AdminStation[];
+  /** Branch menu, used by the "Add food" flow on confirmed bookings. */
+  menu?: AdminMenuItem[];
   onChanged: () => void;
   /** Booking reference to open automatically (e.g. from a notification). */
   focusReference?: string | null;
@@ -128,6 +133,11 @@ export function BookingsPanel({
   /** Booking awaiting the "how did they pay?" confirmation dialog. */
   const [approving, setApproving] = useState<AdminBooking | null>(null);
   const [payMode, setPayMode] = useState<"upi" | "cash">("upi");
+  /** Last-minute discount the admin can apply while approving. */
+  const [extraDiscount, setExtraDiscount] = useState("");
+  /** Confirmed booking that is having food added to it. */
+  const [addingFood, setAddingFood] = useState<AdminBooking | null>(null);
+  const approvePayment = useServerFn(approveBookingPayment);
   const editHours = useServerFn(updateBookingExtraHours);
 
   useEffect(() => {
@@ -295,6 +305,7 @@ export function BookingsPanel({
                           disabled={busy === b.id}
                           onClick={() => {
                             setPayMode("upi");
+                            setExtraDiscount("");
                             setApproving(b);
                           }}
                         >
@@ -313,6 +324,9 @@ export function BookingsPanel({
                       <>
                         <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
                           <Copy className="size-3.5" /> Copy confirmation
+                        </AdminButton>
+                        <AdminButton disabled={busy === b.id} onClick={() => setAddingFood(b)}>
+                          <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         <AdminButton
                           variant="success"
