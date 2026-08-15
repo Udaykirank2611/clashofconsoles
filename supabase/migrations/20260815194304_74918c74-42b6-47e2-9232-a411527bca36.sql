@@ -1,0 +1,1 @@
+update public.experiences set starting_price = 90 where name = 'PS5 Gaming';
