@@ -52,7 +52,7 @@ export function BookingCalendar({
   branches: { id: string; name: string }[];
   defaultBranchId: string | null;
 }) {
-  const [branchId, setBranchId] = useState(defaultBranchId ?? branches[0]?.id ?? "");
+  const branchId = defaultBranchId ?? branches[0]?.id ?? "";
   const [view, setView] = useState<View>("day");
   const [anchor, setAnchor] = useState(() => new Date());
   const [bookings, setBookings] = useState<CalBooking[]>([]);
@@ -229,15 +229,7 @@ export function BookingCalendar({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {branches.length > 1 ? (
-            <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className={field}>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          ) : null}
+          {/* Branch is chosen from the admin header selector — no duplicate control here. */}
           <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={field}>
             <option value="all">All booking types</option>
             <option value="single">Single pass</option>
