@@ -230,10 +230,19 @@ export function useBranchData(branchId: string | null): BranchData {
       channel = channel.on("postgres_changes", { event: "*", schema: "public", table }, () => void refresh());
     }
     channel.subscribe();
+    // Polling fallback so the panel stays current if the realtime socket drops.
+    const timer = window.setInterval(() => void refresh(), 25000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
   }, [branchId, refresh]);
+
 
   return { loading, stations, bookings, coupons, sessions, groupRates, menu, refresh };
 }

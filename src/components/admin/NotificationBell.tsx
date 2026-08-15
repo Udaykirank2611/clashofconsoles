@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Check, Gamepad2, IndianRupee, Ticket, UtensilsCrossed, Gift, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { playChime } from "@/lib/admin/chime";
 import { money } from "./primitives";
 
 export interface AdminNotification {
@@ -46,6 +48,7 @@ export function NotificationBell({
   const [items, setItems] = useState<AdminNotification[]>([]);
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
+  const seenRef = useRef<Set<string> | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -54,10 +57,23 @@ export function NotificationBell({
       .eq("branch_id", branchId)
       .order("created_at", { ascending: false })
       .limit(50);
-    setItems((data ?? []) as unknown as AdminNotification[]);
+    const rows = (data ?? []) as unknown as AdminNotification[];
+    if (seenRef.current === null) {
+      seenRef.current = new Set(rows.map((r) => r.id));
+    } else {
+      const fresh = rows.filter((r) => !seenRef.current!.has(r.id));
+      for (const r of rows) seenRef.current.add(r.id);
+      if (fresh.some((r) => !r.read_at)) {
+        playChime();
+        const top = fresh[0];
+        if (top) toast(top.title, { description: top.body });
+      }
+    }
+    setItems(rows);
   }, [branchId]);
 
   useEffect(() => {
+    seenRef.current = null;
     void load();
     const channel = supabase
       .channel(`notifications-${branchId}`)
@@ -67,10 +83,14 @@ export function NotificationBell({
         () => void load(),
       )
       .subscribe();
+    // Polling fallback so alerts still arrive if the realtime socket drops.
+    const timer = window.setInterval(() => void load(), 20000);
     return () => {
+      window.clearInterval(timer);
       void supabase.removeChannel(channel);
     };
   }, [branchId, load]);
+
 
   useEffect(() => {
     if (!open) return;
