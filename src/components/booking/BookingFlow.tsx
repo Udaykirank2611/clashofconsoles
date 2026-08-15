@@ -232,6 +232,8 @@ export function BookingFlow() {
   const releaseFn = useServerFn(releaseHold);
   const couponFn = useServerFn(validateCoupon);
   const bookFn = useServerFn(createBooking);
+  const registerFn = useServerFn(registerCustomer);
+
   const navigate = useNavigate();
 
 
