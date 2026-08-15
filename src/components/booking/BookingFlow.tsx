@@ -32,9 +32,11 @@ import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
 
 import {
   REWARD_MIN_BOOKING_MINUTES,
+  registerCustomer,
   rewardLabel,
   type LoyaltyCustomer,
 } from "@/lib/loyalty.functions";
+
 import {
   createBooking,
   getActiveHold,
@@ -230,12 +232,17 @@ export function BookingFlow() {
   const releaseFn = useServerFn(releaseHold);
   const couponFn = useServerFn(validateCoupon);
   const bookFn = useServerFn(createBooking);
+  const registerFn = useServerFn(registerCustomer);
+
   const navigate = useNavigate();
 
 
   const days = useMemo(() => upcomingDays(14), []);
   const [step, setStep] = useState(0);
   const [customer, setCustomer] = useState<LoyaltyCustomer | null>(null);
+  /** Visitor chose to skip the phone step — no loyalty rewards, phone collected at the end. */
+  const [skippedPhone, setSkippedPhone] = useState(false);
+
   const [useReward, setUseReward] = useState(false);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [date, setDate] = useState(() => toDateKey(new Date()));
@@ -887,6 +894,16 @@ export function BookingFlow() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      // Phone step was skipped — make sure the number exists in our customer
+      // roster now (visits are still credited when the session completes).
+      if (!customer) {
+        try {
+          await registerFn({ data: { phone: form.phone.trim(), name: form.fullName.trim() } });
+        } catch {
+          /* non-blocking: the booking itself still records the phone number */
+        }
+      }
+
       const res = await bookFn({
         data: {
           branchId: branch.id,
@@ -1002,13 +1019,14 @@ export function BookingFlow() {
   
 
 
-  if (!customer) {
+  if (!customer && !skippedPhone) {
     return (
       <PhoneGate
         onReady={(c) => {
           setCustomer(c);
           setForm((f) => ({ ...f, fullName: c.name, phone: c.phone }));
         }}
+        onSkip={() => setSkippedPhone(true)}
       />
     );
   }
@@ -1016,7 +1034,8 @@ export function BookingFlow() {
   return (
     <div className="pb-40">
       <StepProgress step={step} />
-      <LoyaltyStrip customer={customer} />
+      {customer ? <LoyaltyStrip customer={customer} /> : null}
+
 
       {expiresAt ? (
         <div className="mx-auto mt-6 flex w-fit items-center gap-2 rounded-full border border-cyan/30 bg-cyan/5 px-4 py-2 text-xs font-bold text-cyan animate-[scale-in_0.25s_ease-out]">

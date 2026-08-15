@@ -17,9 +17,16 @@ import { Field } from "./ui";
  * Existing numbers are recognised instantly; new numbers only need a name.
  * No OTP, no password, no login.
  */
-export function PhoneGate({ onReady }: { onReady: (customer: LoyaltyCustomer) => void }) {
+export function PhoneGate({
+  onReady,
+  onSkip,
+}: {
+  onReady: (customer: LoyaltyCustomer) => void;
+  onSkip?: () => void;
+}) {
   const lookupFn = useServerFn(lookupCustomer);
   const registerFn = useServerFn(registerCustomer);
+
 
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -121,7 +128,24 @@ export function PhoneGate({ onReady }: { onReady: (customer: LoyaltyCustomer) =>
               Use a different number
             </button>
           ) : null}
+
+          {onSkip ? (
+            <div className="space-y-1.5 pt-1">
+              <button
+                type="button"
+                onClick={onSkip}
+                className="w-full rounded-2xl border border-border bg-background/40 px-6 py-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:border-cyan/40 hover:text-foreground"
+              >
+                Skip for now
+              </button>
+              <p className="text-center text-[0.66rem] text-muted-foreground/80">
+                You'll still need to enter your number at checkout, and you won't be able to use the free
+                gaming reward on this booking.
+              </p>
+            </div>
+          ) : null}
         </div>
+
 
         <p className="mt-6 flex items-center gap-2 rounded-2xl border border-border bg-background/40 px-4 py-3 text-[0.68rem] text-muted-foreground">
           <Gift className="size-3.5 shrink-0 text-cyan" />
