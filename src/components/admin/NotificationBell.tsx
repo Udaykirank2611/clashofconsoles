@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Check, Gamepad2, IndianRupee, Ticket, UtensilsCrossed, Gift, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { playChime } from "@/lib/admin/chime";
 import { money } from "./primitives";
 
 export interface AdminNotification {
