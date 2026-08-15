@@ -32,9 +32,11 @@ import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
 
 import {
   REWARD_MIN_BOOKING_MINUTES,
+  registerCustomer,
   rewardLabel,
   type LoyaltyCustomer,
 } from "@/lib/loyalty.functions";
+
 import {
   createBooking,
   getActiveHold,
