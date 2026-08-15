@@ -149,7 +149,8 @@ export function PhoneGate({
 
         <p className="mt-6 flex items-center gap-2 rounded-2xl border border-border bg-background/40 px-4 py-3 text-[0.68rem] text-muted-foreground">
           <Gift className="size-3.5 shrink-0 text-cyan" />
-          {VISITS_PER_REWARD}th completed visit → 30 Minutes FREE · 10th completed visit → 1 Hour FREE.
+          Free time on your {VISITS_PER_REWARD}th visit → 30 Minutes FREE · on your 10th visit → 1 Hour
+          FREE. Every game counts.
         </p>
       </div>
     </div>
@@ -181,7 +182,8 @@ export function LoyaltyStrip({ customer }: { customer: LoyaltyCustomer }) {
           <span className="flex items-center gap-2 text-[0.68rem] font-semibold text-cyan">
             {customer.cycleProgress} / {VISITS_PER_REWARD} visits
             <span className="text-muted-foreground">
-              · {customer.visitsToReward} more for {rewardLabel(customer.nextRewardMinutes)} free
+              · your {customer.nextMilestoneVisit}th visit gets{" "}
+              {rewardLabel(customer.nextRewardMinutes)} free
             </span>
           </span>
         )}
