@@ -236,6 +236,9 @@ export function BookingFlow() {
   const days = useMemo(() => upcomingDays(14), []);
   const [step, setStep] = useState(0);
   const [customer, setCustomer] = useState<LoyaltyCustomer | null>(null);
+  /** Visitor chose to skip the phone step — no loyalty rewards, phone collected at the end. */
+  const [skippedPhone, setSkippedPhone] = useState(false);
+
   const [useReward, setUseReward] = useState(false);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [date, setDate] = useState(() => toDateKey(new Date()));
