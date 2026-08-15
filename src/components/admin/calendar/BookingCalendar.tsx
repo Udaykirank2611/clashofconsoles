@@ -52,7 +52,7 @@ export function BookingCalendar({
   branches: { id: string; name: string }[];
   defaultBranchId: string | null;
 }) {
-  const [branchId, setBranchId] = useState(defaultBranchId ?? branches[0]?.id ?? "");
+  const branchId = defaultBranchId ?? branches[0]?.id ?? "";
   const [view, setView] = useState<View>("day");
   const [anchor, setAnchor] = useState(() => new Date());
   const [bookings, setBookings] = useState<CalBooking[]>([]);
