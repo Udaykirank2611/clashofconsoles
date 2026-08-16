@@ -61,9 +61,13 @@ function TierWord({ name }: { name: string }) {
           <span
             key={`${part}-${i}`}
             style={{ "--w1": tier.c1, "--w2": tier.c2 } as CSSProperties}
-            className="rounded-lg border border-[color-mix(in_oklab,var(--w1)_50%,transparent)] px-2.5 py-1 [background:linear-gradient(120deg,color-mix(in_oklab,var(--w1)_88%,black),color-mix(in_oklab,var(--w2)_92%,white),color-mix(in_oklab,var(--w1)_88%,black))] bg-clip-text text-transparent shadow-[0_8px_26px_-16px_var(--w1)] drop-shadow-[0_0_10px_color-mix(in_oklab,var(--w1)_45%,transparent)]"
+            className="relative inline-block overflow-hidden rounded-lg border border-[color-mix(in_oklab,var(--w1)_60%,transparent)] px-2.5 py-1 text-background [background:linear-gradient(120deg,color-mix(in_oklab,var(--w1)_82%,black)_0%,color-mix(in_oklab,var(--w2)_95%,white)_45%,color-mix(in_oklab,var(--w1)_88%,black)_100%)] shadow-[0_10px_30px_-14px_var(--w1)]"
           >
-            {part}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 [background:linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.55)_50%,transparent_65%)]"
+            />
+            <span className="relative">{part}</span>
           </span>
         ) : (
           <span key={`${part}-${i}`} className="text-muted-foreground">
