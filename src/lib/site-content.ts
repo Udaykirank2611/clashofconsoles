@@ -328,10 +328,12 @@ function deriveExperiences(
     const base = hourlyOnly.length
       ? hourlyOnly
       : rows2.filter((r) => r.group_label !== "Add-ons").map((r) => r.price);
+    // An explicit price set in Experience Management always wins over derived rates.
+    const explicit = Number(exp.starting_price);
     experiences.push({
       ...exp,
       branch_ids: branchIds,
-      starting_price: base.length ? Math.min(...base) : Number(exp.starting_price),
+      starting_price: explicit > 0 ? explicit : base.length ? Math.min(...base) : 0,
       is_exclusive: branchIds.length === 1 && new Set(stations.map((s) => s.branch_id)).size > 1,
     });
   }
