@@ -1,7 +1,9 @@
-import { ChevronDown, Gamepad2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Check, Gamepad2, LibraryBig } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatTime, inr } from "@/lib/booking/pricing";
 import type { Station, StationGame } from "@/lib/booking/types";
+import { GamesModal } from "./GamesModal";
 
 /** Status of a console for the currently chosen slot. */
 type Availability = "available" | "occupied" | "maintenance";
