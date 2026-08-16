@@ -144,7 +144,7 @@ function TodayFoodOrders({ rows }: { rows: AdminBooking[] }) {
   const [status, setStatus] = useState("all");
   const filtered = rows
     .filter((b) => (status === "all" ? true : b.status === status))
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
 
   return (
     <Panel
