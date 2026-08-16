@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, AdminInput, Panel, Pill } from "./primitives";
 import { MenuCategoriesPanel } from "./MenuCategoriesPanel";
 import { ExperiencesPanel } from "./ExperiencesPanel";
+import { SiteMediaPanel } from "./SiteMediaPanel";
 import { AlertTriangle } from "lucide-react";
 
 export interface HomepageCard {
@@ -182,6 +183,8 @@ export function HomepagePanel({ branches }: { branches: { id: string; name: stri
           </ul>
         </Panel>
       )}
+
+      <SiteMediaPanel />
 
       <MenuCategoriesPanel />
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FoodBanner } from "@/components/site/FoodBanner";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -992,6 +993,11 @@ export function BookingFlow() {
         : step === 2
           ? hasGaming || cart.length > 0
           : true;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
   const goNext = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
@@ -1871,6 +1877,7 @@ export function BookingFlow() {
         {/* ---------------- STEP 3 · FOOD ---------------- */}
         {step === 2 ? (
           <section className="space-y-8">
+            <FoodBanner caption="Food & drinks" />
             <div className="flex flex-wrap items-end justify-between gap-4">
               <StepHead
                 title="Food & drinks"

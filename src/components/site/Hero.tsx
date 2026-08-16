@@ -3,6 +3,7 @@ import { ChevronDown, Gamepad2 } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
 import { MagneticButton } from "./primitives";
+import { useSiteMedia } from "@/lib/site-media";
 
 
 const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
@@ -14,6 +15,9 @@ const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
 
 export function Hero() {
   const spotRef = useRef<HTMLDivElement | null>(null);
+  const { media } = useSiteMedia();
+  const backdrop = media["hero_background"];
+  const isVideo = backdrop?.media_type === "video" && Boolean(backdrop?.url);
 
   useEffect(() => {
     const el = spotRef.current;
@@ -40,14 +44,26 @@ export function Hero() {
       ref={spotRef}
       className="relative isolate flex min-h-[100svh] items-center overflow-hidden pt-28"
     >
-      <img
-        src={heroImg}
-        alt="Interior of the Clash of Consoles gaming lounge in Hyderabad"
-        width={1920}
-        height={1088}
-        fetchPriority="high"
-        className="absolute inset-0 -z-20 size-full object-cover"
-      />
+      {isVideo ? (
+        <video
+          src={backdrop!.url!}
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={heroImg}
+          className="absolute inset-0 -z-20 size-full object-cover"
+        />
+      ) : (
+        <img
+          src={backdrop?.url || heroImg}
+          alt="Interior of the Clash of Consoles gaming lounge in Hyderabad"
+          width={1920}
+          height={1088}
+          fetchPriority="high"
+          className="absolute inset-0 -z-20 size-full object-cover"
+        />
+      )}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10 bg-linear-to-b from-background/85 via-background/70 to-background"

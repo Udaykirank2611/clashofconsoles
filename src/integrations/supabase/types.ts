@@ -1559,6 +1559,33 @@ export type Database = {
           },
         ]
       }
+      site_media: {
+        Row: {
+          created_at: string
+          key: string
+          label: string
+          media_type: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          label?: string
+          media_type?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          label?: string
+          media_type?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       site_offers: {
         Row: {
           branch_id: string

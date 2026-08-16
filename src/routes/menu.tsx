@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { FoodBanner } from "@/components/site/FoodBanner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AmbientBackground } from "@/components/site/AmbientBackground";
 import { Footer } from "@/components/site/Footer";
@@ -98,6 +99,8 @@ function MenuPage() {
             }
             lead="Kitchen-fresh food and cold drinks, served right at your station."
           />
+
+          <FoodBanner className="mt-10" caption="Fresh from our kitchen" />
 
           {/* Search + filters */}
           <div className="mt-14 space-y-4">
