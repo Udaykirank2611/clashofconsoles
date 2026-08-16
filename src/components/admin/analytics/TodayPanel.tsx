@@ -127,7 +127,7 @@ function TodayBookings({ rows, stations }: { rows: AdminBooking[]; stations: Adm
           b.customer_name,
           b.customer_phone,
           b.gaming_stations?.name ?? "—",
-          `${formatTime(b.start_time)} – ${formatTime(b.end_time)}`,
+          b.start_time && b.end_time ? `${formatTime(b.start_time)} – ${formatTime(b.end_time)}` : "—",
           String(b.players),
           money(Number(b.session_amount) + Number(b.addons_amount)),
           money(b.food_amount),
