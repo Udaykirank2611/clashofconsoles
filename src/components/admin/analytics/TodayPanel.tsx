@@ -96,7 +96,7 @@ function TodayBookings({ rows, stations }: { rows: AdminBooking[]; stations: Adm
   const filtered = rows
     .filter((b) => (status === "all" ? true : b.status === status))
     .filter((b) => (station === "all" ? true : b.station_id === station))
-    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+    .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
 
   return (
     <Panel
@@ -127,7 +127,7 @@ function TodayBookings({ rows, stations }: { rows: AdminBooking[]; stations: Adm
           b.customer_name,
           b.customer_phone,
           b.gaming_stations?.name ?? "—",
-          `${formatTime(b.start_time)} – ${formatTime(b.end_time)}`,
+          b.start_time && b.end_time ? `${formatTime(b.start_time)} – ${formatTime(b.end_time)}` : "—",
           String(b.players),
           money(Number(b.session_amount) + Number(b.addons_amount)),
           money(b.food_amount),
@@ -144,7 +144,7 @@ function TodayFoodOrders({ rows }: { rows: AdminBooking[] }) {
   const [status, setStatus] = useState("all");
   const filtered = rows
     .filter((b) => (status === "all" ? true : b.status === status))
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
 
   return (
     <Panel
