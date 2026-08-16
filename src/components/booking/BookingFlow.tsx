@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Gamepad2,
+  LibraryBig,
   Loader2,
   MapPin,
   Minus,
@@ -61,7 +62,8 @@ import {
   upcomingDays,
 } from "@/lib/booking/pricing";
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
-import { ConsoleSelect, GamesGrid } from "./ConsoleSelect";
+import { ConsoleSelect, CardAction } from "./ConsoleSelect";
+import { GamesModal } from "./GamesModal";
 import type { CouponCategory } from "@/lib/booking/pricing";
 import { BillSummary, durationLabel, type BillLine } from "./BillSummary";
 import {
@@ -70,6 +72,7 @@ import {
   type CartLine,
   type CouponResult,
   type Station,
+  type StationGame,
 } from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
@@ -1731,7 +1734,9 @@ export function BookingFlow() {
                                 image_url: null,
                                 sort_order: 0,
                               }));
-                          return games.length ? <GamesGrid games={games} /> : null;
+                          return games.length ? (
+                            <ViewGamesButton title={active.name} games={games} />
+                          ) : null;
                         })()}
 
                         <div>
@@ -2314,6 +2319,22 @@ function StepHead({ title, hint }: { title: string; hint: string }) {
     <div>
       <h2 className="text-2xl font-black sm:text-3xl">{title}</h2>
       <p className="mt-2 max-w-xl text-sm text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+/** Opens the games library popup for a non-console station (VR, lounge, theatre…). */
+function ViewGamesButton({ title, games }: { title: string; games: StationGame[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex items-center gap-3">
+      <p className="text-[0.62rem] font-bold uppercase tracking-[0.24em] text-cyan">
+        {games.length} {games.length === 1 ? "game installed" : "games installed"}
+      </p>
+      <CardAction onClick={() => setOpen(true)} className="max-w-44 flex-none">
+        <LibraryBig className="size-3.5" /> View games
+      </CardAction>
+      <GamesModal open={open} title={title} games={games} onClose={() => setOpen(false)} />
     </div>
   );
 }
