@@ -12,7 +12,6 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Konami } from "@/components/site/Konami";
-import { SoundToggle } from "@/components/site/SoundToggle";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -152,7 +151,6 @@ function RootComponent() {
       <Outlet />
       <Toaster position="top-center" />
       <Konami />
-      <SoundToggle />
     </QueryClientProvider>
   );
 }
