@@ -151,7 +151,8 @@
   --tier-bronze-2: oklch(0.55 0.12 40);
   --tier-silver: oklch(0.86 0.03 250);
   --tier-silver-2: oklch(0.68 0.05 240);
-  --tier-gold: oklch(0.86 0.17 92);
+  --tier-gold: oklch(0.84 0.16 86);
+  --tier-gold-2: oklch(0.95 0.13 100);
 }
 
 /*
