@@ -279,7 +279,7 @@ export function StationsPanel({
                 (b.status === "pending" || b.status === "confirmed") &&
                 b.station_id === s.id,
             )
-            .sort((a, b) => a.start_time.localeCompare(b.start_time));
+            .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
           const current = today.find(
             (b) => toMinutes(b.start_time) <= nowMin && toMinutes(b.end_time) > nowMin,
           );

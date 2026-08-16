@@ -283,7 +283,7 @@ function TodayList({ bookings }: { bookings: ReturnType<typeof useBranchData>["b
   const today = new Date().toISOString().slice(0, 10);
   const rows = bookings
     .filter((b) => b.booking_date === today && b.status !== "cancelled")
-    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+    .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
   if (!rows.length) return <p className="py-8 text-center text-sm text-muted-foreground">Nothing booked today yet.</p>;
   return (
     <ul className="space-y-2">
