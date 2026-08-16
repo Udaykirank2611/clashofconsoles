@@ -213,6 +213,18 @@ export function ConsoleSelect({
     return "available";
   };
 
+  const nextRef = useRef<HTMLDivElement | null>(null);
+  const select = (id: string) => {
+    const next = stationId === id ? null : id;
+    onStation(next);
+    if (!next) return;
+    window.setTimeout(
+      () => nextRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      120,
+    );
+  };
+
+
 
   return (
     <div
