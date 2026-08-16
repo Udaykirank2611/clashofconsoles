@@ -110,16 +110,21 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                     ) : null}
 
                     <div className="relative [transform:translateZ(40px)]">
-                      <span className="inline-flex items-center gap-2">
-                        <TierIcon className="size-4 text-foreground/80" aria-hidden="true" />
-                        <span className="text-[0.55rem] font-bold uppercase tracking-[0.28em] text-foreground/80">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--t1)_45%,transparent)] px-3 py-1.5 [background:linear-gradient(120deg,color-mix(in_oklab,var(--t1)_22%,transparent),color-mix(in_oklab,var(--t2)_18%,transparent))] shadow-[0_10px_30px_-18px_var(--t1)]">
+                        <TierIcon
+                          className="size-4"
+                          style={{ color: "var(--t1)" }}
+                          aria-hidden="true"
+                        />
+                        <span className="text-[0.55rem] font-black uppercase tracking-[0.28em] text-foreground">
                           {tier.label}
                         </span>
                       </span>
 
-                      <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
-                        {plan.name}
+                      <p className="mt-4 text-lg font-black uppercase tracking-[0.18em]">
+                        <TierWord name={plan.name} />
                       </p>
+
 
                       <p className="mt-3 text-5xl font-black tracking-tight text-foreground sm:text-6xl">
                         {inr(plan.price)}
