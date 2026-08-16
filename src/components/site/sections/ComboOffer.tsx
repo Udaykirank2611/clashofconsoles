@@ -81,8 +81,10 @@ export function ComboOffer({ offer }: { offer: SiteOffer | null }) {
                   <p className="text-gradient mt-2 text-6xl font-black tracking-tight sm:text-7xl">
                     {inr(offer.price)}
                   </p>
-                  <p className="mt-4 text-sm text-muted-foreground">{offer.offer_text}</p>
-                  {offer.validity ? (
+                  <p className="mt-4 whitespace-pre-line text-sm text-muted-foreground">
+                    {offer.offer_text}
+                  </p>
+                  {offer.validity && offer.validity !== offer.offer_text ? (
                     <p className="mt-3 text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-cyan">
                       {offer.validity}
                     </p>
