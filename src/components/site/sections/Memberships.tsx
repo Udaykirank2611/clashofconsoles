@@ -49,6 +49,32 @@ function tierOf(name: string): TierKey {
   return "neon";
 }
 
+/** Renders Bronze / Silver / Gold inside a plan name with its metallic signature. */
+function TierWord({ name }: { name: string }) {
+  const parts = name.split(/(bronze|silver|gold)/gi).filter(Boolean);
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-1.5">
+      {parts.map((part, i) => {
+        const key = part.toLowerCase() as TierKey;
+        const tier = key === "bronze" || key === "silver" || key === "gold" ? TIERS[key] : null;
+        return tier ? (
+          <span
+            key={`${part}-${i}`}
+            style={{ "--w1": tier.c1, "--w2": tier.c2 } as CSSProperties}
+            className="rounded-lg border border-[color-mix(in_oklab,var(--w1)_50%,transparent)] px-2.5 py-1 [background:linear-gradient(120deg,color-mix(in_oklab,var(--w1)_88%,black),color-mix(in_oklab,var(--w2)_92%,white),color-mix(in_oklab,var(--w1)_88%,black))] bg-clip-text text-transparent shadow-[0_8px_26px_-16px_var(--w1)] drop-shadow-[0_0_10px_color-mix(in_oklab,var(--w1)_45%,transparent)]"
+          >
+            {part}
+          </span>
+        ) : (
+          <span key={`${part}-${i}`} className="text-muted-foreground">
+            {part.trim()}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export function Memberships({ plans }: { plans: MembershipPlan[] }) {
   if (!plans.length) return null;
 
