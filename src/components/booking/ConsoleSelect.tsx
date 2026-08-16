@@ -291,14 +291,17 @@ export function ConsoleSelect({
                   status={statusOf(s)}
                   games={gamesFor(s.id)}
                   selected={stationId === s.id}
-                  onSelect={() => onStation(stationId === s.id ? null : s.id)}
+                  onSelect={() => select(s.id)}
                 />
               ))}
             </div>
           </div>
 
           {stationId ? (
-            <div className="space-y-7 animate-[step-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]">
+            <div
+              ref={nextRef}
+              className="scroll-mt-24 space-y-7 animate-[step-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]"
+            >
               <div>
                 <Label>
                   Start time
