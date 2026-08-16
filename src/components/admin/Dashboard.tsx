@@ -292,7 +292,7 @@ function TodayList({ bookings }: { bookings: ReturnType<typeof useBranchData>["b
           key={b.id}
           className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
         >
-          <span className="w-20 text-sm font-bold">{formatTime(b.start_time)}</span>
+          <span className="w-20 text-sm font-bold">{b.start_time ? formatTime(b.start_time) : "—"}</span>
           <span className="min-w-0 flex-1 truncate text-sm">
             {b.customer_name} · {b.gaming_stations?.name ?? ""} · {b.players}P
           </span>
