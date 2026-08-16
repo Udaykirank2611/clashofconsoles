@@ -13,6 +13,7 @@ interface BranchSettings {
   slot_minutes: string;
   tax_percent: string;
   map_url: string;
+  image_url: string;
 }
 
 const EMPTY: BranchSettings = {
@@ -25,6 +26,7 @@ const EMPTY: BranchSettings = {
   slot_minutes: "30",
   tax_percent: "5",
   map_url: "",
+  image_url: "",
 };
 
 export function SettingsPanel({ branchId }: { branchId: string }) {
@@ -36,7 +38,7 @@ export function SettingsPanel({ branchId }: { branchId: string }) {
     let active = true;
     void supabase
       .from("branches")
-      .select("name, address, city, phone, opens_at, closes_at, slot_minutes, tax_percent, map_url")
+      .select("name, address, city, phone, opens_at, closes_at, slot_minutes, tax_percent, map_url, image_url")
       .eq("id", branchId)
       .maybeSingle()
       .then(({ data }) => {
@@ -51,6 +53,7 @@ export function SettingsPanel({ branchId }: { branchId: string }) {
           slot_minutes: String(data.slot_minutes ?? 30),
           tax_percent: String(data.tax_percent ?? 0),
           map_url: (data as { map_url?: string | null }).map_url ?? "",
+          image_url: data.image_url ?? "",
         });
         setLoading(false);
       });
@@ -79,6 +82,7 @@ export function SettingsPanel({ branchId }: { branchId: string }) {
         slot_minutes: Number(form.slot_minutes) || 30,
         tax_percent: Number(form.tax_percent) || 0,
         map_url: form.map_url.trim() || null,
+        image_url: form.image_url.trim() || null,
       })
       .eq("id", branchId);
     setSaving(false);
@@ -121,6 +125,21 @@ export function SettingsPanel({ branchId }: { branchId: string }) {
           className="sm:col-span-2"
         />
         <AdminInput label="Slot size (minutes)" value={form.slot_minutes} onChange={set("slot_minutes")} />
+        <AdminInput
+          label="Branch photo link (shown when guests pick a branch)"
+          value={form.image_url}
+          onChange={set("image_url")}
+          placeholder="https://…/branch.jpg"
+          className="sm:col-span-2"
+        />
+        {form.image_url ? (
+          <img
+            src={form.image_url}
+            alt={form.name}
+            loading="lazy"
+            className="h-36 w-full rounded-2xl object-cover sm:col-span-2"
+          />
+        ) : null}
       </div>
     </Panel>
   );
