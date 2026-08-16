@@ -49,6 +49,36 @@ function tierOf(name: string): TierKey {
   return "neon";
 }
 
+/** Renders Bronze / Silver / Gold inside a plan name with its metallic signature. */
+function TierWord({ name }: { name: string }) {
+  const parts = name.split(/(bronze|silver|gold)/gi).filter(Boolean);
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-1.5">
+      {parts.map((part, i) => {
+        const key = part.toLowerCase() as TierKey;
+        const tier = key === "bronze" || key === "silver" || key === "gold" ? TIERS[key] : null;
+        return tier ? (
+          <span
+            key={`${part}-${i}`}
+            style={{ "--w1": tier.c1, "--w2": tier.c2 } as CSSProperties}
+            className="relative inline-block overflow-hidden rounded-lg border border-[color-mix(in_oklab,var(--w1)_60%,transparent)] px-2.5 py-1 text-background [background:linear-gradient(120deg,color-mix(in_oklab,var(--w1)_82%,black)_0%,color-mix(in_oklab,var(--w2)_95%,white)_45%,color-mix(in_oklab,var(--w1)_88%,black)_100%)] shadow-[0_10px_30px_-14px_var(--w1)]"
+          >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 [background:linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.55)_50%,transparent_65%)]"
+            />
+            <span className="relative">{part}</span>
+          </span>
+        ) : (
+          <span key={`${part}-${i}`} className="text-muted-foreground">
+            {part.trim()}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export function Memberships({ plans }: { plans: MembershipPlan[] }) {
   if (!plans.length) return null;
 
@@ -110,16 +140,21 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                     ) : null}
 
                     <div className="relative [transform:translateZ(40px)]">
-                      <span className="inline-flex items-center gap-2">
-                        <TierIcon className="size-4 text-foreground/80" aria-hidden="true" />
-                        <span className="text-[0.55rem] font-bold uppercase tracking-[0.28em] text-foreground/80">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--t1)_45%,transparent)] px-3 py-1.5 [background:linear-gradient(120deg,color-mix(in_oklab,var(--t1)_22%,transparent),color-mix(in_oklab,var(--t2)_18%,transparent))] shadow-[0_10px_30px_-18px_var(--t1)]">
+                        <TierIcon
+                          className="size-4"
+                          style={{ color: "var(--t1)" }}
+                          aria-hidden="true"
+                        />
+                        <span className="text-[0.55rem] font-black uppercase tracking-[0.28em] text-foreground">
                           {tier.label}
                         </span>
                       </span>
 
-                      <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
-                        {plan.name}
+                      <p className="mt-4 text-lg font-black uppercase tracking-[0.18em]">
+                        <TierWord name={plan.name} />
                       </p>
+
 
                       <p className="mt-3 text-5xl font-black tracking-tight text-foreground sm:text-6xl">
                         {inr(plan.price)}
