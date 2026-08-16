@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Gamepad2,
+  LibraryBig,
   Loader2,
   MapPin,
   Minus,
@@ -71,6 +72,7 @@ import {
   type CartLine,
   type CouponResult,
   type Station,
+  type StationGame,
 } from "@/lib/booking/types";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
