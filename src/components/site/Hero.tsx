@@ -3,6 +3,7 @@ import { ChevronDown, Gamepad2 } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
 import { MagneticButton } from "./primitives";
+import { useSiteMedia } from "@/lib/site-media";
 
 
 const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
