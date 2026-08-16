@@ -27,47 +27,36 @@ function StatusBadge({ status }: { status: Availability }) {
   );
 }
 
-/** Compact game grid rendered inside an expanded console card. */
-export function GamesGrid({ games }: { games: StationGame[] }) {
+/** Small pill button used inside a console card. */
+export function CardAction({
+  children,
+  onClick,
+  disabled,
+  primary,
+  className,
+  ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { primary?: boolean }) {
   return (
-    <div className="mt-4 border-t border-border pt-3">
-      <p className="mb-2 text-[0.55rem] font-bold uppercase tracking-[0.2em] text-cyan">
-        Available Games ({games.length})
-      </p>
-      {games.length ? (
-        <div className="coc-thin-scroll max-h-[16.5rem] overflow-y-auto pr-1">
-          <div className="grid grid-cols-3 gap-2.5">
-            {games.map((g) => (
-              <div key={g.id} className="group/game min-w-0">
-                <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-linear-to-br from-surface-2 via-surface to-background transition-transform duration-300 group-hover/game:-translate-y-0.5 group-hover/game:border-cyan/40">
-                  {g.image_url ? (
-                    <img
-                      src={g.image_url}
-                      alt={g.name}
-                      loading="lazy"
-                      className="size-full object-cover transition-transform duration-500 group-hover/game:scale-105"
-                    />
-                  ) : (
-                    <span className="grid size-full place-items-center text-[0.6rem] font-black tracking-[0.2em] text-muted-foreground/80">
-                      {g.name.slice(0, 3).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 truncate text-[0.62rem] font-semibold text-muted-foreground">
-                  {g.name}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <p className="text-[0.68rem] text-muted-foreground">No games listed yet.</p>
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition-all duration-300",
+        primary
+          ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground hover:brightness-110"
+          : "border-border bg-background/50 text-muted-foreground hover:border-cyan/40 hover:text-foreground",
+        disabled && "cursor-not-allowed opacity-50",
+        className,
       )}
-    </div>
+      {...rest}
+    >
+      {children}
+    </button>
   );
 }
 
-/** One premium console card; expands in place to reveal its games. */
+/** One premium console card: Select + View Games, no in-page expansion. */
 function ConsoleCard({
   station,
   status,
@@ -83,6 +72,8 @@ function ConsoleCard({
 }) {
   const disabled = status !== "available";
   const gameCount = games.length;
+  const [showGames, setShowGames] = useState(false);
+
   return (
     <div
       className={cn(
@@ -104,15 +95,8 @@ function ConsoleCard({
           selected && "opacity-100",
         )}
       />
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onSelect}
-        aria-pressed={selected}
-        aria-expanded={selected}
-        className={cn("relative block w-full text-left", disabled && "cursor-not-allowed")}
-      >
-        <span className="flex items-start justify-between gap-3">
+      <div className="relative">
+        <div className="flex items-start justify-between gap-3">
           <span
             className={cn(
               "grid size-12 shrink-0 place-items-center rounded-2xl border border-border bg-background/60 transition-colors duration-500",
@@ -122,34 +106,41 @@ function ConsoleCard({
             <Gamepad2 className="size-6" />
           </span>
           <StatusBadge status={status} />
-        </span>
-        <span className="mt-4 block truncate text-base font-extrabold">{station.name}</span>
-        <span className="mt-1 block text-[0.68rem] text-muted-foreground">
+        </div>
+        <p className="mt-4 truncate text-base font-extrabold">{station.name}</p>
+        <p className="mt-1 text-[0.68rem] text-muted-foreground">
           {status === "available"
-            ? `${gameCount} ${gameCount === 1 ? "game" : "games"}`
+            ? `${gameCount} ${gameCount === 1 ? "game" : "games"} installed`
             : status === "occupied"
               ? "Unavailable for this slot"
               : "Under maintenance"}
-        </span>
-        <span
-          className={cn(
-            "mt-3 flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-[0.2em]",
-            selected ? "text-cyan" : "text-muted-foreground/70",
-          )}
-        >
-          {selected ? "Selected" : status === "available" ? "Click to select" : "—"}
-          {!disabled ? (
-            <ChevronDown
-              className={cn("size-3.5 transition-transform duration-300", selected && "rotate-180")}
-            />
+        </p>
+
+        <div className="mt-4 flex items-center gap-2">
+          <CardAction
+            primary
+            disabled={disabled}
+            onClick={onSelect}
+            aria-pressed={selected}
+            className={cn(selected && "from-cyan to-cyan")}
+          >
+            {selected ? <Check className="size-3.5" /> : null}
+            {selected ? "Selected" : "Select"}
+          </CardAction>
+          {gameCount ? (
+            <CardAction onClick={() => setShowGames(true)}>
+              <LibraryBig className="size-3.5" /> View games
+            </CardAction>
           ) : null}
-        </span>
-      </button>
-      {selected ? (
-        <div className="relative animate-[step-in_0.35s_cubic-bezier(0.22,1,0.36,1)_both]">
-          <GamesGrid games={games} />
         </div>
-      ) : null}
+      </div>
+
+      <GamesModal
+        open={showGames}
+        title={station.name}
+        games={games}
+        onClose={() => setShowGames(false)}
+      />
     </div>
   );
 }
