@@ -61,7 +61,8 @@ import {
   upcomingDays,
 } from "@/lib/booking/pricing";
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
-import { ConsoleSelect, GamesGrid } from "./ConsoleSelect";
+import { ConsoleSelect, CardAction } from "./ConsoleSelect";
+import { GamesModal } from "./GamesModal";
 import type { CouponCategory } from "@/lib/booking/pricing";
 import { BillSummary, durationLabel, type BillLine } from "./BillSummary";
 import {
@@ -1731,7 +1732,9 @@ export function BookingFlow() {
                                 image_url: null,
                                 sort_order: 0,
                               }));
-                          return games.length ? <GamesGrid games={games} /> : null;
+                          return games.length ? (
+                            <ViewGamesButton title={active.name} games={games} />
+                          ) : null;
                         })()}
 
                         <div>
