@@ -15,6 +15,9 @@ const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
 
 export function Hero() {
   const spotRef = useRef<HTMLDivElement | null>(null);
+  const { media } = useSiteMedia();
+  const backdrop = media["hero_background"];
+  const isVideo = backdrop?.media_type === "video" && Boolean(backdrop?.url);
 
   useEffect(() => {
     const el = spotRef.current;
