@@ -96,7 +96,7 @@ function TodayBookings({ rows, stations }: { rows: AdminBooking[]; stations: Adm
   const filtered = rows
     .filter((b) => (status === "all" ? true : b.status === status))
     .filter((b) => (station === "all" ? true : b.station_id === station))
-    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+    .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
 
   return (
     <Panel
