@@ -80,12 +80,10 @@ export function Experiences({
                         <p className="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                           Starting from
                         </p>
-                        <p className="mt-1 flex flex-col items-start gap-0.5 text-2xl font-black tracking-tight text-cyan">
-                          <span className="flex items-center gap-1.5">
-                            {inr(exp.starting_price)}
-                            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                              {exp.price_unit}
-                            </span>
+                        <p className="mt-1 flex flex-wrap items-center gap-1.5 text-2xl font-black tracking-tight text-cyan">
+                          {inr(exp.starting_price)}
+                          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            {exp.price_unit}
                           </span>
                           {exp.name.toLowerCase().includes("ps5") ? (
                             <span className="group/info relative inline-flex items-center">
