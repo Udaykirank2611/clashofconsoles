@@ -2321,6 +2321,22 @@ function StepHead({ title, hint }: { title: string; hint: string }) {
   );
 }
 
+/** Opens the games library popup for a non-console station (VR, lounge, theatre…). */
+function ViewGamesButton({ title, games }: { title: string; games: StationGame[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex items-center gap-3">
+      <p className="text-[0.62rem] font-bold uppercase tracking-[0.24em] text-cyan">
+        {games.length} {games.length === 1 ? "game installed" : "games installed"}
+      </p>
+      <CardAction onClick={() => setOpen(true)} className="max-w-44 flex-none">
+        <LibraryBig className="size-3.5" /> View games
+      </CardAction>
+      <GamesModal open={open} title={title} games={games} onClose={() => setOpen(false)} />
+    </div>
+  );
+}
+
 function FieldLabel({ children, tone = "cyan" }: { children: React.ReactNode; tone?: "cyan" | "violet" }) {
   return (
     <p
