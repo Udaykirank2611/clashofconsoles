@@ -2217,16 +2217,17 @@ export function BookingFlow() {
               </span>
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
             {step > 0 ? (
               <button
                 type="button"
                 onClick={goBack}
-                className="inline-flex items-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40 sm:flex-none"
               >
                 <ArrowLeft className="size-3.5" /> Back
               </button>
             ) : null}
+
             {step === 0 ? null : step < STEPS.length - 1 ? (
               <button
                 type="button"
