@@ -2234,7 +2234,7 @@ export function BookingFlow() {
                 onClick={goNext}
                 disabled={!canAdvance}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300",
+                  "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300 sm:flex-none",
                   canAdvance
                     ? "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] hover:scale-[1.03] active:scale-[0.99]"
                     : "cursor-not-allowed border border-border bg-muted/30 text-muted-foreground",
@@ -2247,7 +2247,7 @@ export function BookingFlow() {
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60 sm:flex-none"
               >
                 {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
                 Confirm Booking
