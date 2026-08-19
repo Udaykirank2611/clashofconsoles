@@ -2189,7 +2189,7 @@ export function BookingFlow() {
 
       {/* ---------------- STICKY SUMMARY BAR ---------------- */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-2xl">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-stretch gap-2 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {[
