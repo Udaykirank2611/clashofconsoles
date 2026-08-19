@@ -1,10 +1,14 @@
-/** Short two-tone chime played when a new admin notification arrives. */
+/** Two-tone chime used for admin notifications, with an optional repeat loop. */
 let ctx: AudioContext | null = null;
+let loopTimer: number | null = null;
 
+/** Plays the chime once. */
 export function playChime() {
   if (typeof window === "undefined") return;
   try {
-    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const Ctor =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
     ctx = ctx ?? new Ctor();
     void ctx.resume();
@@ -25,4 +29,26 @@ export function playChime() {
   } catch {
     /* audio unavailable */
   }
+}
+
+/** True while the repeating alert is running. */
+export function isChimeLooping() {
+  return loopTimer !== null;
+}
+
+/**
+ * Repeats the chime until it is stopped, so an unattended booking keeps
+ * ringing. Calling it again while running does nothing — only one loop plays.
+ */
+export function startChimeLoop(intervalMs = 4000) {
+  if (typeof window === "undefined" || loopTimer !== null) return;
+  playChime();
+  loopTimer = window.setInterval(playChime, intervalMs);
+}
+
+/** Stops the repeating alert once the admin has acknowledged the notification. */
+export function stopChimeLoop() {
+  if (loopTimer === null) return;
+  window.clearInterval(loopTimer);
+  loopTimer = null;
 }
