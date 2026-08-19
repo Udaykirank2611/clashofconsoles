@@ -227,3 +227,49 @@ export const listCustomers = createServerFn({ method: "GET" })
       });
     },
   );
+
+/** Admin > Customers: manually correct a customer's completed-visit count. */
+export const updateCustomerVisits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        phone: z.string().trim().min(6).max(20),
+        totalVisits: z.number().int().min(0).max(9999),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message?: string }> => {
+    const { data: role } = await context.supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!role) return { ok: false, message: "You cannot edit customers." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("customers")
+      .update({ total_visits: data.totalVisits })
+      .eq("phone", data.phone);
+    if (error) return { ok: false, message: "Could not update this customer." };
+
+    // Keep the milestone reward in sync with the corrected visit count.
+    const visits = data.totalVisits;
+    const milestone = visits > 0 && visits % 5 === 0;
+    await supabaseAdmin
+      .from("rewards")
+      .update({ status: "expired" })
+      .eq("phone", data.phone)
+      .eq("status", "available");
+    if (milestone) {
+      await supabaseAdmin.from("rewards").insert({
+        phone: data.phone,
+        status: "available",
+        minutes: visits % 10 === 0 ? 60 : 30,
+        earned_at_visit: visits,
+        expires_at_visit: visits + 5,
+      });
+    }
+    return { ok: true };
+  });
