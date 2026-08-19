@@ -877,7 +877,9 @@ export function BookingFlow() {
           foodAmount,
           date,
           startTime: slotStart,
+          phone: (customer?.phone ?? form.phone ?? "").trim(),
         },
+
       });
 
       setCoupon(res);
