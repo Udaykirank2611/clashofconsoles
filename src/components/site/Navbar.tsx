@@ -95,23 +95,29 @@ export function Navbar() {
         <ul className="hidden items-center gap-1 lg:flex">
           {LINKS.map((l) => {
             const isActive = active === l.href;
+            const Icon = l.icon;
             return (
               <li key={l.href}>
                 <a
                   href={l.href}
                   aria-current={isActive ? "true" : undefined}
                   className={cn(
-                    "relative rounded-full px-4 py-2 text-sm font-medium transition-colors duration-300",
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                    "group relative inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-300 hover:text-pink",
+                    isActive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
+                  <Icon
+                    aria-hidden="true"
+                    className={cn(
+                      "size-4 shrink-0 transition-all duration-300 group-hover:text-pink group-hover:drop-shadow-[0_0_10px_var(--pink)]",
+                      isActive ? "text-cyan" : "text-muted-foreground",
+                    )}
+                  />
                   {l.label}
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "absolute inset-x-3.5 bottom-1 h-px origin-left bg-linear-to-r from-cyan via-primary to-violet transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      "absolute inset-x-3.5 bottom-1 h-px origin-left bg-linear-to-r from-cyan via-primary to-violet transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100 group-hover:from-pink group-hover:via-pink group-hover:to-primary",
                       isActive ? "scale-x-100" : "scale-x-0",
                     )}
                   />
