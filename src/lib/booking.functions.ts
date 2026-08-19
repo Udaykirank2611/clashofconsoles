@@ -275,13 +275,16 @@ export const validateCoupon = createServerFn({ method: "POST" })
         foodAmount: z.number().min(0).optional(),
         date: dateStr,
         startTime: timeStr.nullable().optional(),
+        /** Used to check the customer's loyalty level against the coupon's level range. */
+        phone: z.string().trim().max(20).optional(),
       })
       .parse(i),
   )
   .handler(async ({ data }): Promise<CouponResult> => {
     const { publicClient } = await import("@/lib/booking/repository.server");
     const { checkCouponSchedule } = await import("@/lib/booking/coupon-schedule");
-    const { data: coupon } = await publicClient()
+    const db = publicClient();
+    const { data: coupon } = await db
       .from("coupons")
       .select("*")
       .eq("branch_id", data.branchId)
@@ -298,6 +301,32 @@ export const validateCoupon = createServerFn({ method: "POST" })
       return { valid: false, message: "This coupon has expired." };
     if (coupon.usage_limit != null && coupon.used_count >= coupon.usage_limit)
       return { valid: false, message: "This coupon has been fully redeemed." };
+
+    const minLevel = coupon.min_level == null ? null : Number(coupon.min_level);
+    const maxLevel = coupon.max_level == null ? null : Number(coupon.max_level);
+    if (minLevel != null || maxLevel != null) {
+      const digits = (data.phone ?? "").replace(/\D/g, "").slice(-10);
+      let level = 0;
+      if (digits.length === 10) {
+        const { data: cust } = await db
+          .from("customers")
+          .select("total_visits")
+          .eq("phone", digits)
+          .maybeSingle();
+        level = Number(cust?.total_visits ?? 0);
+      }
+      if (minLevel != null && level < minLevel)
+        return {
+          valid: false,
+          message: `This coupon is for level ${minLevel}+ members. Your level is ${level}.`,
+        };
+      if (maxLevel != null && level > maxLevel)
+        return {
+          valid: false,
+          message: `This coupon is only for levels up to ${maxLevel}. Your level is ${level}.`,
+        };
+    }
+
 
     const category = (coupon.category ?? "entire_bill") as CouponCategory;
     const gaming = Math.round(data.gamingAmount ?? data.amount ?? 0);
@@ -831,13 +860,26 @@ export const createBooking = createServerFn({ method: "POST" })
 
       // Expired or fully redeemed coupons are ignored server-side.
       const nowMs = Date.now();
+      let levelOk = true;
+      if (coupon && (coupon.min_level != null || coupon.max_level != null)) {
+        const { data: cust } = await db
+          .from("customers")
+          .select("total_visits")
+          .eq("phone", loyaltyPhone)
+          .maybeSingle();
+        const level = Number(cust?.total_visits ?? 0);
+        if (coupon.min_level != null && level < Number(coupon.min_level)) levelOk = false;
+        if (coupon.max_level != null && level > Number(coupon.max_level)) levelOk = false;
+      }
       const usable =
         !!coupon &&
+        levelOk &&
         !(coupon.starts_at && new Date(coupon.starts_at).getTime() > nowMs) &&
         !(coupon.ends_at && new Date(coupon.ends_at).getTime() < nowMs) &&
         !(coupon.usage_limit != null && Number(coupon.used_count) >= Number(coupon.usage_limit));
 
       if (coupon && usable && schedule.ok && base > 0 && base >= Number(coupon.min_order_amount)) {
+
 
         let d =
           coupon.discount_type === "percent"

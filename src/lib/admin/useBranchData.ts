@@ -111,7 +111,11 @@ export interface AdminCoupon {
   /** Happy-hour window checked against the booked slot time. */
   active_start_time: string | null;
   active_end_time: string | null;
+  /** Loyalty level range that may use this coupon. Null = no bound. */
+  min_level: number | null;
+  max_level: number | null;
 }
+
 
 
 /** A branch-owned session duration + price row. */

@@ -30,6 +30,9 @@ export function CouponsPanel({
   const [to, setTo] = useState("");
   const [maxUses, setMaxUses] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [minLevel, setMinLevel] = useState("");
+  const [maxLevel, setMaxLevel] = useState("");
+
   const [historyFor, setHistoryFor] = useState<AdminCoupon | null>(null);
 
   const toggleDay = (d: number) =>
@@ -55,7 +58,10 @@ export function CouponsPanel({
       active_end_time: from && to ? to : null,
       usage_limit: maxUses.trim() ? Number(maxUses) : null,
       ends_at: expiry ? new Date(`${expiry}T23:59:59`).toISOString() : null,
+      min_level: minLevel.trim() ? Number(minLevel) : null,
+      max_level: maxLevel.trim() ? Number(maxLevel) : null,
     });
+
 
     setBusy(false);
     if (error) {
@@ -69,6 +75,9 @@ export function CouponsPanel({
     setTo("");
     setMaxUses("");
     setExpiry("");
+    setMinLevel("");
+    setMaxLevel("");
+
     toast.success("Coupon created.");
     onChanged();
   };
@@ -144,9 +153,25 @@ export function CouponsPanel({
             />
           </label>
         </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <AdminInput
+            label="Min level (blank = any)"
+            value={minLevel}
+            onChange={(v) => setMinLevel(v.replace(/[^0-9]/g, ""))}
+            placeholder="e.g. 5"
+          />
+          <AdminInput
+            label="Max level (blank = unlimited)"
+            value={maxLevel}
+            onChange={(v) => setMaxLevel(v.replace(/[^0-9]/g, ""))}
+            placeholder="e.g. 10"
+          />
+        </div>
         <p className="mt-2 text-[0.65rem] text-muted-foreground">
-          Gaming-only coupons never discount food, and food-only coupons never discount gaming.
+          Gaming-only coupons never discount food, and food-only coupons never discount gaming. Level = the
+          guest&apos;s completed visits, so min 2 / max 5 means only levels 2–5 can redeem the code.
         </p>
+
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
@@ -232,7 +257,14 @@ export function CouponsPanel({
                     {c.ends_at
                       ? `expires ${new Date(c.ends_at).toLocaleDateString("en-IN")}`
                       : "no expiry"}{" "}
-                    · {daysLabel(c.active_days)} · {windowLabel(c.active_start_time, c.active_end_time)}
+                    · {daysLabel(c.active_days)} · {windowLabel(c.active_start_time, c.active_end_time)} ·{" "}
+                    {c.min_level == null && c.max_level == null
+                      ? "all levels"
+                      : c.min_level != null && c.max_level != null
+                        ? `levels ${c.min_level}–${c.max_level}`
+                        : c.min_level != null
+                          ? `level ${c.min_level}+`
+                          : `levels up to ${c.max_level}`}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <label className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
@@ -245,6 +277,34 @@ export function CouponsPanel({
                           const raw = e.target.value.replace(/[^0-9]/g, "");
                           const next = raw ? Number(raw) : null;
                           if (next !== c.usage_limit) void update(c, { usage_limit: next });
+                        }}
+                        className="w-16 rounded-xl border border-border bg-surface/70 px-2 py-1 text-center text-xs outline-none focus:border-cyan/50"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                      Min level
+                      <input
+                        defaultValue={c.min_level == null ? "" : String(c.min_level)}
+                        inputMode="numeric"
+                        placeholder="any"
+                        onBlur={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, "");
+                          const next = raw ? Number(raw) : null;
+                          if (next !== c.min_level) void update(c, { min_level: next });
+                        }}
+                        className="w-16 rounded-xl border border-border bg-surface/70 px-2 py-1 text-center text-xs outline-none focus:border-cyan/50"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                      Max level
+                      <input
+                        defaultValue={c.max_level == null ? "" : String(c.max_level)}
+                        inputMode="numeric"
+                        placeholder="∞"
+                        onBlur={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, "");
+                          const next = raw ? Number(raw) : null;
+                          if (next !== c.max_level) void update(c, { max_level: next });
                         }}
                         className="w-16 rounded-xl border border-border bg-surface/70 px-2 py-1 text-center text-xs outline-none focus:border-cyan/50"
                       />
@@ -265,6 +325,7 @@ export function CouponsPanel({
                       />
                     </label>
                   </div>
+
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {DAY_LABELS.map((label, i) => {
                       const on = (c.active_days ?? []).includes(i);
