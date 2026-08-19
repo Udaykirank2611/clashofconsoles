@@ -626,7 +626,7 @@ export function buildReportRows(
         finalAmount: Math.round(split.gaming),
         status: b.status,
         paymentStatus: paymentStatus(b),
-        paymentMode: paymentModeLabel(b.payment_mode),
+        paymentMode: bookingPaymentLabel(b),
       });
     }
     if (type !== "gaming" && split.foodGross > 0) {
@@ -647,7 +647,7 @@ export function buildReportRows(
         finalAmount: Math.round(split.food),
         status: b.status,
         paymentStatus: paymentStatus(b),
-        paymentMode: paymentModeLabel(b.payment_mode),
+        paymentMode: bookingPaymentLabel(b),
       });
     }
   }
@@ -714,7 +714,7 @@ export function buildDrilldownRows(
         phone: b.customer_phone,
         players: n(b.players),
         status: b.status,
-        paymentMode: paymentModeLabel(b.payment_mode),
+        paymentMode: bookingPaymentLabel(b),
         amount: Math.round(isRealized(b) ? split.gaming : 0),
       });
     }
