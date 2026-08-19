@@ -20,13 +20,13 @@ export const STATUS_LABEL: Record<CalStatus, string> = {
 
 /** Orange pending · green confirmed · blue completed · red cancelled · grey expired. */
 export const STATUS_CLASS: Record<CalStatus, string> = {
-  awaiting_payment: "border-orange-400/50 bg-orange-500/15 text-orange-200",
-  payment_pending: "border-orange-400/50 bg-orange-500/15 text-orange-200",
-  pending: "border-orange-400/50 bg-orange-500/15 text-orange-200",
-  confirmed: "border-emerald-400/50 bg-emerald-500/15 text-emerald-200",
-  completed: "border-sky-400/50 bg-sky-500/15 text-sky-200",
-  cancelled: "border-rose-400/50 bg-rose-500/15 text-rose-200",
-  expired: "border-border bg-muted/40 text-muted-foreground",
+  awaiting_payment: "border-orange-300 bg-orange-100 text-orange-800",
+  payment_pending: "border-orange-300 bg-orange-100 text-orange-800",
+  pending: "border-orange-300 bg-orange-100 text-orange-800",
+  confirmed: "border-emerald-300 bg-emerald-100 text-emerald-800",
+  completed: "border-sky-300 bg-sky-100 text-sky-800",
+  cancelled: "border-rose-300 bg-rose-100 text-rose-800",
+  expired: "border-border bg-muted text-foreground",
 };
 
 export const STATUS_DOT: Record<CalStatus, string> = {
