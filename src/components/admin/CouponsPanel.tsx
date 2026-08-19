@@ -58,7 +58,10 @@ export function CouponsPanel({
       active_end_time: from && to ? to : null,
       usage_limit: maxUses.trim() ? Number(maxUses) : null,
       ends_at: expiry ? new Date(`${expiry}T23:59:59`).toISOString() : null,
+      min_level: minLevel.trim() ? Number(minLevel) : null,
+      max_level: maxLevel.trim() ? Number(maxLevel) : null,
     });
+
 
     setBusy(false);
     if (error) {
