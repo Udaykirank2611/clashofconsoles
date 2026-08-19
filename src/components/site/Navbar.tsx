@@ -154,21 +154,28 @@ export function Navbar() {
         <div className="min-h-0">
           <div className="glass rounded-3xl p-4">
             <ul className="flex flex-col">
-              {LINKS.map((l, i) => (
-                <li key={l.href}>
-                  <a
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    style={{ transitionDelay: open ? `${80 + i * 45}ms` : "0ms" }}
-                    className={cn(
-                      "block rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-500 hover:bg-surface-2 hover:text-foreground",
-                      open ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
-                    )}
-                  >
-                    {l.label}
-                  </a>
-                </li>
-              ))}
+              {LINKS.map((l, i) => {
+                const Icon = l.icon;
+                return (
+                  <li key={l.href}>
+                    <a
+                      href={l.href}
+                      onClick={() => setOpen(false)}
+                      style={{ transitionDelay: open ? `${80 + i * 45}ms` : "0ms" }}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-500 hover:bg-surface-2 hover:text-pink",
+                        open ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
+                      )}
+                    >
+                      <Icon
+                        aria-hidden="true"
+                        className="size-4 shrink-0 transition-colors duration-300 group-hover:text-pink"
+                      />
+                      {l.label}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
             <MagneticButton href="/book" className="mt-2 w-full">
               Book Now
