@@ -3,7 +3,7 @@ import { Bell, Check, Gamepad2, IndianRupee, Ticket, UtensilsCrossed, Gift, XCir
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { playChime } from "@/lib/admin/chime";
+import { startChimeLoop, stopChimeLoop } from "@/lib/admin/chime";
 import { money } from "./primitives";
 
 export interface AdminNotification {
