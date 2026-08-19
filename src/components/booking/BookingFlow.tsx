@@ -2189,7 +2189,7 @@ export function BookingFlow() {
 
       {/* ---------------- STICKY SUMMARY BAR ---------------- */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-2xl">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-stretch gap-2 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {[
@@ -2217,23 +2217,24 @@ export function BookingFlow() {
               </span>
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
             {step > 0 ? (
               <button
                 type="button"
                 onClick={goBack}
-                className="inline-flex items-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40 sm:flex-none"
               >
                 <ArrowLeft className="size-3.5" /> Back
               </button>
             ) : null}
+
             {step === 0 ? null : step < STEPS.length - 1 ? (
               <button
                 type="button"
                 onClick={goNext}
                 disabled={!canAdvance}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300",
+                  "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300 sm:flex-none",
                   canAdvance
                     ? "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] hover:scale-[1.03] active:scale-[0.99]"
                     : "cursor-not-allowed border border-border bg-muted/30 text-muted-foreground",
@@ -2246,7 +2247,7 @@ export function BookingFlow() {
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60 sm:flex-none"
               >
                 {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
                 Confirm Booking
