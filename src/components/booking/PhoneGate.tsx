@@ -87,9 +87,17 @@ export function PhoneGate({
           {needsName ? "Welcome! What's your name?" : "Enter your phone number"}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {needsName
-            ? "We only need your name — no OTP, no password."
-            : "We use it to track your visits and unlock free gaming rewards."}
+          {needsName ? (
+            "We only need your name — no OTP, no password."
+          ) : (
+            <>
+              We use it to track your visits and unlock{" "}
+              <span className="font-black text-pink drop-shadow-[0_0_14px_color-mix(in_oklab,var(--pink)_55%,transparent)]">
+                FREE GAMING
+              </span>{" "}
+              rewards.
+            </>
+          )}
         </p>
 
         <div className="mt-6 space-y-4">
