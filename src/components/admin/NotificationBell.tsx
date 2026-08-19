@@ -155,7 +155,7 @@ export function NotificationBell({
             </button>
           </div>
 
-          <ul className="max-h-[26rem] divide-y divide-border overflow-y-auto">
+          <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto sm:max-h-[26rem]">
             {items.length === 0 ? (
               <li className="px-4 py-10 text-center text-xs text-muted-foreground">Nothing yet.</li>
             ) : (
