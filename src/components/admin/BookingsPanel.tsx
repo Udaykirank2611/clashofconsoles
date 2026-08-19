@@ -417,6 +417,7 @@ export function BookingsPanel({
                           onClick={() => {
                             setSplitCash("");
                             setSplitUpi("");
+                            setExtraDiscount("");
                             setSettling(b);
                           }}
                         >
