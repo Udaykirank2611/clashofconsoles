@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import {
+  Menu,
+  X,
+  Home,
+  Sparkles,
+  Gamepad2,
+  Crown,
+  MapPin,
+  UtensilsCrossed,
+  PhoneCall,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "./primitives";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
 
 const LINKS = [
-  { label: "Home", href: "/#home" },
-  { label: "Experiences", href: "/#experiences" },
-  { label: "Games", href: "/games" },
-  { label: "Membership and Combo offers", href: "/#membership" },
-  { label: "Branches", href: "/#branches" },
-  { label: "Food Menu", href: "/#food" },
-  { label: "Contact", href: "/#contact" },
+  { label: "Home", href: "/#home", icon: Home },
+  { label: "Experiences", href: "/#experiences", icon: Sparkles },
+  { label: "Games", href: "/games", icon: Gamepad2 },
+  { label: "Membership and Combo offers", href: "/#membership", icon: Crown },
+  { label: "Branches", href: "/#branches", icon: MapPin },
+  { label: "Food Menu", href: "/#food", icon: UtensilsCrossed },
+  { label: "Contact", href: "/#contact", icon: PhoneCall },
 ];
 
 /** The in-page section a nav link points at, or null for a real page link. */
@@ -85,23 +95,29 @@ export function Navbar() {
         <ul className="hidden items-center gap-1 lg:flex">
           {LINKS.map((l) => {
             const isActive = active === l.href;
+            const Icon = l.icon;
             return (
               <li key={l.href}>
                 <a
                   href={l.href}
                   aria-current={isActive ? "true" : undefined}
                   className={cn(
-                    "relative rounded-full px-4 py-2 text-sm font-medium transition-colors duration-300",
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                    "group relative inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-300 hover:text-pink",
+                    isActive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
+                  <Icon
+                    aria-hidden="true"
+                    className={cn(
+                      "size-4 shrink-0 transition-all duration-300 group-hover:text-pink group-hover:drop-shadow-[0_0_10px_var(--pink)]",
+                      isActive ? "text-cyan" : "text-muted-foreground",
+                    )}
+                  />
                   {l.label}
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "absolute inset-x-3.5 bottom-1 h-px origin-left bg-linear-to-r from-cyan via-primary to-violet transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      "absolute inset-x-3.5 bottom-1 h-px origin-left bg-linear-to-r from-cyan via-primary to-violet transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100 group-hover:from-pink group-hover:via-pink group-hover:to-primary",
                       isActive ? "scale-x-100" : "scale-x-0",
                     )}
                   />
@@ -138,21 +154,28 @@ export function Navbar() {
         <div className="min-h-0">
           <div className="glass rounded-3xl p-4">
             <ul className="flex flex-col">
-              {LINKS.map((l, i) => (
-                <li key={l.href}>
-                  <a
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    style={{ transitionDelay: open ? `${80 + i * 45}ms` : "0ms" }}
-                    className={cn(
-                      "block rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-500 hover:bg-surface-2 hover:text-foreground",
-                      open ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
-                    )}
-                  >
-                    {l.label}
-                  </a>
-                </li>
-              ))}
+              {LINKS.map((l, i) => {
+                const Icon = l.icon;
+                return (
+                  <li key={l.href}>
+                    <a
+                      href={l.href}
+                      onClick={() => setOpen(false)}
+                      style={{ transitionDelay: open ? `${80 + i * 45}ms` : "0ms" }}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-500 hover:bg-surface-2 hover:text-pink",
+                        open ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
+                      )}
+                    >
+                      <Icon
+                        aria-hidden="true"
+                        className="size-4 shrink-0 transition-colors duration-300 group-hover:text-pink"
+                      />
+                      {l.label}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
             <MagneticButton href="/book" className="mt-2 w-full">
               Book Now
