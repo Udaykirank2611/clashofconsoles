@@ -153,9 +153,25 @@ export function CouponsPanel({
             />
           </label>
         </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <AdminInput
+            label="Min level (blank = any)"
+            value={minLevel}
+            onChange={(v) => setMinLevel(v.replace(/[^0-9]/g, ""))}
+            placeholder="e.g. 5"
+          />
+          <AdminInput
+            label="Max level (blank = unlimited)"
+            value={maxLevel}
+            onChange={(v) => setMaxLevel(v.replace(/[^0-9]/g, ""))}
+            placeholder="e.g. 10"
+          />
+        </div>
         <p className="mt-2 text-[0.65rem] text-muted-foreground">
-          Gaming-only coupons never discount food, and food-only coupons never discount gaming.
+          Gaming-only coupons never discount food, and food-only coupons never discount gaming. Level = the
+          guest&apos;s completed visits, so min 2 / max 5 means only levels 2–5 can redeem the code.
         </p>
+
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
