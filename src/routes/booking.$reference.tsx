@@ -133,16 +133,25 @@ function BookingDetails() {
                 </div>
 
                 <div className="mt-6 space-y-2.5 text-sm">
-                  <Row
-                    label={`Session — ${data.station_name || "Passes only"}${
-                      data.start_time && data.end_time
-                        ? ` · ${formatTime(data.start_time)} – ${formatTime(data.end_time)} (${durationLabel(
-                            data.start_time,
-                            data.end_time,
-                          )}) · ${data.players}P`
-                        : ""
-                    }`}
-                    value={inr(data.session_amount)}
+                  <Group
+                    title="Gaming session"
+                    items={
+                      data.station_name || data.session_amount
+                        ? [
+                            {
+                              kind: "session",
+                              label: `${data.station_name || "Gaming session"}${
+                                data.game_title ? ` · ${data.game_title}` : ""
+                              }`,
+                              quantity: data.players || 1,
+                              unit_price: 0,
+                              line_total: data.session_amount,
+                              start_time: data.start_time,
+                              end_time: data.end_time,
+                            } as unknown as BookingSummaryItem,
+                          ]
+                        : []
+                    }
                   />
                   <Group
                     title="Experiences"
