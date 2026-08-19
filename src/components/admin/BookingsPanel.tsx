@@ -599,32 +599,12 @@ export function BookingsPanel({
           >
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Verify Payment</h3>
             <p className="mt-2 text-xs text-muted-foreground">
-              Confirm this booking. You will record how it was paid when you mark it completed.
+              Confirm this booking. You will record how it was paid — and apply any last-minute discount — when you
+              mark it completed.
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
-
-            <label className="mt-4 block space-y-1.5">
-              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Last-minute discount (₹)
-              </span>
-              <input
-                type="number"
-                min={0}
-                max={approving.total_amount}
-                value={extraDiscount}
-                onChange={(e) => setExtraDiscount(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm outline-none focus:border-cyan/50"
-              />
-              <span className="block text-[0.65rem] text-muted-foreground">
-                Payable after discount:{" "}
-                <span className="font-semibold text-foreground">
-                  {money(Math.max(0, approving.total_amount - (Number(extraDiscount) || 0)))}
-                </span>
-              </span>
-            </label>
 
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setApproving(null)}>Cancel</AdminButton>
@@ -634,12 +614,13 @@ export function BookingsPanel({
                 onClick={() => {
                   const booking = approving;
                   setApproving(null);
-                  void approveWithDiscount(booking, Number(extraDiscount) || 0);
+                  void approveWithDiscount(booking, 0);
                 }}
               >
                 Approve Payment
               </AdminButton>
             </div>
+
           </div>
         </div>
       ) : null}
