@@ -630,17 +630,20 @@ export function BookingsPanel({
           booking={settling}
           cash={splitCash}
           upi={splitUpi}
+          discount={extraDiscount}
           busy={busy === settling.id}
           onCash={setSplitCash}
           onUpi={setSplitUpi}
+          onDiscount={setExtraDiscount}
           onClose={() => setSettling(null)}
-          onConfirm={(cash, upi) => {
+          onConfirm={(cash, upi, discount) => {
             const booking = settling;
             setSettling(null);
-            void settleBooking(booking, cash, upi);
+            void settleBooking(booking, cash, upi, discount);
           }}
         />
       ) : null}
+
 
 
       {addingFood ? (
