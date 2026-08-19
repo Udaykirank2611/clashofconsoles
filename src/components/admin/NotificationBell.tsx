@@ -3,7 +3,7 @@ import { Bell, Check, Gamepad2, IndianRupee, Ticket, UtensilsCrossed, Gift, XCir
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { playChime } from "@/lib/admin/chime";
+import { startChimeLoop, stopChimeLoop } from "@/lib/admin/chime";
 import { money } from "./primitives";
 
 export interface AdminNotification {
@@ -64,13 +64,15 @@ export function NotificationBell({
       const fresh = rows.filter((r) => !seenRef.current!.has(r.id));
       for (const r of rows) seenRef.current.add(r.id);
       if (fresh.some((r) => !r.read_at)) {
-        playChime();
+        // Keep ringing until the admin acknowledges the alert.
+        startChimeLoop();
         const top = fresh[0];
         if (top) toast(top.title, { description: top.body });
       }
     }
     setItems(rows);
   }, [branchId]);
+
 
   useEffect(() => {
     seenRef.current = null;
@@ -103,13 +105,23 @@ export function NotificationBell({
 
   const unread = useMemo(() => items.filter((i) => !i.read_at).length, [items]);
 
+  // Opening the panel counts as acknowledging the alert; so does clearing the
+  // last unread item. Either way the repeating chime stops.
+  useEffect(() => {
+    if (open || unread === 0) stopChimeLoop();
+  }, [open, unread]);
+
+  useEffect(() => () => stopChimeLoop(), []);
+
   const markRead = async (ids: string[]) => {
     if (!ids.length) return;
+    stopChimeLoop();
     setItems((prev) =>
       prev.map((i) => (ids.includes(i.id) ? { ...i, read_at: new Date().toISOString() } : i)),
     );
     await supabase.from("admin_notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
   };
+
 
   return (
     <div ref={boxRef} className="relative">

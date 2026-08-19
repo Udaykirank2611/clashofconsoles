@@ -7,7 +7,7 @@ import { formatTime } from "@/lib/booking/pricing";
 import { ChevronDown, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
-import { approveBookingPayment } from "@/lib/booking-admin.functions";
+import { approveBookingPayment, completeBookingWithSplit } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
 import { cn } from "@/lib/utils";
@@ -137,15 +137,20 @@ export function BookingsPanel({
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  /** Booking awaiting the "how did they pay?" confirmation dialog. */
+  /** Booking awaiting the "verify payment" dialog. */
   const [approving, setApproving] = useState<AdminBooking | null>(null);
-  const [payMode, setPayMode] = useState<"upi" | "cash">("upi");
   /** Last-minute discount the admin can apply while approving. */
   const [extraDiscount, setExtraDiscount] = useState("");
+  /** Booking being closed out — collects the exact cash / UPI split. */
+  const [settling, setSettling] = useState<AdminBooking | null>(null);
+  const [splitCash, setSplitCash] = useState("");
+  const [splitUpi, setSplitUpi] = useState("");
   /** Confirmed booking that is having food added to it. */
   const [addingFood, setAddingFood] = useState<AdminBooking | null>(null);
   const approvePayment = useServerFn(approveBookingPayment);
+  const completeWithSplit = useServerFn(completeBookingWithSplit);
   const editHours = useServerFn(updateBookingExtraHours);
+
 
   useEffect(() => {
     if (!focusReference) return;
@@ -182,9 +187,9 @@ export function BookingsPanel({
 
 
   /** Approve a payment, applying any last-minute discount server-side first. */
-  const approveWithDiscount = async (booking: AdminBooking, mode: "upi" | "cash", discount: number) => {
+  const approveWithDiscount = async (booking: AdminBooking, discount: number) => {
     setBusy(booking.id);
-    const res = await approvePayment({ data: { bookingId: booking.id, paymentMode: mode, extraDiscount: discount } });
+    const res = await approvePayment({ data: { bookingId: booking.id, extraDiscount: discount } });
     setBusy(null);
     if (!res.ok) {
       toast.error(res.message ?? "Could not approve this booking.");
@@ -193,6 +198,22 @@ export function BookingsPanel({
     toast.success(discount > 0 ? `Booking confirmed with ${money(discount)} discount.` : "Booking confirmed.");
     onChanged();
   };
+
+  /** Close out a booking with the exact cash / UPI split collected at the counter. */
+  const settleBooking = async (booking: AdminBooking, cash: number, upi: number) => {
+    setBusy(booking.id);
+    const res = await completeWithSplit({ data: { bookingId: booking.id, cash, upi } });
+    setBusy(null);
+    if (!res.ok) {
+      toast.error(res.message ?? "Could not complete this booking.");
+      return;
+    }
+    toast.success(
+      `Completed — ${cash > 0 ? `${money(cash)} cash` : ""}${cash > 0 && upi > 0 ? " + " : ""}${upi > 0 ? `${money(upi)} UPI` : ""} recorded.`,
+    );
+    onChanged();
+  };
+
 
   /** Menu id -> category, so receipts can group food lines. */
   const categories = new Map(menu.map((m) => [m.id, m.category] as const));
@@ -338,10 +359,10 @@ export function BookingsPanel({
                           variant="success"
                           disabled={busy === b.id}
                           onClick={() => {
-                            setPayMode("upi");
                             setExtraDiscount("");
                             setApproving(b);
                           }}
+
                         >
                           Approve
                         </AdminButton>
@@ -365,10 +386,15 @@ export function BookingsPanel({
                         <AdminButton
                           variant="success"
                           disabled={busy === b.id}
-                          onClick={() => void setStatus(b, "completed")}
+                          onClick={() => {
+                            setSplitCash("");
+                            setSplitUpi("");
+                            setSettling(b);
+                          }}
                         >
                           Mark completed
                         </AdminButton>
+
                         <AdminButton onClick={() => printReceipt(b, stationName)}>
                           <Printer className="size-3.5" /> Receipt
                         </AdminButton>
@@ -545,8 +571,10 @@ export function BookingsPanel({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl"
           >
-            <h3 className="text-sm font-black uppercase tracking-[0.18em]">Confirm Payment</h3>
-            <p className="mt-2 text-xs text-muted-foreground">Select how the customer paid.</p>
+            <h3 className="text-sm font-black uppercase tracking-[0.18em]">Verify Payment</h3>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Confirm this booking. You will record how it was paid when you mark it completed.
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
@@ -572,30 +600,6 @@ export function BookingsPanel({
               </span>
             </label>
 
-
-
-            <div className="mt-4 space-y-2">
-              {(["upi", "cash"] as const).map((m) => (
-                <label
-                  key={m}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-colors",
-                    payMode === m ? "border-cyan/50 bg-cyan/10 text-cyan" : "border-border bg-surface/60",
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="payment-mode"
-                    value={m}
-                    checked={payMode === m}
-                    onChange={() => setPayMode(m)}
-                    className="accent-cyan"
-                  />
-                  {m === "upi" ? "UPI" : "Cash"}
-                </label>
-              ))}
-            </div>
-
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setApproving(null)}>Cancel</AdminButton>
               <AdminButton
@@ -604,7 +608,7 @@ export function BookingsPanel({
                 onClick={() => {
                   const booking = approving;
                   setApproving(null);
-                  void approveWithDiscount(booking, payMode, Number(extraDiscount) || 0);
+                  void approveWithDiscount(booking, Number(extraDiscount) || 0);
                 }}
               >
                 Approve Payment
@@ -613,6 +617,24 @@ export function BookingsPanel({
           </div>
         </div>
       ) : null}
+
+      {settling ? (
+        <SettleDialog
+          booking={settling}
+          cash={splitCash}
+          upi={splitUpi}
+          busy={busy === settling.id}
+          onCash={setSplitCash}
+          onUpi={setSplitUpi}
+          onClose={() => setSettling(null)}
+          onConfirm={(cash, upi) => {
+            const booking = settling;
+            setSettling(null);
+            void settleBooking(booking, cash, upi);
+          }}
+        />
+      ) : null}
+
 
       {addingFood ? (
         <AddFoodDialog
@@ -678,3 +700,130 @@ export function StatusPill({ status }: { status: AdminBooking["status"] }) {
   return <Pill tone="muted">{status}</Pill>;
 }
 
+
+/**
+ * Collects the exact cash / UPI split when a booking is closed out.
+ * The bill can only be settled when the remaining amount reaches ₹0, so the
+ * ledger, reports and reconciliation always add up to the booking total.
+ */
+function SettleDialog({
+  booking,
+  cash,
+  upi,
+  busy,
+  onCash,
+  onUpi,
+  onClose,
+  onConfirm,
+}: {
+  booking: AdminBooking;
+  cash: string;
+  upi: string;
+  busy: boolean;
+  onCash: (v: string) => void;
+  onUpi: (v: string) => void;
+  onClose: () => void;
+  onConfirm: (cash: number, upi: number) => void;
+}) {
+  const total = Math.round(Number(booking.total_amount) || 0);
+  const cashValue = Math.max(0, Math.round(Number(cash) || 0));
+  const upiValue = Math.max(0, Math.round(Number(upi) || 0));
+  const remaining = total - cashValue - upiValue;
+
+  const field = (
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+    fill: () => void,
+  ) => (
+    <label className="block space-y-1.5">
+      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+        {label} (₹)
+      </span>
+      <span className="flex items-center gap-2">
+        <input
+          type="number"
+          min={0}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0"
+          className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm tabular-nums outline-none focus:border-cyan/50"
+        />
+        <button
+          type="button"
+          onClick={fill}
+          className="shrink-0 rounded-full border border-cyan/40 bg-cyan/10 px-3 py-2 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-cyan transition-colors hover:bg-cyan/20"
+        >
+          Full amount
+        </button>
+      </span>
+    </label>
+  );
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl"
+      >
+        <h3 className="text-sm font-black uppercase tracking-[0.18em]">Collect payment</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {booking.reference} · {booking.customer_name}
+        </p>
+
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-3">
+          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            Total bill
+          </span>
+          <span className="text-lg font-black tabular-nums">{money(total)}</span>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {field("Cash", cash, onCash, () => {
+            onCash(String(total));
+            onUpi("0");
+          })}
+          {field("UPI", upi, onUpi, () => {
+            onUpi(String(total));
+            onCash("0");
+          })}
+        </div>
+
+        <div
+          className={cn(
+            "mt-4 flex items-center justify-between rounded-2xl border px-4 py-3",
+            remaining === 0
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-600",
+          )}
+        >
+          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em]">Remaining</span>
+          <span className="text-base font-black tabular-nums">{money(remaining)}</span>
+        </div>
+        {remaining !== 0 ? (
+          <p className="mt-2 text-[0.65rem] text-muted-foreground">
+            {remaining > 0
+              ? "Cash + UPI must add up to the total bill before you can complete this booking."
+              : "The entered amounts exceed the total bill."}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <AdminButton onClick={onClose}>Cancel</AdminButton>
+          <AdminButton
+            variant="success"
+            disabled={busy || remaining !== 0}
+            onClick={() => onConfirm(cashValue, upiValue)}
+          >
+            Complete booking
+          </AdminButton>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -213,7 +213,6 @@ export const approveBookingPayment = createServerFn({ method: "POST" })
     z
       .object({
         bookingId: z.string().uuid(),
-        paymentMode: z.enum(["upi", "cash"]),
         extraDiscount: z.number().min(0).max(1000000),
       })
       .parse(i),
@@ -233,11 +232,56 @@ export const approveBookingPayment = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("bookings")
-      .update({ status: "confirmed", payment_mode: data.paymentMode })
+      .update({ status: "confirmed" })
       .eq("id", data.bookingId);
     if (error) return { ok: false, message: error.message };
     return { ok: true };
   });
+
+/**
+ * Marks a booking completed and records exactly how the bill was settled.
+ * The cash/UPI split written here is the single source of truth for the
+ * dashboard, reports, transactions and reconciliation.
+ */
+export const completeBookingWithSplit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        bookingId: z.string().uuid(),
+        cash: z.number().min(0).max(10000000),
+        upi: z.number().min(0).max(10000000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<AdminMoveResult> => {
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("id, total_amount")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!booking) return { ok: false, message: "You cannot edit this booking." };
+
+    const total = Math.round(Number(booking.total_amount ?? 0));
+    const cash = Math.round(data.cash);
+    const upi = Math.round(data.upi);
+    if (cash + upi !== total)
+      return { ok: false, message: `Cash + UPI must add up to ${total}.` };
+
+    const mode = cash > 0 && upi > 0 ? "mixed" : cash > 0 ? "cash" : upi > 0 ? "upi" : null;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("bookings")
+      .update({ status: "completed", payment_mode: mode })
+      .eq("id", data.bookingId);
+    if (error) return { ok: false, message: error.message };
+
+    const { setLedgerSplit } = await import("@/lib/booking-admin.server");
+    await setLedgerSplit(data.bookingId, cash, upi);
+    return { ok: true };
+  });
+
 
 /** Add food/drinks to an already confirmed booking and collect payment for it. */
 export const addFoodToBooking = createServerFn({ method: "POST" })
@@ -298,12 +342,30 @@ export const addFoodToBooking = createServerFn({ method: "POST" })
     if (!totals) return { ok: false, message: "Booking not found." };
 
     // Keep the ledger honest when the food was paid a different way than the session.
+    const { data: ledger } = await supabaseAdmin
+      .from("booking_transactions")
+      .select("cash_amount, upi_amount")
+      .eq("booking_id", data.bookingId)
+      .maybeSingle();
+    const recorded = Number(ledger?.cash_amount ?? 0) + Number(ledger?.upi_amount ?? 0);
     const foodPaid = Math.max(0, totals.total - previousTotal);
     const basePaid = Math.max(0, totals.total - foodPaid);
     const baseMode = booking.payment_mode === "cash" ? "cash" : booking.payment_mode === "upi" ? "upi" : null;
-    const cash = (baseMode === "cash" ? basePaid : 0) + (data.paymentMode === "cash" ? foodPaid : 0);
-    const upi = (baseMode === "upi" ? basePaid : 0) + (data.paymentMode === "upi" ? foodPaid : 0);
+    // Prefer the split already recorded against the booking; fall back to the
+    // single payment mode captured when the booking was approved.
+    const baseCash = recorded > 0 ? Math.round((basePaid * Number(ledger?.cash_amount ?? 0)) / recorded) : baseMode === "cash" ? basePaid : 0;
+    const baseUpi = recorded > 0 ? basePaid - baseCash : baseMode === "upi" ? basePaid : 0;
+    const cash = baseCash + (data.paymentMode === "cash" ? foodPaid : 0);
+    const upi = baseUpi + (data.paymentMode === "upi" ? foodPaid : 0);
     await setLedgerSplit(data.bookingId, cash, upi);
+    // Keep the booking's payment label in step with the recorded split.
+    await supabaseAdmin
+      .from("bookings")
+      .update({ payment_mode: cash > 0 && upi > 0 ? "mixed" : cash > 0 ? "cash" : upi > 0 ? "upi" : null })
+      .eq("id", data.bookingId);
+
+
+
 
     return { ok: true, total: added };
   });

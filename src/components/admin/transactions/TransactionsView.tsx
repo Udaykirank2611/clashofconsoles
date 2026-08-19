@@ -132,6 +132,8 @@ export function TransactionsView({
             <option value="all">All payment modes</option>
             <option value="cash">Cash</option>
             <option value="upi">UPI</option>
+            <option value="mixed">Cash + UPI</option>
+
           </select>
           <select value={fService} onChange={(e) => setFService(e.target.value)} className={field}>
             <option value="all">All services</option>

@@ -56,9 +56,15 @@ export interface RawBooking {
   pass_minutes?: number | null;
   payment_submitted_at: string | null;
   created_at: string;
+  /** Recorded cash/UPI split — the single source of truth for collections. */
+  booking_transactions?:
+    | { cash_amount: number | string | null; upi_amount: number | string | null }[]
+    | { cash_amount: number | string | null; upi_amount: number | string | null }
+    | null;
   gaming_stations: { name: string; station_type: string } | null;
   booking_items: RawItem[];
 }
+
 
 export interface RawStation {
   id: string;
@@ -100,9 +106,29 @@ export const SERVICE_LABELS: Record<string, string> = {
   private_lounge: "Private Gaming Lounge",
 };
 
+/** The ledger row attached to a booking, whichever shape PostgREST returns. */
+const ledgerRow = (b: RawBooking) =>
+  Array.isArray(b.booking_transactions) ? b.booking_transactions[0] : b.booking_transactions;
+
+/** Cash collected against a booking, straight from the transaction ledger. */
+export const ledgerCash = (b: RawBooking) => Number(ledgerRow(b)?.cash_amount ?? 0) || 0;
+/** UPI collected against a booking, straight from the transaction ledger. */
+export const ledgerUpi = (b: RawBooking) => Number(ledgerRow(b)?.upi_amount ?? 0) || 0;
+
 /** Normalised payment-mode label used everywhere in analytics + reports. */
 export const paymentModeLabel = (mode?: string | null) =>
-  mode === "upi" ? "UPI" : mode === "cash" ? "Cash" : "Not recorded";
+  mode === "upi" ? "UPI" : mode === "cash" ? "Cash" : mode === "mixed" ? "Cash + UPI" : "Not recorded";
+
+/** Payment label derived from what was actually collected against a booking. */
+export const bookingPaymentLabel = (b: RawBooking) => {
+  const cash = ledgerCash(b);
+  const upi = ledgerUpi(b);
+  if (cash > 0 && upi > 0) return "Cash + UPI";
+  if (cash > 0) return "Cash";
+  if (upi > 0) return "UPI";
+  return paymentModeLabel(b.payment_mode);
+};
+
 
 const minutes = (t?: string | null) => {
   if (!t) return null;
@@ -222,12 +248,10 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
     expired: bookings.filter((b) => b.status === "expired").length,
     pending: pendingRows.length,
     avgValue: revenueRows.length ? Math.round(totalRevenue / revenueRows.length) : 0,
-    upiRevenue: Math.round(
-      revenueRows.filter((b) => b.payment_mode === "upi").reduce((s2, b) => s2 + n(b.total_amount), 0),
-    ),
-    cashRevenue: Math.round(
-      revenueRows.filter((b) => b.payment_mode === "cash").reduce((s2, b) => s2 + n(b.total_amount), 0),
-    ),
+    // Collections come from the transaction ledger, the single source of truth.
+    upiRevenue: Math.round(revenueRows.reduce((s2, b) => s2 + ledgerUpi(b), 0)),
+    cashRevenue: Math.round(revenueRows.reduce((s2, b) => s2 + ledgerCash(b), 0)),
+
     ...(() => {
       /* Membership passes redeemed instead of paying for the session. */
       const passRows = counted.filter((b) => Boolean(b.pass_id));
@@ -257,18 +281,25 @@ export function computeAnalytics(input: ComputeInput): AnalyticsResult {
   };
 
   // ---- payment modes ------------------------------------------------------
-  const modeRow = (mode: "upi" | "cash" | null) => {
-    const rows = revenueRows.filter((b) => (b.payment_mode ?? null) === mode);
-    return {
-      revenue: Math.round(rows.reduce((s2, b) => s2 + n(b.total_amount), 0)),
-      bookings: rows.length,
-    };
-  };
+  // Split bookings contribute to both buckets, exactly as recorded in the ledger.
   const paymentModes = {
-    upi: modeRow("upi"),
-    cash: modeRow("cash"),
-    unrecorded: modeRow(null),
+    upi: {
+      revenue: Math.round(revenueRows.reduce((s2, b) => s2 + ledgerUpi(b), 0)),
+      bookings: revenueRows.filter((b) => ledgerUpi(b) > 0).length,
+    },
+    cash: {
+      revenue: Math.round(revenueRows.reduce((s2, b) => s2 + ledgerCash(b), 0)),
+      bookings: revenueRows.filter((b) => ledgerCash(b) > 0).length,
+    },
+    unrecorded: (() => {
+      const rows = revenueRows.filter((b) => ledgerCash(b) + ledgerUpi(b) <= 0);
+      return {
+        revenue: Math.round(rows.reduce((s2, b) => s2 + n(b.total_amount), 0)),
+        bookings: rows.length,
+      };
+    })(),
   };
+
 
   // ---- daily series -------------------------------------------------------
   const byDay = new Map<string, DayPoint>();
@@ -595,7 +626,7 @@ export function buildReportRows(
         finalAmount: Math.round(split.gaming),
         status: b.status,
         paymentStatus: paymentStatus(b),
-        paymentMode: paymentModeLabel(b.payment_mode),
+        paymentMode: bookingPaymentLabel(b),
       });
     }
     if (type !== "gaming" && split.foodGross > 0) {
@@ -616,7 +647,7 @@ export function buildReportRows(
         finalAmount: Math.round(split.food),
         status: b.status,
         paymentStatus: paymentStatus(b),
-        paymentMode: paymentModeLabel(b.payment_mode),
+        paymentMode: bookingPaymentLabel(b),
       });
     }
   }
@@ -683,7 +714,7 @@ export function buildDrilldownRows(
         phone: b.customer_phone,
         players: n(b.players),
         status: b.status,
-        paymentMode: paymentModeLabel(b.payment_mode),
+        paymentMode: bookingPaymentLabel(b),
         amount: Math.round(isRealized(b) ? split.gaming : 0),
       });
     }

@@ -5,19 +5,22 @@ import { MagneticButton } from "./primitives";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
 
 const LINKS = [
-  { label: "Home", href: "#home" },
-  { label: "Experiences", href: "#experiences" },
-    { label: "Membership and Combo offers", href: "#membership" },
-    { label: "Branches", href: "#branches" },
-    { label: "Food Menu", href: "#food" },
-  { label: "Contact", href: "#contact" },
-
+  { label: "Home", href: "/#home" },
+  { label: "Experiences", href: "/#experiences" },
+  { label: "Games", href: "/games" },
+  { label: "Membership and Combo offers", href: "/#membership" },
+  { label: "Branches", href: "/#branches" },
+  { label: "Food Menu", href: "/#food" },
+  { label: "Contact", href: "/#contact" },
 ];
+
+/** The in-page section a nav link points at, or null for a real page link. */
+const hashOf = (href: string) => (href.includes("#") ? `#${href.split("#")[1]}` : null);
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState("#home");
+  const [active, setActive] = useState("/#home");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -27,22 +30,28 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    const sections = LINKS.map((l) => document.querySelector(l.href)).filter(
-      Boolean,
-    ) as HTMLElement[];
+    if (typeof window !== "undefined" && window.location.pathname !== "/") {
+      setActive(window.location.pathname);
+      return;
+    }
+    const sections = LINKS.map((l) => {
+      const hash = hashOf(l.href);
+      return hash ? document.querySelector(hash) : null;
+    }).filter(Boolean) as HTMLElement[];
     if (!sections.length || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible?.target.id) setActive(`#${visible.target.id}`);
+        if (visible?.target.id) setActive(`/#${visible.target.id}`);
       },
       { rootMargin: "-40% 0px -50% 0px", threshold: [0, 0.25, 0.5, 1] },
     );
     sections.forEach((s) => io.observe(s));
     return () => io.disconnect();
   }, []);
+
 
   return (
     <header
@@ -60,7 +69,7 @@ export function Navbar() {
             : "mx-4 border border-transparent lg:mx-auto",
         )}
       >
-        <a href="#home" className="group flex min-w-0 items-center gap-2.5">
+        <a href="/#home" className="group flex min-w-0 items-center gap-2.5">
           <img
             src={logoAsset.url}
             alt="Clash of Consoles logo"
