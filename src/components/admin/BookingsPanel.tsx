@@ -799,8 +799,32 @@ function SettleDialog({
           <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Total bill
           </span>
-          <span className="text-lg font-black tabular-nums">{money(total)}</span>
+          <span className="text-right">
+            {discountValue > 0 ? (
+              <span className="mr-2 text-xs text-muted-foreground line-through tabular-nums">{money(billed)}</span>
+            ) : null}
+            <span className="text-lg font-black tabular-nums">{money(total)}</span>
+          </span>
         </div>
+
+        <label className="mt-4 block space-y-1.5">
+          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            Last-minute discount (₹)
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={billed}
+            value={discount}
+            onChange={(e) => {
+              onDiscount(e.target.value);
+              onCash("");
+              onUpi("");
+            }}
+            placeholder="0"
+            className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm tabular-nums outline-none focus:border-cyan/50"
+          />
+        </label>
 
         <div className="mt-4 space-y-3">
           {field("Cash", cash, onCash, () => {
@@ -812,6 +836,7 @@ function SettleDialog({
             onCash("0");
           })}
         </div>
+
 
         <div
           className={cn(
