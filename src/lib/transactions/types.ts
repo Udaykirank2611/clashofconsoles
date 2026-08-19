@@ -25,7 +25,7 @@ export interface TransactionRow {
   studentDiscount: number;
   totalDiscount: number;
   finalAmount: number;
-  paymentMode: "cash" | "upi" | "";
+  paymentMode: "cash" | "upi" | "mixed" | "";
   upiProvider: UpiProvider | null;
   cashAmount: number;
   upiAmount: number;

@@ -143,7 +143,18 @@ export async function loadTransactions(
       studentDiscount: student,
       totalDiscount: coupon + student + membership,
       finalAmount: total,
-      paymentMode: (b['payment_mode'] as "cash" | "upi" | null) ?? "",
+      // Derived from the recorded split so the ledger is the single source of truth.
+      paymentMode: (() => {
+        const c = num(tx?.['cash_amount']);
+        const u = num(tx?.['upi_amount']);
+        if (c > 0 && u > 0) return "mixed" as const;
+        if (c > 0) return "cash" as const;
+        if (u > 0) return "upi" as const;
+        return (b['payment_mode'] === "cash" || b['payment_mode'] === "upi" ? b['payment_mode'] : "") as
+          | "cash"
+          | "upi"
+          | "";
+      })(),
       upiProvider: (tx?.['upi_provider'] as UpiProvider | null) ?? null,
       cashAmount: num(tx?.['cash_amount']),
       upiAmount: num(tx?.['upi_amount']),
