@@ -226,9 +226,11 @@ export function BookingsPanel({
   };
 
   /** Close out a booking with the exact cash / UPI split collected at the counter. */
-  const settleBooking = async (booking: AdminBooking, cash: number, upi: number) => {
+  const settleBooking = async (booking: AdminBooking, cash: number, upi: number, extraDiscountValue = 0) => {
     setBusy(booking.id);
-    const res = await completeWithSplit({ data: { bookingId: booking.id, cash, upi } });
+    const res = await completeWithSplit({
+      data: { bookingId: booking.id, cash, upi, extraDiscount: extraDiscountValue },
+    });
     setBusy(null);
     if (!res.ok) {
       toast.error(res.message ?? "Could not complete this booking.");
@@ -415,6 +417,7 @@ export function BookingsPanel({
                           onClick={() => {
                             setSplitCash("");
                             setSplitUpi("");
+                            setExtraDiscount("");
                             setSettling(b);
                           }}
                         >
@@ -599,32 +602,12 @@ export function BookingsPanel({
           >
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Verify Payment</h3>
             <p className="mt-2 text-xs text-muted-foreground">
-              Confirm this booking. You will record how it was paid when you mark it completed.
+              Confirm this booking. You will record how it was paid — and apply any last-minute discount — when you
+              mark it completed.
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
-
-            <label className="mt-4 block space-y-1.5">
-              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Last-minute discount (₹)
-              </span>
-              <input
-                type="number"
-                min={0}
-                max={approving.total_amount}
-                value={extraDiscount}
-                onChange={(e) => setExtraDiscount(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm outline-none focus:border-cyan/50"
-              />
-              <span className="block text-[0.65rem] text-muted-foreground">
-                Payable after discount:{" "}
-                <span className="font-semibold text-foreground">
-                  {money(Math.max(0, approving.total_amount - (Number(extraDiscount) || 0)))}
-                </span>
-              </span>
-            </label>
 
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setApproving(null)}>Cancel</AdminButton>
@@ -634,12 +617,13 @@ export function BookingsPanel({
                 onClick={() => {
                   const booking = approving;
                   setApproving(null);
-                  void approveWithDiscount(booking, Number(extraDiscount) || 0);
+                  void approveWithDiscount(booking, 0);
                 }}
               >
                 Approve Payment
               </AdminButton>
             </div>
+
           </div>
         </div>
       ) : null}
@@ -649,17 +633,20 @@ export function BookingsPanel({
           booking={settling}
           cash={splitCash}
           upi={splitUpi}
+          discount={extraDiscount}
           busy={busy === settling.id}
           onCash={setSplitCash}
           onUpi={setSplitUpi}
+          onDiscount={setExtraDiscount}
           onClose={() => setSettling(null)}
-          onConfirm={(cash, upi) => {
+          onConfirm={(cash, upi, discount) => {
             const booking = settling;
             setSettling(null);
-            void settleBooking(booking, cash, upi);
+            void settleBooking(booking, cash, upi, discount);
           }}
         />
       ) : null}
+
 
 
       {addingFood ? (
@@ -736,25 +723,32 @@ function SettleDialog({
   booking,
   cash,
   upi,
+  discount,
   busy,
   onCash,
   onUpi,
+  onDiscount,
   onClose,
   onConfirm,
 }: {
   booking: AdminBooking;
   cash: string;
   upi: string;
+  discount: string;
   busy: boolean;
   onCash: (v: string) => void;
   onUpi: (v: string) => void;
+  onDiscount: (v: string) => void;
   onClose: () => void;
-  onConfirm: (cash: number, upi: number) => void;
+  onConfirm: (cash: number, upi: number, discount: number) => void;
 }) {
-  const total = Math.round(Number(booking.total_amount) || 0);
+  const billed = Math.round(Number(booking.total_amount) || 0);
+  const discountValue = Math.min(billed, Math.max(0, Math.round(Number(discount) || 0)));
+  const total = Math.max(0, billed - discountValue);
   const cashValue = Math.max(0, Math.round(Number(cash) || 0));
   const upiValue = Math.max(0, Math.round(Number(upi) || 0));
   const remaining = total - cashValue - upiValue;
+
 
   const field = (
     label: string,
@@ -806,8 +800,32 @@ function SettleDialog({
           <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Total bill
           </span>
-          <span className="text-lg font-black tabular-nums">{money(total)}</span>
+          <span className="text-right">
+            {discountValue > 0 ? (
+              <span className="mr-2 text-xs text-muted-foreground line-through tabular-nums">{money(billed)}</span>
+            ) : null}
+            <span className="text-lg font-black tabular-nums">{money(total)}</span>
+          </span>
         </div>
+
+        <label className="mt-4 block space-y-1.5">
+          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            Last-minute discount (₹)
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={billed}
+            value={discount}
+            onChange={(e) => {
+              onDiscount(e.target.value);
+              onCash("");
+              onUpi("");
+            }}
+            placeholder="0"
+            className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm tabular-nums outline-none focus:border-cyan/50"
+          />
+        </label>
 
         <div className="mt-4 space-y-3">
           {field("Cash", cash, onCash, () => {
@@ -819,6 +837,7 @@ function SettleDialog({
             onCash("0");
           })}
         </div>
+
 
         <div
           className={cn(
@@ -844,7 +863,7 @@ function SettleDialog({
           <AdminButton
             variant="success"
             disabled={busy || remaining !== 0}
-            onClick={() => onConfirm(cashValue, upiValue)}
+            onClick={() => onConfirm(cashValue, upiValue, discountValue)}
           >
             Complete booking
           </AdminButton>
