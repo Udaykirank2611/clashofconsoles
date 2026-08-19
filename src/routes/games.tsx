@@ -57,6 +57,8 @@ function GamesPage() {
   });
 
   const [query, setQuery] = useState("");
+  // Cover art that failed to load falls back to the initials tile.
+  const [broken, setBroken] = useState<Record<string, boolean>>({});
   const [platform, setPlatform] = useState("All");
 
   const games = useMemo<GalleryGame[]>(() => {
@@ -160,11 +162,12 @@ function GamesPage() {
                 <TiltCard max={10} glow contentClassName="group/tilt h-full">
                   <article className="group relative h-full overflow-hidden rounded-3xl border border-border bg-surface transition-[border-color,box-shadow] duration-500 group-hover/tilt:border-primary/50">
                     <div className="overflow-hidden">
-                      {g.image ? (
+                      {g.image && !broken[g.name] ? (
                         <img
                           src={g.image}
                           alt={`${g.name} cover art`}
                           loading="lazy"
+                          onError={() => setBroken((b) => ({ ...b, [g.name]: true }))}
                           className="aspect-3/4 w-full object-cover transition-transform duration-[1.1s] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/tilt:scale-110 motion-reduce:transition-none"
                         />
                       ) : (
