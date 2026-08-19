@@ -75,6 +75,9 @@ export function CouponsPanel({
     setTo("");
     setMaxUses("");
     setExpiry("");
+    setMinLevel("");
+    setMaxLevel("");
+
     toast.success("Coupon created.");
     onChanged();
   };
