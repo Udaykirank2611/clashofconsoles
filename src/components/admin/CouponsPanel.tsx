@@ -30,6 +30,9 @@ export function CouponsPanel({
   const [to, setTo] = useState("");
   const [maxUses, setMaxUses] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [minLevel, setMinLevel] = useState("");
+  const [maxLevel, setMaxLevel] = useState("");
+
   const [historyFor, setHistoryFor] = useState<AdminCoupon | null>(null);
 
   const toggleDay = (d: number) =>
