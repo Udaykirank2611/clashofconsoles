@@ -862,7 +862,7 @@ function SettleDialog({
           <AdminButton
             variant="success"
             disabled={busy || remaining !== 0}
-            onClick={() => onConfirm(cashValue, upiValue)}
+            onClick={() => onConfirm(cashValue, upiValue, discountValue)}
           >
             Complete booking
           </AdminButton>
