@@ -42,9 +42,10 @@ function BookPage() {
           >
             <Ticket className="size-3.5" aria-hidden="true" /> Already booked? Know your status
           </Link>
-          <span className="hidden text-[0.62rem] font-semibold uppercase tracking-[0.42em] text-cyan sm:inline">
+          <span className="hidden items-center rounded-full border border-pink/45 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_22%,transparent),color-mix(in_oklab,var(--primary)_20%,transparent))] px-4 py-2 text-[0.68rem] font-black uppercase tracking-[0.3em] text-foreground shadow-[0_18px_50px_-26px_var(--pink)] sm:inline-flex">
             Clash of Consoles
           </span>
+
         </div>
       </header>
 
