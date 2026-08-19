@@ -255,26 +255,24 @@ export function ConsoleSelect({
         </div>
         <button
           type="button"
-          role="switch"
-          aria-checked={enabled}
+          aria-expanded={enabled}
           disabled={!bookable.length}
-          aria-label={`Add ${label}`}
+          aria-label={`${enabled ? "Hide" : "Show"} ${label} options`}
           onClick={(e) => {
             e.stopPropagation();
             onToggle();
           }}
           className={cn(
-            "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300 disabled:cursor-not-allowed",
+            "inline-flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed",
             enabled
-              ? "border-transparent bg-linear-to-r from-primary to-violet"
-              : "border-border bg-muted/40",
+              ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground"
+              : "border-border bg-surface/60 hover:border-cyan/50",
           )}
         >
-          <span
-            className={cn(
-              "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
-              enabled ? "left-6" : "left-0.5",
-            )}
+          {enabled ? "Selected" : "Select"}
+          <ChevronDown
+            aria-hidden="true"
+            className={cn("size-4 transition-transform duration-300", enabled && "rotate-180")}
           />
         </button>
       </div>
