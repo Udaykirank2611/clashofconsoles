@@ -226,9 +226,11 @@ export function BookingsPanel({
   };
 
   /** Close out a booking with the exact cash / UPI split collected at the counter. */
-  const settleBooking = async (booking: AdminBooking, cash: number, upi: number) => {
+  const settleBooking = async (booking: AdminBooking, cash: number, upi: number, extraDiscountValue = 0) => {
     setBusy(booking.id);
-    const res = await completeWithSplit({ data: { bookingId: booking.id, cash, upi } });
+    const res = await completeWithSplit({
+      data: { bookingId: booking.id, cash, upi, extraDiscount: extraDiscountValue },
+    });
     setBusy(null);
     if (!res.ok) {
       toast.error(res.message ?? "Could not complete this booking.");
