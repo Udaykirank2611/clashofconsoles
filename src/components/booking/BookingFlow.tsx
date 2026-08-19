@@ -683,7 +683,7 @@ export function BookingFlow() {
             {
               key: "session",
               label: isGroup
-                ? `Group Pass · ${groupRate?.label ?? ""}`
+                ? `Party Booking · ${groupRate?.label ?? ""}`
                 : (station?.name ?? "Gaming session"),
               amount: sessionAmount,
             },
@@ -1437,7 +1437,7 @@ export function BookingFlow() {
                     </div>
                   ) : (
                     <p className="mt-3 text-xs text-muted-foreground">
-                      Group Pass pricing has not been set up for this branch yet.
+                      Party Booking pricing has not been set up for this branch yet.
                     </p>
                   )}
                 </div>
@@ -2090,7 +2090,7 @@ export function BookingFlow() {
                       month: "short",
                     })}
                   />
-                  <Row label="Booking type" value={isGroup ? "Group Pass" : "Single Pass"} />
+                  <Row label="Booking type" value={isGroup ? "Party Booking" : "Regular Booking"} />
                   {isGroup ? (
                     <>
                       <Row label="Members" value={String(groupMembers)} />
@@ -2194,7 +2194,7 @@ export function BookingFlow() {
             <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {[
                 branch?.name,
-                isGroup ? `Group Pass · ${groupMembers} members` : null,
+                isGroup ? `Party Booking · ${groupMembers} members` : null,
                 isGroup && groupStart && groupRate
                   ? `${formatTime(groupStart)} · ${groupRate.label}`
                   : null,
