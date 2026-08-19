@@ -1374,52 +1374,35 @@ export function BookingFlow() {
             <div className={cn(appliedPass && "hidden")}>
               <FieldLabel>Booking Type</FieldLabel>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {(
-                  [
-                    {
-                      id: "single" as const,
-                      icon: "🎮",
-                      title: "Single Pass",
-                      body: "For individual gaming bookings.",
-                    },
-                    {
-                      id: "group" as const,
-                      icon: "👥",
-                      title: "Group Pass",
-                      body: `Book the entire gaming café exclusively for your group. Up to ${GROUP_PASS_MAX_MEMBERS} members, with access to every gaming experience at this branch.`,
-                    },
-                  ]
-                ).map((opt) => {
-                  const active = bookingType === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => {
-                        if (bookingType === opt.id) return;
-                        setBookingType(opt.id);
-                        setStationId(null);
-                        setStartTime(null);
-                        setDurationMinutes(null);
-                        setConsoleOn(false);
-                        setExtras({});
-                        setGroupStart(null);
-                      }}
-                      className={cn(
-                        "rounded-3xl border border-border bg-surface/60 p-5 text-left backdrop-blur-xl transition-all duration-300",
-                        active
-                          ? "border-transparent shadow-[0_0_0_1px_var(--cyan)]"
-                          : "hover:border-cyan/40",
-                      )}
-                    >
-                      <span className="text-2xl">{opt.icon}</span>
-                      <p className="mt-2 text-sm font-extrabold">{opt.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{opt.body}</p>
-                    </button>
-                  );
-                })}
+              <div className="relative mt-3 w-full max-w-sm">
+                <select
+                  value={bookingType}
+                  onChange={(e) => {
+                    const next = e.target.value as "single" | "group";
+                    if (bookingType === next) return;
+                    setBookingType(next);
+                    setStationId(null);
+                    setStartTime(null);
+                    setDurationMinutes(null);
+                    setConsoleOn(false);
+                    setExtras({});
+                    setGroupStart(null);
+                  }}
+                  className="w-full appearance-none rounded-2xl border border-border bg-surface/70 px-4 py-3.5 pr-11 text-sm font-bold backdrop-blur-xl transition-colors duration-300 hover:border-cyan/50 focus:border-cyan/60 focus:outline-hidden"
+                >
+                  <option value="single">🎮 Regular Booking</option>
+                  <option value="group">👥 Party Booking</option>
+                </select>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
               </div>
+              <p className="mt-2 max-w-sm text-xs text-muted-foreground">
+                {isGroup
+                  ? `Book the entire gaming café exclusively for your group. Up to ${GROUP_PASS_MAX_MEMBERS} members, with access to every gaming experience at this branch.`
+                  : "For individual gaming bookings."}
+              </p>
             </div>
 
             {isGroup ? (
