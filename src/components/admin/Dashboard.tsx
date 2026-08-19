@@ -46,6 +46,7 @@ const BRANCH_TABS = [
   "Offers",
   "Coupons",
   "Payments",
+  "Messages",
   "Settings",
 
 ] as const;
