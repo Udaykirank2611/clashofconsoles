@@ -69,7 +69,7 @@ export function Navbar() {
             : "mx-4 border border-transparent lg:mx-auto",
         )}
       >
-        <a href="#home" className="group flex min-w-0 items-center gap-2.5">
+        <a href="/#home" className="group flex min-w-0 items-center gap-2.5">
           <img
             src={logoAsset.url}
             alt="Clash of Consoles logo"
