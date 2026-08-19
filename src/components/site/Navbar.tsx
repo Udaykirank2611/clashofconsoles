@@ -7,9 +7,9 @@ import logoAsset from "@/assets/coc-logo.png.asset.json";
 const LINKS = [
   { label: "Home", href: "#home" },
   { label: "Experiences", href: "#experiences" },
-  { label: "Membership", href: "#membership" },
-  { label: "Branches", href: "#branches" },
-  { label: "Food", href: "#food" },
+    { label: "Membership and Combo offers", href: "#membership" },
+    { label: "Branches", href: "#branches" },
+    { label: "Food Menu", href: "#food" },
   { label: "Contact", href: "#contact" },
 
 ];
