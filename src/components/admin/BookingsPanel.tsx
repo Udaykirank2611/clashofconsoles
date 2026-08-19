@@ -49,7 +49,8 @@ const waNumber = (phone: string) => {
   return digits.length === 10 ? `91${digits}` : digits;
 };
 
-const confirmationText = (b: AdminBooking, stationName: string) => {
+/** The auto-generated breakdown block injected into templates via {details}. */
+const bookingDetailsText = (b: AdminBooking, stationName: string) => {
   const experiences = b.booking_items.filter((i) => i.kind === "addon" && i.station_id);
   const passes = b.booking_items.filter((i) => i.kind === "addon" && !i.station_id);
   const food = b.booking_items.filter((i) => i.kind === "food");
@@ -65,7 +66,6 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
       )
       .join("\n");
   return [
-    `Hi ${b.customer_name}! Your booking at Clash of Consoles is CONFIRMED ✅`,
     `Booking ID: ${b.reference}`,
     `Date: ${new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
       weekday: "short",
@@ -111,7 +111,6 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
     Number(b.reward_minutes)
       ? `🎁 Loyalty reward applied: ${Number(b.reward_minutes)} minutes of FREE play added to this session.`
       : "🎁 Loyalty: every game counts — your 5th visit comes with 30 Minutes FREE and your 10th visit with 1 Hour FREE (used on that visit itself).",
-    "Please arrive 10 minutes early. See you at the arena!",
   ]
     .filter(Boolean)
     .join("\n");
