@@ -10,6 +10,7 @@ import { PricingPanel } from "./PricingPanel";
 import { CouponsPanel } from "./CouponsPanel";
 import { MenuPanel } from "./MenuPanel";
 import { SettingsPanel } from "./SettingsPanel";
+import { MessagesPanel } from "./MessagesPanel";
 import { PaymentSettingsPanel } from "./PaymentSettingsPanel";
 
 import { OwnerPanel } from "./OwnerPanel";
@@ -269,6 +270,8 @@ export function AdminDashboard() {
         ) : null}
 
         {tab === "Payments" ? <PaymentSettingsPanel branchId={branch.id} /> : null}
+
+        {tab === "Messages" ? <MessagesPanel branchId={branch.id} /> : null}
 
         {tab === "Settings" ? <SettingsPanel branchId={branch.id} /> : null}
 
