@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import {
+  Menu,
+  X,
+  Home,
+  Sparkles,
+  Gamepad2,
+  Crown,
+  MapPin,
+  UtensilsCrossed,
+  PhoneCall,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "./primitives";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
 
 const LINKS = [
-  { label: "Home", href: "/#home" },
-  { label: "Experiences", href: "/#experiences" },
-  { label: "Games", href: "/games" },
-  { label: "Membership and Combo offers", href: "/#membership" },
-  { label: "Branches", href: "/#branches" },
-  { label: "Food Menu", href: "/#food" },
-  { label: "Contact", href: "/#contact" },
+  { label: "Home", href: "/#home", icon: Home },
+  { label: "Experiences", href: "/#experiences", icon: Sparkles },
+  { label: "Games", href: "/games", icon: Gamepad2 },
+  { label: "Membership and Combo offers", href: "/#membership", icon: Crown },
+  { label: "Branches", href: "/#branches", icon: MapPin },
+  { label: "Food Menu", href: "/#food", icon: UtensilsCrossed },
+  { label: "Contact", href: "/#contact", icon: PhoneCall },
 ];
 
 /** The in-page section a nav link points at, or null for a real page link. */
