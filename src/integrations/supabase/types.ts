@@ -1287,6 +1287,41 @@ export type Database = {
           },
         ]
       }
+      message_templates: {
+        Row: {
+          body: string
+          branch_id: string
+          created_at: string
+          id: string
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          branch_id: string
+          created_at?: string
+          id?: string
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          branch_id?: string
+          created_at?: string
+          id?: string
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           account_name: string

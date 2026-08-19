@@ -11,6 +11,7 @@ import { approveBookingPayment, completeBookingWithSplit } from "@/lib/booking-a
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
 import { cn } from "@/lib/utils";
+import { renderTemplate, useMessageTemplates, type TemplateKey } from "@/lib/message-templates";
 
 const FILTERS = ["payment_pending", "awaiting_payment", "confirmed", "cancelled", "all"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -49,7 +50,8 @@ const waNumber = (phone: string) => {
   return digits.length === 10 ? `91${digits}` : digits;
 };
 
-const confirmationText = (b: AdminBooking, stationName: string) => {
+/** The auto-generated breakdown block injected into templates via {details}. */
+const bookingDetailsText = (b: AdminBooking, stationName: string) => {
   const experiences = b.booking_items.filter((i) => i.kind === "addon" && i.station_id);
   const passes = b.booking_items.filter((i) => i.kind === "addon" && !i.station_id);
   const food = b.booking_items.filter((i) => i.kind === "food");
@@ -65,7 +67,6 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
       )
       .join("\n");
   return [
-    `Hi ${b.customer_name}! Your booking at Clash of Consoles is CONFIRMED ✅`,
     `Booking ID: ${b.reference}`,
     `Date: ${new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
       weekday: "short",
@@ -111,7 +112,6 @@ const confirmationText = (b: AdminBooking, stationName: string) => {
     Number(b.reward_minutes)
       ? `🎁 Loyalty reward applied: ${Number(b.reward_minutes)} minutes of FREE play added to this session.`
       : "🎁 Loyalty: every game counts — your 5th visit comes with 30 Minutes FREE and your 10th visit with 1 Hour FREE (used on that visit itself).",
-    "Please arrive 10 minutes early. See you at the arena!",
   ]
     .filter(Boolean)
     .join("\n");
@@ -122,6 +122,8 @@ export function BookingsPanel({
   bookings,
   stations,
   menu = [],
+  branchId,
+  branchName,
   onChanged,
   focusReference,
 }: {
@@ -129,6 +131,8 @@ export function BookingsPanel({
   stations: AdminStation[];
   /** Branch menu, used by the "Add food" flow on confirmed bookings. */
   menu?: AdminMenuItem[];
+  branchId: string;
+  branchName: string;
   onChanged: () => void;
   /** Booking reference to open automatically (e.g. from a notification). */
   focusReference?: string | null;
@@ -150,6 +154,28 @@ export function BookingsPanel({
   const approvePayment = useServerFn(approveBookingPayment);
   const completeWithSplit = useServerFn(completeBookingWithSplit);
   const editHours = useServerFn(updateBookingExtraHours);
+  const { template } = useMessageTemplates();
+
+  /** Renders the admin-editable WhatsApp message for a booking. */
+  const customerMessage = (b: AdminBooking, stationName: string, key?: TemplateKey) => {
+    const which: TemplateKey =
+      key ?? (b.status === "confirmed" || b.status === "completed" ? "booking_confirmed" : "booking_placed");
+    const w = bookingWindow(b);
+    return renderTemplate(template(branchId, which), {
+      name: b.customer_name,
+      branch: branchName,
+      reference: b.reference,
+      phone: b.customer_phone,
+      total: money(b.total_amount),
+      date: new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }),
+      time: w.start && w.end ? `${formatTime(w.start)} – ${formatTime(w.end)}` : "—",
+      details: bookingDetailsText(b, stationName),
+    });
+  };
 
 
   useEffect(() => {
@@ -178,7 +204,7 @@ export function BookingsPanel({
 
   const copyConfirmation = async (b: AdminBooking, stationName: string) => {
     try {
-      await navigator.clipboard.writeText(confirmationText(b, stationName));
+      await navigator.clipboard.writeText(customerMessage(b, stationName));
       toast.success("Confirmation message copied.");
     } catch {
       toast.error("Could not copy — please copy manually.");
@@ -343,7 +369,7 @@ export function BookingsPanel({
                       <Phone className="size-3" /> {b.customer_phone}
                     </a>
                     <a
-                      href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(confirmationText(b, stationName))}`}
+                      href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ml-2 inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"

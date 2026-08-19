@@ -140,7 +140,7 @@ export function NotificationBell({
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-[min(22rem,90vw)] overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl">
+        <div className="fixed inset-x-3 top-16 z-[60] max-h-[75vh] overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem]">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <span className="text-[0.6rem] font-extrabold uppercase tracking-[0.22em] text-muted-foreground">
               Notifications
@@ -155,7 +155,7 @@ export function NotificationBell({
             </button>
           </div>
 
-          <ul className="max-h-[26rem] divide-y divide-border overflow-y-auto">
+          <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto sm:max-h-[26rem]">
             {items.length === 0 ? (
               <li className="px-4 py-10 text-center text-xs text-muted-foreground">Nothing yet.</li>
             ) : (

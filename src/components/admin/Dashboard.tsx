@@ -10,6 +10,7 @@ import { PricingPanel } from "./PricingPanel";
 import { CouponsPanel } from "./CouponsPanel";
 import { MenuPanel } from "./MenuPanel";
 import { SettingsPanel } from "./SettingsPanel";
+import { MessagesPanel } from "./MessagesPanel";
 import { PaymentSettingsPanel } from "./PaymentSettingsPanel";
 
 import { OwnerPanel } from "./OwnerPanel";
@@ -46,6 +47,7 @@ const BRANCH_TABS = [
   "Offers",
   "Coupons",
   "Payments",
+  "Messages",
   "Settings",
 
 ] as const;
@@ -199,6 +201,8 @@ export function AdminDashboard() {
             bookings={data.bookings}
             stations={data.stations}
             menu={data.menu}
+            branchId={branch.id}
+            branchName={branch.name}
             onChanged={data.refresh}
             focusReference={focusReference}
           />
@@ -268,6 +272,8 @@ export function AdminDashboard() {
         ) : null}
 
         {tab === "Payments" ? <PaymentSettingsPanel branchId={branch.id} /> : null}
+
+        {tab === "Messages" ? <MessagesPanel branchId={branch.id} /> : null}
 
         {tab === "Settings" ? <SettingsPanel branchId={branch.id} /> : null}
 

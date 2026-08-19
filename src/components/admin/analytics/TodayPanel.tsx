@@ -23,10 +23,12 @@ export function TodayPanel({
   const { data } = useQuery({
     queryKey: ["today-overview", branchId],
     queryFn: () => fetchToday({ data: { branchId } }),
-    refetchInterval: 60_000,
+    refetchInterval: 20_000,
   });
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Venue day in IST, so late-evening sessions stay on "today".
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+
   const todays = useMemo(
     () => bookings.filter((b) => b.booking_date === today),
     [bookings, today],

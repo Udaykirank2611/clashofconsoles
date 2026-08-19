@@ -188,9 +188,11 @@ export async function loadTodayOverview(
 ): Promise<TodayOverview | null> {
   const scope = await resolveScope(supabase, userId, branchId);
   if (!scope) return null;
-  const now = new Date();
-  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  // The venue runs on IST; the server clock is UTC, so derive both the date and
+  // the current minute-of-day in Asia/Kolkata or availability lags by hours.
+  const { nowInIst } = await import("@/lib/availability");
+  const { date, minutes: nowMinutes } = nowInIst();
+
 
   const [bookings, stationsRes] = await Promise.all([
     fetchBookings(supabase, scope.ids, date, date),
