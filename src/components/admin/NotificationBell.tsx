@@ -64,13 +64,15 @@ export function NotificationBell({
       const fresh = rows.filter((r) => !seenRef.current!.has(r.id));
       for (const r of rows) seenRef.current.add(r.id);
       if (fresh.some((r) => !r.read_at)) {
-        playChime();
+        // Keep ringing until the admin acknowledges the alert.
+        startChimeLoop();
         const top = fresh[0];
         if (top) toast(top.title, { description: top.body });
       }
     }
     setItems(rows);
   }, [branchId]);
+
 
   useEffect(() => {
     seenRef.current = null;
