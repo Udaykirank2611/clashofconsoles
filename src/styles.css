@@ -216,6 +216,31 @@
   background: color-mix(in oklab, var(--primary) 22%, transparent);
 }
 
+/* Make faint helper text readable in the admin workspace */
+.theme-admin-light {
+  -webkit-font-smoothing: auto;
+}
+
+.theme-admin-light .text-muted-foreground,
+.theme-admin-light .text-foreground\/60,
+.theme-admin-light .text-foreground\/70,
+.theme-admin-light .text-foreground\/80 {
+  color: oklch(0.34 0.015 285) !important;
+}
+
+.theme-admin-light .text-xs,
+.theme-admin-light .text-\[11px\],
+.theme-admin-light .text-\[10px\] {
+  font-weight: 500;
+}
+
+.theme-admin-light label,
+.theme-admin-light th {
+  color: oklch(0.18 0.012 285);
+  font-weight: 600;
+}
+
+
 
 
 @layer base {
