@@ -98,13 +98,13 @@ function DatePickerChip({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="group inline-flex w-full max-w-sm items-center gap-4 rounded-3xl border border-border bg-surface/70 px-4 py-3.5 text-left backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan/50 hover:shadow-[0_24px_60px_-34px_var(--primary)]"
+          className="group inline-flex w-full max-w-sm items-center gap-4 rounded-3xl border border-pink/40 bg-surface/70 px-4 py-3.5 text-left backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-pink/70 hover:shadow-[0_24px_60px_-30px_var(--pink)]"
         >
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-cyan/40 bg-linear-to-br from-primary/30 to-cyan/15 text-cyan shadow-[0_0_0_1px_var(--cyan)]">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-pink/45 bg-linear-to-br from-pink/30 to-pink/10 text-pink shadow-[0_0_0_1px_color-mix(in_oklab,var(--pink)_45%,transparent)]">
             <CalendarDays className="size-5" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="block text-[0.6rem] font-bold uppercase tracking-[0.22em] text-pink">
               Select date
             </span>
             <span className="mt-0.5 block truncate text-lg font-black">
@@ -115,10 +115,13 @@ function DatePickerChip({
               })}
             </span>
           </span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
+          <ChevronDown className="size-4 shrink-0 text-pink transition-transform duration-300 group-data-[state=open]:rotate-180" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-0">
+      <PopoverContent
+        align="start"
+        className="w-auto border-pink/40 p-0 shadow-[0_30px_90px_-40px_var(--pink)]"
+      >
         <Calendar
           mode="single"
           selected={selected}
@@ -134,6 +137,14 @@ function DatePickerChip({
           }}
           initialFocus
           className={cn("pointer-events-auto p-3")}
+          classNames={{
+            caption_label: "text-sm font-black text-pink",
+            nav_button: "border-pink/40 text-pink hover:bg-pink/10",
+            head_cell: "text-pink/70 rounded-md w-9 font-semibold text-[0.7rem]",
+            day_selected:
+              "bg-pink text-background hover:bg-pink focus:bg-pink shadow-[0_0_24px_-6px_var(--pink)]",
+            day_today: "border border-pink/50 text-pink",
+          }}
         />
       </PopoverContent>
     </Popover>
