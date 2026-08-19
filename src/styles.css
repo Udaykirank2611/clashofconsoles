@@ -164,33 +164,34 @@
  */
 .theme-admin-light {
   --background: oklch(0.985 0.002 285);
-  --foreground: oklch(0.22 0.01 285);
+  --foreground: oklch(0.14 0.012 285);
   --surface: oklch(1 0 0);
   --surface-2: oklch(0.965 0.003 285);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.01 285);
+  --card-foreground: oklch(0.14 0.012 285);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.01 285);
+  --popover-foreground: oklch(0.14 0.012 285);
 
-  --primary: oklch(0.55 0.19 258);
+  --primary: oklch(0.48 0.2 258);
   --primary-foreground: oklch(0.99 0.002 260);
-  --violet: oklch(0.52 0.21 300);
-  --cyan: oklch(0.6 0.12 210);
-  --orange: oklch(0.68 0.16 55);
+  --violet: oklch(0.45 0.22 300);
+  --cyan: oklch(0.5 0.13 210);
+  --orange: oklch(0.58 0.17 55);
 
-  --secondary: oklch(0.95 0.004 285);
-  --secondary-foreground: oklch(0.26 0.01 285);
-  --muted: oklch(0.95 0.004 285);
-  --muted-foreground: oklch(0.5 0.012 285);
-  --accent: oklch(0.52 0.21 300);
+  --secondary: oklch(0.94 0.005 285);
+  --secondary-foreground: oklch(0.18 0.012 285);
+  --muted: oklch(0.94 0.005 285);
+  --muted-foreground: oklch(0.36 0.015 285);
+  --accent: oklch(0.45 0.22 300);
   --accent-foreground: oklch(0.99 0.002 300);
-  --destructive: oklch(0.55 0.21 25);
+  --destructive: oklch(0.48 0.22 25);
   --destructive-foreground: oklch(0.99 0.002 25);
 
-  --border: oklch(0.2 0.01 285 / 12%);
-  --input: oklch(0.2 0.01 285 / 16%);
-  --ring: oklch(0.55 0.19 258);
+  --border: oklch(0.2 0.01 285 / 22%);
+  --input: oklch(0.2 0.01 285 / 30%);
+  --ring: oklch(0.48 0.2 258);
+
 
   --gradient-arena: linear-gradient(
     120deg,
@@ -214,6 +215,31 @@
 .theme-admin-light ::selection {
   background: color-mix(in oklab, var(--primary) 22%, transparent);
 }
+
+/* Make faint helper text readable in the admin workspace */
+.theme-admin-light {
+  -webkit-font-smoothing: auto;
+}
+
+.theme-admin-light .text-muted-foreground,
+.theme-admin-light .text-foreground\/60,
+.theme-admin-light .text-foreground\/70,
+.theme-admin-light .text-foreground\/80 {
+  color: oklch(0.34 0.015 285) !important;
+}
+
+.theme-admin-light .text-xs,
+.theme-admin-light .text-\[11px\],
+.theme-admin-light .text-\[10px\] {
+  font-weight: 500;
+}
+
+.theme-admin-light label,
+.theme-admin-light th {
+  color: oklch(0.18 0.012 285);
+  font-weight: 600;
+}
+
 
 
 
