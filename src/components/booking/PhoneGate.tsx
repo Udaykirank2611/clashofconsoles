@@ -155,10 +155,14 @@ export function PhoneGate({
         </div>
 
 
-        <p className="mt-6 flex items-center gap-2 rounded-2xl border border-border bg-background/40 px-4 py-3 text-[0.68rem] text-muted-foreground">
-          <Gift className="size-3.5 shrink-0 text-cyan" />
-          Free time on your {VISITS_PER_REWARD}th visit → 30 Minutes FREE · on your 10th visit → 1 Hour
-          FREE. Every game counts.
+        <p className="mt-6 flex items-center gap-2 rounded-2xl border border-pink/35 bg-pink/8 px-4 py-3 text-[0.72rem] text-foreground/85 shadow-[0_0_40px_-24px_var(--pink)]">
+          <Gift className="size-4 shrink-0 text-pink" />
+          <span>
+            <span className="font-black text-pink">Free time</span> on your{" "}
+            <span className="font-black text-pink">{VISITS_PER_REWARD}th visit → 30 Minutes FREE</span> ·
+            on your <span className="font-black text-pink">10th visit → 1 Hour FREE</span>. Every game
+            counts.
+          </span>
         </p>
       </div>
     </div>
