@@ -8,6 +8,7 @@ import { SectionHeading } from "@/components/site/primitives";
 import { inr, useSiteContent, type SiteMenuItem } from "@/lib/site-content";
 import { ArrowLeft, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { menuItemIcon } from "@/lib/menu-icons";
 
 const TITLE = "Food & Drinks Menu — Clash of Consoles Hyderabad";
 const DESC =
