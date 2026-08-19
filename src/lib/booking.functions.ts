@@ -860,13 +860,26 @@ export const createBooking = createServerFn({ method: "POST" })
 
       // Expired or fully redeemed coupons are ignored server-side.
       const nowMs = Date.now();
+      let levelOk = true;
+      if (coupon && (coupon.min_level != null || coupon.max_level != null)) {
+        const { data: cust } = await db
+          .from("customers")
+          .select("total_visits")
+          .eq("phone", loyaltyPhone)
+          .maybeSingle();
+        const level = Number(cust?.total_visits ?? 0);
+        if (coupon.min_level != null && level < Number(coupon.min_level)) levelOk = false;
+        if (coupon.max_level != null && level > Number(coupon.max_level)) levelOk = false;
+      }
       const usable =
         !!coupon &&
+        levelOk &&
         !(coupon.starts_at && new Date(coupon.starts_at).getTime() > nowMs) &&
         !(coupon.ends_at && new Date(coupon.ends_at).getTime() < nowMs) &&
         !(coupon.usage_limit != null && Number(coupon.used_count) >= Number(coupon.usage_limit));
 
       if (coupon && usable && schedule.ok && base > 0 && base >= Number(coupon.min_order_amount)) {
+
 
         let d =
           coupon.discount_type === "percent"
