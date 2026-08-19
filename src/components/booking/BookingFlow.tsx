@@ -1374,35 +1374,53 @@ export function BookingFlow() {
             <div className={cn(appliedPass && "hidden")}>
               <FieldLabel>Booking Type</FieldLabel>
 
-              <div className="relative mt-3 w-full max-w-sm">
-                <select
-                  value={bookingType}
-                  onChange={(e) => {
-                    const next = e.target.value as "single" | "group";
-                    if (bookingType === next) return;
-                    setBookingType(next);
-                    setStationId(null);
-                    setStartTime(null);
-                    setDurationMinutes(null);
-                    setConsoleOn(false);
-                    setExtras({});
-                    setGroupStart(null);
-                  }}
-                  className="w-full appearance-none rounded-2xl border border-border bg-surface/70 px-4 py-3.5 pr-11 text-sm font-bold backdrop-blur-xl transition-colors duration-300 hover:border-cyan/50 focus:border-cyan/60 focus:outline-hidden"
-                >
-                  <option value="single">🎮 Regular Booking</option>
-                  <option value="group">👥 Party Booking</option>
-                </select>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {([
+                  {
+                    id: "single" as const,
+                    title: "Regular Booking",
+                    emoji: "🎮",
+                    desc: "For individual gaming bookings.",
+                  },
+                  {
+                    id: "group" as const,
+                    title: "Party Booking",
+                    emoji: "👥",
+                    desc: `Book the entire gaming café exclusively for your group — up to ${GROUP_PASS_MAX_MEMBERS} members.`,
+                  },
+                ]).map((opt) => {
+                  const active = bookingType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        if (bookingType === opt.id) return;
+                        setBookingType(opt.id);
+                        setStationId(null);
+                        setStartTime(null);
+                        setDurationMinutes(null);
+                        setConsoleOn(false);
+                        setExtras({});
+                        setGroupStart(null);
+                      }}
+                      className={cn(
+                        "rounded-3xl border p-5 text-left backdrop-blur-xl transition-all duration-300",
+                        active
+                          ? "border-transparent bg-surface/80 shadow-[0_0_0_1px_var(--cyan)]"
+                          : "border-border bg-surface/50 hover:border-cyan/40",
+                      )}
+                    >
+                      <p className="text-base font-extrabold">
+                        <span className="mr-2">{opt.emoji}</span>
+                        {opt.title}
+                      </p>
+                      <p className="mt-1.5 text-xs text-muted-foreground">{opt.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
-              <p className="mt-2 max-w-sm text-xs text-muted-foreground">
-                {isGroup
-                  ? `Book the entire gaming café exclusively for your group. Up to ${GROUP_PASS_MAX_MEMBERS} members, with access to every gaming experience at this branch.`
-                  : "For individual gaming bookings."}
-              </p>
+
             </div>
 
             {isGroup ? (
@@ -1665,26 +1683,24 @@ export function BookingFlow() {
                       </div>
                       <button
                         type="button"
-                        role="switch"
-                        aria-checked={on}
+                        aria-expanded={on}
                         disabled={!bookable.length}
-                        aria-label={`Add ${g.label}`}
+                        aria-label={`${on ? "Hide" : "Show"} ${g.label} options`}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggle();
                         }}
                         className={cn(
-                          "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300 disabled:cursor-not-allowed",
+                          "inline-flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed",
                           on
-                            ? "border-transparent bg-linear-to-r from-primary to-violet"
-                            : "border-border bg-muted/40",
+                            ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground"
+                            : "border-border bg-surface/60 hover:border-cyan/50",
                         )}
                       >
-                        <span
-                          className={cn(
-                            "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
-                            on ? "left-6" : "left-0.5",
-                          )}
+                        {on ? "Selected" : "Select"}
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={cn("size-4 transition-transform duration-300", on && "rotate-180")}
                         />
                       </button>
                     </div>
