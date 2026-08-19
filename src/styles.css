@@ -38,6 +38,7 @@
   --color-violet: var(--violet);
   --color-cyan: var(--cyan);
   --color-orange: var(--orange);
+  --color-pink: var(--pink);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -69,6 +70,8 @@
   --cyan: oklch(0.82 0.13 200);
   /* Arena orange — station selection accent */
   --orange: oklch(0.75 0.17 60);
+  /* Neon pink — booking calendar accent */
+  --pink: oklch(0.72 0.24 348);
 
   --secondary: oklch(0.24 0.01 285);
   --secondary-foreground: oklch(0.97 0.003 285);

@@ -480,7 +480,7 @@ export const createBooking = createServerFn({ method: "POST" })
         branch_id: row.branch_id,
       };
       if (data.bookingType === "group")
-        return { ok: false, message: "A membership pass cannot be used for a Group Pass booking." };
+        return { ok: false, message: "A membership pass cannot be used for a Party Booking." };
       if ((data.passes ?? []).length)
         return { ok: false, message: "You cannot buy a new pass while redeeming one." };
     }
@@ -966,7 +966,7 @@ export const createBooking = createServerFn({ method: "POST" })
             kind: "addon" as const,
             menu_item_id: null,
             station_id: st.id,
-            label: `${st.name} · Group Pass`,
+            label: `${st.name} · Party Booking`,
             unit_price: 0,
             quantity: 1,
             line_total: 0,

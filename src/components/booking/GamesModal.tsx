@@ -22,7 +22,7 @@ function GameTile({ game }: { game: StationGame }) {
           </span>
         )}
       </div>
-      <p className="mt-1.5 truncate text-[0.68rem] font-semibold text-muted-foreground">{game.name}</p>
+      <p className="mt-2 truncate text-sm font-bold text-foreground/90 sm:text-base">{game.name}</p>
     </div>
   );
 }

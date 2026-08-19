@@ -107,7 +107,7 @@ export async function loadTransactions(
     const station = b.gaming_stations;
 
     const service = b['booking_type'] === "group"
-      ? "Group Pass"
+      ? "Party Booking"
       : b['pass_id']
         ? "Membership Redemption"
         : station

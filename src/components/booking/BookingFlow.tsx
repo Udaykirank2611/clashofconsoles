@@ -98,13 +98,13 @@ function DatePickerChip({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="group inline-flex w-full max-w-sm items-center gap-4 rounded-3xl border border-border bg-surface/70 px-4 py-3.5 text-left backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan/50 hover:shadow-[0_24px_60px_-34px_var(--primary)]"
+          className="group inline-flex w-full max-w-sm items-center gap-4 rounded-3xl border border-pink/40 bg-surface/70 px-4 py-3.5 text-left backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-pink/70 hover:shadow-[0_24px_60px_-30px_var(--pink)]"
         >
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-cyan/40 bg-linear-to-br from-primary/30 to-cyan/15 text-cyan shadow-[0_0_0_1px_var(--cyan)]">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-pink/45 bg-linear-to-br from-pink/30 to-pink/10 text-pink shadow-[0_0_0_1px_color-mix(in_oklab,var(--pink)_45%,transparent)]">
             <CalendarDays className="size-5" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="block text-[0.6rem] font-bold uppercase tracking-[0.22em] text-pink">
               Select date
             </span>
             <span className="mt-0.5 block truncate text-lg font-black">
@@ -115,10 +115,13 @@ function DatePickerChip({
               })}
             </span>
           </span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
+          <ChevronDown className="size-4 shrink-0 text-pink transition-transform duration-300 group-data-[state=open]:rotate-180" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-0">
+      <PopoverContent
+        align="start"
+        className="w-auto border-pink/40 p-0 shadow-[0_30px_90px_-40px_var(--pink)]"
+      >
         <Calendar
           mode="single"
           selected={selected}
@@ -134,6 +137,14 @@ function DatePickerChip({
           }}
           initialFocus
           className={cn("pointer-events-auto p-3")}
+          classNames={{
+            caption_label: "text-sm font-black text-pink",
+            nav_button: "border-pink/40 text-pink hover:bg-pink/10",
+            head_cell: "text-pink/70 rounded-md w-9 font-semibold text-[0.7rem]",
+            day_selected:
+              "bg-pink text-background hover:bg-pink focus:bg-pink shadow-[0_0_24px_-6px_var(--pink)]",
+            day_today: "border border-pink/50 text-pink",
+          }}
         />
       </PopoverContent>
     </Popover>
@@ -672,7 +683,7 @@ export function BookingFlow() {
             {
               key: "session",
               label: isGroup
-                ? `Group Pass · ${groupRate?.label ?? ""}`
+                ? `Party Booking · ${groupRate?.label ?? ""}`
                 : (station?.name ?? "Gaming session"),
               amount: sessionAmount,
             },
@@ -1363,52 +1374,35 @@ export function BookingFlow() {
             <div className={cn(appliedPass && "hidden")}>
               <FieldLabel>Booking Type</FieldLabel>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {(
-                  [
-                    {
-                      id: "single" as const,
-                      icon: "🎮",
-                      title: "Single Pass",
-                      body: "For individual gaming bookings.",
-                    },
-                    {
-                      id: "group" as const,
-                      icon: "👥",
-                      title: "Group Pass",
-                      body: `Book the entire gaming café exclusively for your group. Up to ${GROUP_PASS_MAX_MEMBERS} members, with access to every gaming experience at this branch.`,
-                    },
-                  ]
-                ).map((opt) => {
-                  const active = bookingType === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => {
-                        if (bookingType === opt.id) return;
-                        setBookingType(opt.id);
-                        setStationId(null);
-                        setStartTime(null);
-                        setDurationMinutes(null);
-                        setConsoleOn(false);
-                        setExtras({});
-                        setGroupStart(null);
-                      }}
-                      className={cn(
-                        "rounded-3xl border border-border bg-surface/60 p-5 text-left backdrop-blur-xl transition-all duration-300",
-                        active
-                          ? "border-transparent shadow-[0_0_0_1px_var(--cyan)]"
-                          : "hover:border-cyan/40",
-                      )}
-                    >
-                      <span className="text-2xl">{opt.icon}</span>
-                      <p className="mt-2 text-sm font-extrabold">{opt.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{opt.body}</p>
-                    </button>
-                  );
-                })}
+              <div className="relative mt-3 w-full max-w-sm">
+                <select
+                  value={bookingType}
+                  onChange={(e) => {
+                    const next = e.target.value as "single" | "group";
+                    if (bookingType === next) return;
+                    setBookingType(next);
+                    setStationId(null);
+                    setStartTime(null);
+                    setDurationMinutes(null);
+                    setConsoleOn(false);
+                    setExtras({});
+                    setGroupStart(null);
+                  }}
+                  className="w-full appearance-none rounded-2xl border border-border bg-surface/70 px-4 py-3.5 pr-11 text-sm font-bold backdrop-blur-xl transition-colors duration-300 hover:border-cyan/50 focus:border-cyan/60 focus:outline-hidden"
+                >
+                  <option value="single">🎮 Regular Booking</option>
+                  <option value="group">👥 Party Booking</option>
+                </select>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
               </div>
+              <p className="mt-2 max-w-sm text-xs text-muted-foreground">
+                {isGroup
+                  ? `Book the entire gaming café exclusively for your group. Up to ${GROUP_PASS_MAX_MEMBERS} members, with access to every gaming experience at this branch.`
+                  : "For individual gaming bookings."}
+              </p>
             </div>
 
             {isGroup ? (
@@ -1443,7 +1437,7 @@ export function BookingFlow() {
                     </div>
                   ) : (
                     <p className="mt-3 text-xs text-muted-foreground">
-                      Group Pass pricing has not been set up for this branch yet.
+                      Party Booking pricing has not been set up for this branch yet.
                     </p>
                   )}
                 </div>
@@ -2096,7 +2090,7 @@ export function BookingFlow() {
                       month: "short",
                     })}
                   />
-                  <Row label="Booking type" value={isGroup ? "Group Pass" : "Single Pass"} />
+                  <Row label="Booking type" value={isGroup ? "Party Booking" : "Regular Booking"} />
                   {isGroup ? (
                     <>
                       <Row label="Members" value={String(groupMembers)} />
@@ -2200,7 +2194,7 @@ export function BookingFlow() {
             <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {[
                 branch?.name,
-                isGroup ? `Group Pass · ${groupMembers} members` : null,
+                isGroup ? `Party Booking · ${groupMembers} members` : null,
                 isGroup && groupStart && groupRate
                   ? `${formatTime(groupStart)} · ${groupRate.label}`
                   : null,
