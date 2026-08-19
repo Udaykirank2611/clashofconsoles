@@ -201,6 +201,8 @@ export function AdminDashboard() {
             bookings={data.bookings}
             stations={data.stations}
             menu={data.menu}
+            branchId={branch.id}
+            branchName={branch.name}
             onChanged={data.refresh}
             focusReference={focusReference}
           />
