@@ -8,6 +8,7 @@ import { SectionHeading } from "@/components/site/primitives";
 import { inr, useSiteContent, type SiteMenuItem } from "@/lib/site-content";
 import { ArrowLeft, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { menuItemIcon } from "@/lib/menu-icons";
 
 const TITLE = "Food & Drinks Menu — Clash of Consoles Hyderabad";
 const DESC =
@@ -163,18 +164,26 @@ function MenuPage() {
                         className="mt-3 h-px w-full bg-linear-to-r from-cyan/50 via-border to-transparent"
                       />
                       <ul className="mt-6 space-y-3.5">
-                        {(groups[cat] ?? []).map((item) => (
-                          <li key={item.id} className="flex items-baseline gap-3">
-                            <span className="shrink-0 text-[0.95rem] font-medium tracking-tight">
-                              {item.name}
-                            </span>
-                            <span
-                              aria-hidden="true"
-                              className="min-w-6 flex-1 translate-y-[-0.25rem] border-b border-dotted border-border"
-                            />
-                            <span className="shrink-0 text-sm font-black text-cyan">{inr(item.price)}</span>
-                          </li>
-                        ))}
+                        {(groups[cat] ?? []).map((item) => {
+                          const ItemIcon = menuItemIcon(item.name, item.category);
+                          return (
+                            <li key={item.id} className="flex items-baseline gap-3">
+                              <span className="flex shrink-0 items-baseline gap-2 text-[0.95rem] font-medium tracking-tight">
+                                <ItemIcon
+                                  aria-hidden="true"
+                                  className="size-4 shrink-0 translate-y-[0.15rem] text-primary/80"
+                                  strokeWidth={1.75}
+                                />
+                                {item.name}
+                              </span>
+                              <span
+                                aria-hidden="true"
+                                className="min-w-6 flex-1 translate-y-[-0.25rem] border-b border-dotted border-border"
+                              />
+                              <span className="shrink-0 text-sm font-black text-cyan">{inr(item.price)}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </section>
                   ))}
