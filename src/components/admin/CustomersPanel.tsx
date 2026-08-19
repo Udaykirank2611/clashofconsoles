@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Copy, Gift, MessageCircle, Phone } from "lucide-react";
 import { toast } from "sonner";
-import { listCustomers } from "@/lib/admin.functions";
+import { listCustomers, updateCustomerVisits } from "@/lib/admin.functions";
 import { rewardLabel } from "@/lib/loyalty.functions";
 import { loyaltyMessage, whatsappLink } from "@/lib/loyalty-messages";
-import { Panel } from "./primitives";
+import { AdminButton, Panel } from "./primitives";
 
 
-/** Read-only loyalty roster: name, phone, visits and available rewards. */
+/** Loyalty roster: name, phone, editable visit count and available rewards. */
 export function CustomersPanel() {
   const fn = useServerFn(listCustomers);
   const { data = [], isLoading } = useQuery({
@@ -40,10 +40,7 @@ export function CustomersPanel() {
                   <Phone className="size-3" /> {c.phone}
                 </a>
               </div>
-              <span className="text-xs text-muted-foreground">
-                <strong className="text-sm font-black text-foreground">{c.totalVisits}</strong> completed
-                visits
-              </span>
+              <VisitsEditor phone={c.phone} visits={c.totalVisits} />
               {c.rewardStatus === "available" ? (
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-300">
                   <Gift className="size-3" />
@@ -69,6 +66,51 @@ export function CustomersPanel() {
         </div>
       )}
     </Panel>
+  );
+}
+
+/** Inline editor for a customer's completed-visit count (level). */
+function VisitsEditor({ phone, visits }: { phone: string; visits: number }) {
+  const [value, setValue] = useState(String(visits));
+  const [saving, setSaving] = useState(false);
+  const update = useServerFn(updateCustomerVisits);
+  const queryClient = useQueryClient();
+  const dirty = String(visits) !== value.trim();
+
+  const save = async () => {
+    const next = Number(value);
+    if (!Number.isInteger(next) || next < 0) {
+      toast.error("Enter a whole number of visits");
+      return;
+    }
+    setSaving(true);
+    const res = await update({ data: { phone, totalVisits: next } });
+    setSaving(false);
+    if (!res.ok) {
+      toast.error(res.message ?? "Could not update visits");
+      return;
+    }
+    toast.success("Visits updated");
+    await queryClient.invalidateQueries({ queryKey: ["admin-customers"] });
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        aria-label="Completed visits"
+        className="w-16 rounded-xl border border-border bg-surface px-2 py-1 text-center text-sm font-black outline-none focus:border-primary"
+      />
+      <span className="text-xs text-muted-foreground">visits</span>
+      {dirty ? (
+        <AdminButton variant="primary" disabled={saving} onClick={() => void save()}>
+          {saving ? "Saving…" : "Update"}
+        </AdminButton>
+      ) : null}
+    </div>
   );
 }
 
