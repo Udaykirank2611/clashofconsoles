@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, Gamepad2, LibraryBig } from "lucide-react";
+import { Check, ChevronDown, Gamepad2, LibraryBig } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatTime, inr } from "@/lib/booking/pricing";
 import type { Station, StationGame } from "@/lib/booking/types";

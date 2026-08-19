@@ -1683,26 +1683,24 @@ export function BookingFlow() {
                       </div>
                       <button
                         type="button"
-                        role="switch"
-                        aria-checked={on}
+                        aria-expanded={on}
                         disabled={!bookable.length}
-                        aria-label={`Add ${g.label}`}
+                        aria-label={`${on ? "Hide" : "Show"} ${g.label} options`}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggle();
                         }}
                         className={cn(
-                          "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300 disabled:cursor-not-allowed",
+                          "inline-flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed",
                           on
-                            ? "border-transparent bg-linear-to-r from-primary to-violet"
-                            : "border-border bg-muted/40",
+                            ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground"
+                            : "border-border bg-surface/60 hover:border-cyan/50",
                         )}
                       >
-                        <span
-                          className={cn(
-                            "absolute top-0.5 size-6 rounded-full bg-foreground transition-all duration-300",
-                            on ? "left-6" : "left-0.5",
-                          )}
+                        {on ? "Selected" : "Select"}
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={cn("size-4 transition-transform duration-300", on && "rotate-180")}
                         />
                       </button>
                     </div>
