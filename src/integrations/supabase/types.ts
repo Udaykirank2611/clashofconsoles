@@ -483,6 +483,8 @@ export type Database = {
           id: string
           is_active: boolean
           max_discount: number | null
+          max_level: number | null
+          min_level: number | null
           min_order_amount: number
           starts_at: string | null
           updated_at: string
@@ -504,6 +506,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_discount?: number | null
+          max_level?: number | null
+          min_level?: number | null
           min_order_amount?: number
           starts_at?: string | null
           updated_at?: string
@@ -525,6 +529,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_discount?: number | null
+          max_level?: number | null
+          min_level?: number | null
           min_order_amount?: number
           starts_at?: string | null
           updated_at?: string
