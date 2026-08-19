@@ -105,13 +105,23 @@ export function NotificationBell({
 
   const unread = useMemo(() => items.filter((i) => !i.read_at).length, [items]);
 
+  // Opening the panel counts as acknowledging the alert; so does clearing the
+  // last unread item. Either way the repeating chime stops.
+  useEffect(() => {
+    if (open || unread === 0) stopChimeLoop();
+  }, [open, unread]);
+
+  useEffect(() => () => stopChimeLoop(), []);
+
   const markRead = async (ids: string[]) => {
     if (!ids.length) return;
+    stopChimeLoop();
     setItems((prev) =>
       prev.map((i) => (ids.includes(i.id) ? { ...i, read_at: new Date().toISOString() } : i)),
     );
     await supabase.from("admin_notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
   };
+
 
   return (
     <div ref={boxRef} className="relative">
