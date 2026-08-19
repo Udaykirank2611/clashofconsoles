@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { Check, Crown, Clock3, CalendarDays, Shield, Gem, Sparkles } from "lucide-react";
-import { Reveal, SectionHeading, MagneticButton } from "../primitives";
+import { Reveal, SectionHeading } from "../primitives";
 import { TiltCard } from "../TiltCard";
 import { cn } from "@/lib/utils";
 import { inr, type MembershipPlan } from "@/lib/site-content";
@@ -47,36 +47,6 @@ function tierOf(name: string): TierKey {
   if (n.includes("silver")) return "silver";
   if (n.includes("gold")) return "gold";
   return "neon";
-}
-
-/** Renders Bronze / Silver / Gold inside a plan name with its metallic signature. */
-function TierWord({ name }: { name: string }) {
-  const parts = name.split(/(bronze|silver|gold)/gi).filter(Boolean);
-  return (
-    <span className="inline-flex flex-wrap items-baseline gap-1.5">
-      {parts.map((part, i) => {
-        const key = part.toLowerCase() as TierKey;
-        const tier = key === "bronze" || key === "silver" || key === "gold" ? TIERS[key] : null;
-        return tier ? (
-          <span
-            key={`${part}-${i}`}
-            style={{ "--w1": tier.c1, "--w2": tier.c2 } as CSSProperties}
-            className="relative inline-block overflow-hidden rounded-lg border border-[color-mix(in_oklab,var(--w1)_60%,transparent)] px-2.5 py-1 text-background [background:linear-gradient(120deg,color-mix(in_oklab,var(--w1)_82%,black)_0%,color-mix(in_oklab,var(--w2)_95%,white)_45%,color-mix(in_oklab,var(--w1)_88%,black)_100%)] shadow-[0_10px_30px_-14px_var(--w1)]"
-          >
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 [background:linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.55)_50%,transparent_65%)]"
-            />
-            <span className="relative">{part}</span>
-          </span>
-        ) : (
-          <span key={`${part}-${i}`} className="text-muted-foreground">
-            {part.trim()}
-          </span>
-        );
-      })}
-    </span>
-  );
 }
 
 export function Memberships({ plans }: { plans: MembershipPlan[] }) {
@@ -151,8 +121,8 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                         </span>
                       </span>
 
-                      <p className="mt-4 text-lg font-black uppercase tracking-[0.18em]">
-                        <TierWord name={plan.name} />
+                      <p className="mt-4 text-lg font-black uppercase tracking-[0.18em] text-foreground">
+                        {plan.name}
                       </p>
 
 
@@ -188,9 +158,16 @@ export function Memberships({ plans }: { plans: MembershipPlan[] }) {
                     </div>
 
                     <div className="relative mt-auto pt-8 [transform:translateZ(30px)]">
-                      <MagneticButton href="/book" variant={featured ? "primary" : "ghost"} className="w-full">
-                        Get {plan.name}
-                      </MagneticButton>
+                      <a
+                        href="/book"
+                        className="group/cta relative inline-flex w-full items-center justify-center overflow-hidden rounded-full border border-[color-mix(in_oklab,var(--t1)_55%,transparent)] px-7 py-3.5 text-sm font-extrabold uppercase tracking-[0.14em] text-foreground transition-[color,box-shadow,transform] duration-400 hover:-translate-y-0.5 hover:text-background hover:shadow-[0_24px_60px_-28px_var(--t1)]"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-0 origin-left scale-x-0 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/cta:scale-x-100 [background:linear-gradient(110deg,color-mix(in_oklab,var(--t1)_85%,black)_0%,color-mix(in_oklab,var(--t2)_92%,white)_48%,color-mix(in_oklab,var(--t1)_88%,black)_100%)]"
+                        />
+                        <span className="relative">Get {plan.name}</span>
+                      </a>
                     </div>
                   </article>
                 </TiltCard>
