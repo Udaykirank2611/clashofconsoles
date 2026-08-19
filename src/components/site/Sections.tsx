@@ -368,6 +368,22 @@ export function Reviews() {
           eyebrow="Player Feedback"
           title={<>Voices From The Community</>}
         />
+        <Reveal>
+          <div className="mt-8 flex justify-center">
+            <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-pink/45 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_18%,transparent),color-mix(in_oklab,var(--primary)_16%,transparent))] px-6 py-3 shadow-[0_20px_60px_-30px_var(--pink)]">
+              <span className="text-2xl font-black tracking-tight text-gradient">4.9/5</span>
+              <span className="flex gap-0.5 text-pink" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, s) => (
+                  <Star key={s} className="size-4 fill-current" />
+                ))}
+              </span>
+              <span className="text-[0.62rem] font-black uppercase tracking-[0.24em] text-foreground">
+                Rated on Google Maps
+              </span>
+            </div>
+          </div>
+        </Reveal>
+
         <ul className="mt-16 grid gap-5 lg:grid-cols-3">
           {REVIEWS.map((r, i) => (
             <Reveal as="li" key={r.name} delay={i * 90}>
