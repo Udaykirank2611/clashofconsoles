@@ -722,25 +722,32 @@ function SettleDialog({
   booking,
   cash,
   upi,
+  discount,
   busy,
   onCash,
   onUpi,
+  onDiscount,
   onClose,
   onConfirm,
 }: {
   booking: AdminBooking;
   cash: string;
   upi: string;
+  discount: string;
   busy: boolean;
   onCash: (v: string) => void;
   onUpi: (v: string) => void;
+  onDiscount: (v: string) => void;
   onClose: () => void;
-  onConfirm: (cash: number, upi: number) => void;
+  onConfirm: (cash: number, upi: number, discount: number) => void;
 }) {
-  const total = Math.round(Number(booking.total_amount) || 0);
+  const billed = Math.round(Number(booking.total_amount) || 0);
+  const discountValue = Math.min(billed, Math.max(0, Math.round(Number(discount) || 0)));
+  const total = Math.max(0, billed - discountValue);
   const cashValue = Math.max(0, Math.round(Number(cash) || 0));
   const upiValue = Math.max(0, Math.round(Number(upi) || 0));
   const remaining = total - cashValue - upiValue;
+
 
   const field = (
     label: string,
