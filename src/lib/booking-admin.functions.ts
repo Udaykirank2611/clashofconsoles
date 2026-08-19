@@ -251,6 +251,7 @@ export const completeBookingWithSplit = createServerFn({ method: "POST" })
         bookingId: z.string().uuid(),
         cash: z.number().min(0).max(10000000),
         upi: z.number().min(0).max(10000000),
+        extraDiscount: z.number().min(0).max(1000000).default(0),
       })
       .parse(i),
   )
@@ -262,7 +263,14 @@ export const completeBookingWithSplit = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!booking) return { ok: false, message: "You cannot edit this booking." };
 
-    const total = Math.round(Number(booking.total_amount ?? 0));
+    const { recomputeBookingTotals, setLedgerSplit } = await import("@/lib/booking-admin.server");
+    let total = Math.round(Number(booking.total_amount ?? 0));
+    if (data.extraDiscount > 0) {
+      const totals = await recomputeBookingTotals(data.bookingId, data.extraDiscount);
+      if (!totals) return { ok: false, message: "Booking not found." };
+      total = Math.round(totals.total);
+    }
+
     const cash = Math.round(data.cash);
     const upi = Math.round(data.upi);
     if (cash + upi !== total)
@@ -277,10 +285,10 @@ export const completeBookingWithSplit = createServerFn({ method: "POST" })
       .eq("id", data.bookingId);
     if (error) return { ok: false, message: error.message };
 
-    const { setLedgerSplit } = await import("@/lib/booking-admin.server");
     await setLedgerSplit(data.bookingId, cash, upi);
     return { ok: true };
   });
+
 
 
 /** Add food/drinks to an already confirmed booking and collect payment for it. */
