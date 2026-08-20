@@ -123,7 +123,7 @@ export function MagneticButton({
       className={cn(
         "gradient-ring group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.965]",
         variant === "primary"
-          ? "bg-primary text-primary-foreground shadow-none hover:shadow-[0_22px_70px_-14px_var(--primary)]"
+          ? "bg-[linear-gradient(120deg,var(--pink),var(--primary)_55%,var(--violet))] text-primary-foreground shadow-none hover:shadow-[0_22px_70px_-14px_var(--pink)]"
           : "glass text-foreground hover:text-cyan",
         className,
       )}
