@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ChevronDown, Gamepad2 } from "lucide-react";
+import { Gamepad2 } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
 import { MagneticButton } from "./primitives";
@@ -138,15 +138,14 @@ export function Hero() {
       <a
         href="#about"
         aria-label="Scroll to about section"
-        className="absolute inset-x-0 bottom-8 mx-auto flex w-fit flex-col items-center gap-2 text-muted-foreground transition-colors hover:text-cyan"
+        className="absolute inset-x-0 bottom-8 mx-auto flex w-fit flex-col items-center gap-2 text-muted-foreground transition-colors hover:text-pink"
       >
         <span className="text-[0.6rem] font-semibold uppercase tracking-[0.34em]">
           Scroll
         </span>
-        <span className="grid h-9 w-5.5 place-items-start justify-center rounded-full border border-border pt-1.5">
-          <span className="size-1 rounded-full bg-cyan [animation:coc-scroll-dot_1.8s_ease-in-out_infinite]" />
+        <span className="grid size-11 place-items-center rounded-2xl border border-pink/40 bg-background/40 backdrop-blur-md shadow-[0_0_30px_-12px_var(--pink)] [animation:coc-float_2.4s_ease-in-out_infinite]">
+          <Gamepad2 className="size-5 text-pink" aria-hidden="true" />
         </span>
-        <ChevronDown className="size-4" aria-hidden="true" />
       </a>
     </section>
   );
