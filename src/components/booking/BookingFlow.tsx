@@ -1498,7 +1498,9 @@ export function BookingFlow() {
             ) : null}
 
             {!isGroup && consoles.length ? (
+              <div id="gaming-console">
               <ConsoleSelect
+
                 label={consoles[0]!.group_label?.trim() || "Console Gaming"}
                 description={consoles[0]?.description ?? undefined}
                 consoles={consoles}
