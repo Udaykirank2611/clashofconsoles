@@ -136,12 +136,12 @@ export function LiveAvailability() {
                     className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(closest-side,color-mix(in_oklch,var(--cyan)_22%,transparent),transparent)] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                   />
 
-                  <header className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                  <header className="relative flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="truncate text-xl font-black tracking-tight sm:text-2xl">
+                      <h3 className="text-lg font-black leading-tight tracking-tight break-words sm:text-2xl">
                         {b.name}
                       </h3>
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {b.city} · {prettyTime(b.opens_at)} – {prettyTime(b.closes_at)}
                       </p>
                     </div>
