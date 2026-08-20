@@ -118,7 +118,7 @@ export function PhoneGate({
             disabled={busy}
             onClick={() => void (needsName ? create() : check())}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3.5 text-sm font-black uppercase tracking-[0.16em] text-primary-foreground transition-transform duration-300",
+              "flex w-full items-center justify-center gap-2 coc-cta px-6 py-3.5 text-sm font-black uppercase tracking-[0.16em] transition-transform duration-300",
               busy ? "opacity-70" : "hover:-translate-y-0.5",
             )}
           >

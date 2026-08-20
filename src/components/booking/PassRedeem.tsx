@@ -181,7 +181,7 @@ export function PassRedeem({
             type="button"
             disabled={busy}
             onClick={() => void verify()}
-            className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary to-violet px-5 py-3 text-sm font-black text-background disabled:opacity-60"
+            className="inline-flex items-center gap-2 coc-cta px-5 py-3 text-sm font-black disabled:opacity-60"
           >
             {busy ? <Loader2 className="size-4 animate-spin" /> : null} Verify
           </button>
