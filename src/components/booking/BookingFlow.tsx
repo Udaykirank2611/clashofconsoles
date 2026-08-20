@@ -1900,7 +1900,8 @@ export function BookingFlow() {
 
         {/* ---------------- STEP 3 · FOOD ---------------- */}
         {step === 2 ? (
-          <section className="space-y-8">
+          <section id="food-step" className="space-y-8">
+
             <FoodBanner caption="Food & drinks" />
             <div className="flex flex-wrap items-end justify-between gap-4">
               <StepHead
