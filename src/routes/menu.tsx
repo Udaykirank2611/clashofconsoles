@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FoodBanner } from "@/components/site/FoodBanner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AmbientBackground } from "@/components/site/AmbientBackground";
