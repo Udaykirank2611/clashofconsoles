@@ -44,7 +44,7 @@ export function CardAction({
       className={cn(
         "flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition-all duration-300",
         primary
-          ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground hover:brightness-110"
+          ? "border-transparent bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground hover:brightness-110"
           : "border-border bg-background/50 text-muted-foreground hover:border-cyan/40 hover:text-foreground",
         disabled && "cursor-not-allowed opacity-50",
         className,
@@ -265,7 +265,7 @@ export function ConsoleSelect({
           className={cn(
             "inline-flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed",
             enabled
-              ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground"
+              ? "border-transparent bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground"
               : "border-border bg-surface/60 hover:border-cyan/50",
           )}
         >

@@ -1299,7 +1299,7 @@ export function BookingFlow() {
                     className={cn(
                       "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300",
                       passesOn
-                        ? "border-transparent bg-linear-to-r from-primary to-violet"
+                        ? "border-transparent bg-linear-to-r from-primary via-cyan to-violet"
                         : "border-border bg-muted/40",
                     )}
                   >
@@ -1773,7 +1773,7 @@ export function BookingFlow() {
                         className={cn(
                           "inline-flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed",
                           on
-                            ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground"
+                            ? "border-transparent bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground"
                             : "border-border bg-surface/60 hover:border-cyan/50",
                         )}
                       >
