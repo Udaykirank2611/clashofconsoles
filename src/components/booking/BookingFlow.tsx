@@ -1426,7 +1426,11 @@ export function BookingFlow() {
             </div>
 
             {isGroup ? (
-              <div className="space-y-5 rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl">
+              <div
+                id="gaming-party"
+                className="space-y-5 rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl"
+              >
+
                 <div>
                   <FieldLabel>Number of members</FieldLabel>
                   <div className="mt-3 flex flex-wrap gap-2">
