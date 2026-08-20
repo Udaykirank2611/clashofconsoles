@@ -138,15 +138,16 @@ export function Hero() {
       <a
         href="#about"
         aria-label="Scroll to about section"
-        className="absolute inset-x-0 bottom-8 mx-auto flex w-fit flex-col items-center gap-2 text-muted-foreground transition-colors hover:text-pink"
+        className="absolute inset-x-0 bottom-8 mx-auto flex w-fit flex-col items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
       >
         <span className="text-[0.6rem] font-semibold uppercase tracking-[0.34em]">
           Scroll
         </span>
-        <span className="grid size-11 place-items-center rounded-2xl border border-pink/40 bg-background/40 backdrop-blur-md shadow-[0_0_30px_-12px_var(--pink)] [animation:coc-float_2.4s_ease-in-out_infinite]">
-          <Gamepad2 className="size-5 text-pink" aria-hidden="true" />
+        <span className="flex h-9 w-6 items-start justify-center rounded-full border border-foreground/25 p-1.5">
+          <span className="size-1.5 rounded-full bg-foreground/70 [animation:coc-float_1.8s_ease-in-out_infinite]" />
         </span>
       </a>
+
     </section>
   );
 }
