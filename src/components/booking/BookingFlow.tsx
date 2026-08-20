@@ -898,7 +898,14 @@ export function BookingFlow() {
     if (!isValidPhone(form.phone)) next.phone = "Enter a valid 10-digit mobile number";
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) next.email = "Enter a valid email";
     setErrors(next);
-    if (Object.keys(next).length || !branch) return;
+    const firstBad = (["fullName", "phone", "email"] as const).find((k) => next[k]);
+    if (firstBad) {
+      // Let the error text render before scrolling to it.
+      window.setTimeout(() => highlight(`#field-${firstBad}`, next[firstBad]!), 30);
+      return;
+    }
+    if (!branch) return;
+
     // Only slot-based bookings depend on a live reservation; a pass on its own
     // blocks nothing, so it needs no hold.
     const needsHold = isGroup ? groupReady : consoleReady || selectedExtras.length > 0;
@@ -1017,6 +1024,69 @@ export function BookingFlow() {
   const goNext = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
+  /** Scroll a required-but-empty area into view and pulse it in neon pink. */
+  const highlight = (selector: string, message: string) => {
+    if (typeof document === "undefined") return;
+    toast.error("Something is missing", { description: message });
+    const el = document.querySelector(selector);
+    if (!el) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("coc-flash");
+    // Restart the animation on repeated taps.
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add("coc-flash");
+    const input = el.querySelector("input, textarea, select") as HTMLElement | null;
+    input?.focus({ preventScroll: true });
+    window.setTimeout(() => el.classList.remove("coc-flash"), 3200);
+  };
+
+  /** What is still blocking the visitor on the current step. */
+  const missingOnStep = (): { selector: string; message: string } | null => {
+    if (step === 0)
+      return branchId ? null : { selector: "#branch-step", message: "Please choose a branch to continue." };
+    if (step === 1) {
+      if (isGroup) {
+        if (!groupRate)
+          return { selector: "#gaming-party", message: "Choose a party booking duration." };
+        if (!groupStart) return { selector: "#gaming-party", message: "Choose a start time for your party booking." };
+        return null;
+      }
+      if (consoleTouched && !consoleReady)
+        return {
+          selector: "#gaming-console",
+          message: !startTime
+            ? "Choose a start time for your console session."
+            : "Choose how long you want to play.",
+        };
+      if (!extrasReady)
+        return {
+          selector: "#gaming-extras",
+          message: "Complete the experience you selected — pick a start time and duration.",
+        };
+      if (appliedPass && !consoleReady)
+        return { selector: "#gaming-console", message: "Pick a console, start time and duration to redeem your pass." };
+      return null;
+    }
+    if (step === 2)
+      return hasGaming || cart.length > 0
+        ? null
+        : { selector: "#food-step", message: "You haven't picked any gaming — add at least one food item." };
+    return null;
+  };
+
+  const tryNext = () => {
+    const miss = missingOnStep();
+    if (miss) {
+      highlight(miss.selector, miss.message);
+      return;
+    }
+    goNext();
+  };
+
+
 
   if (isLoading) {
     return (
@@ -1068,7 +1138,8 @@ export function BookingFlow() {
       <div key={step} className="mt-8 animate-[step-in_0.55s_cubic-bezier(0.22,1,0.36,1)_both]">
         {/* ---------------- STEP 1 · BRANCH ---------------- */}
         {step === 0 ? (
-          <section className="space-y-8">
+          <section id="branch-step" className="space-y-8">
+
             <StepHead
               title="Choose your arena"
               hint="Pick the branch closest to you."
@@ -1228,7 +1299,7 @@ export function BookingFlow() {
                     className={cn(
                       "relative h-7 w-13 shrink-0 rounded-full border transition-all duration-300",
                       passesOn
-                        ? "border-transparent bg-linear-to-r from-primary to-violet"
+                        ? "border-transparent bg-linear-to-r from-primary via-cyan to-violet"
                         : "border-border bg-muted/40",
                     )}
                   >
@@ -1426,7 +1497,11 @@ export function BookingFlow() {
             </div>
 
             {isGroup ? (
-              <div className="space-y-5 rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl">
+              <div
+                id="gaming-party"
+                className="space-y-5 rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-xl"
+              >
+
                 <div>
                   <FieldLabel>Number of members</FieldLabel>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -1494,7 +1569,9 @@ export function BookingFlow() {
             ) : null}
 
             {!isGroup && consoles.length ? (
+              <div id="gaming-console">
               <ConsoleSelect
+
                 label={consoles[0]!.group_label?.trim() || "Console Gaming"}
                 description={consoles[0]?.description ?? undefined}
                 consoles={consoles}
@@ -1534,10 +1611,11 @@ export function BookingFlow() {
                 }}
                 extraMinutes={useReward && rewardDurationOk ? rewardMinutes : 0}
               />
-
+              </div>
             ) : null}
 
-            <div className="space-y-4">
+            <div id="gaming-extras" className="space-y-4">
+
               {(isGroup || passConsoleOnly
                 ? []
                 : experienceGroups.filter((g) => !g.isConsole)
@@ -1695,7 +1773,7 @@ export function BookingFlow() {
                         className={cn(
                           "inline-flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed",
                           on
-                            ? "border-transparent bg-linear-to-r from-primary to-violet text-primary-foreground"
+                            ? "border-transparent bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground"
                             : "border-border bg-surface/60 hover:border-cyan/50",
                         )}
                       >
@@ -1893,7 +1971,8 @@ export function BookingFlow() {
 
         {/* ---------------- STEP 3 · FOOD ---------------- */}
         {step === 2 ? (
-          <section className="space-y-8">
+          <section id="food-step" className="space-y-8">
+
             <FoodBanner caption="Food & drinks" />
             <div className="flex flex-wrap items-end justify-between gap-4">
               <StepHead
@@ -1908,7 +1987,7 @@ export function BookingFlow() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40 hover:text-cyan"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03]"
                 >
                   Skip food <ArrowRight className="size-3.5" />
                 </button>
@@ -1978,31 +2057,38 @@ export function BookingFlow() {
             <div className="min-w-0 space-y-6">
               <StepHead title="Your details" hint="No payment now — we confirm everything by phone." />
               <div className="space-y-3">
-                <Field
-                  label="Full name"
-                  value={form.fullName}
-                  onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
-                  {...(errors.fullName ? { error: errors.fullName } : {})}
-                  required
-                  autoComplete="name"
-                />
-                <Field
-                  label="Phone number"
-                  value={form.phone}
-                  onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
-                  type="tel"
-                  {...(errors.phone ? { error: errors.phone } : {})}
-                  required
-                  autoComplete="tel"
-                />
-                <Field
-                  label="Email (optional)"
-                  value={form.email}
-                  onChange={(v) => setForm((f) => ({ ...f, email: v }))}
-                  type="email"
-                  {...(errors.email ? { error: errors.email } : {})}
-                  autoComplete="email"
-                />
+                <div id="field-fullName">
+                  <Field
+                    label="Full name"
+                    value={form.fullName}
+                    onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
+                    {...(errors.fullName ? { error: errors.fullName } : {})}
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+                <div id="field-phone">
+                  <Field
+                    label="Phone number"
+                    value={form.phone}
+                    onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+                    type="tel"
+                    {...(errors.phone ? { error: errors.phone } : {})}
+                    required
+                    autoComplete="tel"
+                  />
+                </div>
+                <div id="field-email">
+                  <Field
+                    label="Email (optional)"
+                    value={form.email}
+                    onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+                    type="email"
+                    {...(errors.email ? { error: errors.email } : {})}
+                    autoComplete="email"
+                  />
+                </div>
+
                 <Field
                   label="Special instructions (optional)"
                   value={form.instructions}
@@ -2024,7 +2110,7 @@ export function BookingFlow() {
                     type="button"
                     onClick={applyCoupon}
                     disabled={couponBusy || !couponInput.trim()}
-                    className="shrink-0 rounded-xl border border-cyan/30 bg-cyan/10 px-5 text-sm font-bold text-cyan transition-transform hover:scale-[1.03] disabled:opacity-40"
+                    className="shrink-0 rounded-xl bg-linear-to-r from-primary via-cyan to-violet px-5 text-sm font-bold text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-40"
                   >
                     {couponBusy ? <Loader2 className="size-4 animate-spin" /> : "Apply coupon"}
                   </button>
@@ -2249,17 +2335,16 @@ export function BookingFlow() {
             {step === 0 ? null : step < STEPS.length - 1 ? (
               <button
                 type="button"
-                onClick={goNext}
-                disabled={!canAdvance}
+                onClick={tryNext}
+                aria-disabled={!canAdvance}
                 className={cn(
-                  "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300 sm:flex-none",
-                  canAdvance
-                    ? "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] hover:scale-[1.03] active:scale-[0.99]"
-                    : "cursor-not-allowed border border-border bg-muted/30 text-muted-foreground",
+                  "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] transition-all duration-300 hover:scale-[1.03] active:scale-[0.99] sm:flex-none",
+                  !canAdvance && "opacity-60",
                 )}
               >
                 Next <ArrowRight className="size-3.5" />
               </button>
+
             ) : (
               <button
                 type="button"
