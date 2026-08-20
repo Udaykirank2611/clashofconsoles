@@ -1987,7 +1987,7 @@ export function BookingFlow() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40 hover:text-cyan"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03]"
                 >
                   Skip food <ArrowRight className="size-3.5" />
                 </button>
@@ -2110,7 +2110,7 @@ export function BookingFlow() {
                     type="button"
                     onClick={applyCoupon}
                     disabled={couponBusy || !couponInput.trim()}
-                    className="shrink-0 rounded-xl border border-cyan/30 bg-cyan/10 px-5 text-sm font-bold text-cyan transition-transform hover:scale-[1.03] disabled:opacity-40"
+                    className="shrink-0 rounded-xl bg-linear-to-r from-primary via-cyan to-violet px-5 text-sm font-bold text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-40"
                   >
                     {couponBusy ? <Loader2 className="size-4 animate-spin" /> : "Apply coupon"}
                   </button>
