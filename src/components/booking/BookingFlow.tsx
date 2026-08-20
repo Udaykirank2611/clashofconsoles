@@ -1538,10 +1538,11 @@ export function BookingFlow() {
                 }}
                 extraMinutes={useReward && rewardDurationOk ? rewardMinutes : 0}
               />
-
+              </div>
             ) : null}
 
-            <div className="space-y-4">
+            <div id="gaming-extras" className="space-y-4">
+
               {(isGroup || passConsoleOnly
                 ? []
                 : experienceGroups.filter((g) => !g.isConsole)
