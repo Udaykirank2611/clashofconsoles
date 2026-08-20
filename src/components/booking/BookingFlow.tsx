@@ -898,7 +898,14 @@ export function BookingFlow() {
     if (!isValidPhone(form.phone)) next.phone = "Enter a valid 10-digit mobile number";
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) next.email = "Enter a valid email";
     setErrors(next);
-    if (Object.keys(next).length || !branch) return;
+    const firstBad = (["fullName", "phone", "email"] as const).find((k) => next[k]);
+    if (firstBad) {
+      // Let the error text render before scrolling to it.
+      window.setTimeout(() => highlight(`#field-${firstBad}`, next[firstBad]!), 30);
+      return;
+    }
+    if (!branch) return;
+
     // Only slot-based bookings depend on a live reservation; a pass on its own
     // blocks nothing, so it needs no hold.
     const needsHold = isGroup ? groupReady : consoleReady || selectedExtras.length > 0;
