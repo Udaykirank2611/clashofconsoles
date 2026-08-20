@@ -1131,7 +1131,8 @@ export function BookingFlow() {
       <div key={step} className="mt-8 animate-[step-in_0.55s_cubic-bezier(0.22,1,0.36,1)_both]">
         {/* ---------------- STEP 1 · BRANCH ---------------- */}
         {step === 0 ? (
-          <section className="space-y-8">
+          <section id="branch-step" className="space-y-8">
+
             <StepHead
               title="Choose your arena"
               hint="Pick the branch closest to you."
