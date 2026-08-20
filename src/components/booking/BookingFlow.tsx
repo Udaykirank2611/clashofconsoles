@@ -1985,31 +1985,38 @@ export function BookingFlow() {
             <div className="min-w-0 space-y-6">
               <StepHead title="Your details" hint="No payment now — we confirm everything by phone." />
               <div className="space-y-3">
-                <Field
-                  label="Full name"
-                  value={form.fullName}
-                  onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
-                  {...(errors.fullName ? { error: errors.fullName } : {})}
-                  required
-                  autoComplete="name"
-                />
-                <Field
-                  label="Phone number"
-                  value={form.phone}
-                  onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
-                  type="tel"
-                  {...(errors.phone ? { error: errors.phone } : {})}
-                  required
-                  autoComplete="tel"
-                />
-                <Field
-                  label="Email (optional)"
-                  value={form.email}
-                  onChange={(v) => setForm((f) => ({ ...f, email: v }))}
-                  type="email"
-                  {...(errors.email ? { error: errors.email } : {})}
-                  autoComplete="email"
-                />
+                <div id="field-fullName">
+                  <Field
+                    label="Full name"
+                    value={form.fullName}
+                    onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
+                    {...(errors.fullName ? { error: errors.fullName } : {})}
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+                <div id="field-phone">
+                  <Field
+                    label="Phone number"
+                    value={form.phone}
+                    onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+                    type="tel"
+                    {...(errors.phone ? { error: errors.phone } : {})}
+                    required
+                    autoComplete="tel"
+                  />
+                </div>
+                <div id="field-email">
+                  <Field
+                    label="Email (optional)"
+                    value={form.email}
+                    onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+                    type="email"
+                    {...(errors.email ? { error: errors.email } : {})}
+                    autoComplete="email"
+                  />
+                </div>
+
                 <Field
                   label="Special instructions (optional)"
                   value={form.instructions}
