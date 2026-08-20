@@ -116,13 +116,13 @@ export function Hero() {
           />
           <a
             href="#rates"
-            className="press mt-7 inline-flex items-center gap-2 rounded-full border border-pink/50 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_20%,transparent),color-mix(in_oklab,var(--primary)_18%,transparent))] px-6 py-2.5 text-[0.68rem] font-black uppercase tracking-[0.28em] text-foreground shadow-[0_18px_50px_-26px_var(--pink)] transition-transform duration-300 hover:-translate-y-0.5"
+            className="press mt-9 inline-flex items-center gap-2 rounded-full border border-pink/50 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_20%,transparent),color-mix(in_oklab,var(--primary)_18%,transparent))] px-6 py-2.5 text-[0.68rem] font-black uppercase tracking-[0.28em] text-foreground shadow-[0_18px_50px_-26px_var(--pink)] transition-transform duration-300 hover:-translate-y-0.5"
             style={{ animation: "coc-rise 1s .35s both" }}
           >
             Rate Card
           </a>
           <div
-            className="mt-6 flex flex-wrap items-center justify-center gap-3"
+            className="mt-3 flex flex-wrap items-center justify-center gap-3"
             style={{ animation: "coc-rise 1s .45s both" }}
           >
             <MagneticButton href="/book">Enter the Arena</MagneticButton>
