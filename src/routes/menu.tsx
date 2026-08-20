@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FoodBanner } from "@/components/site/FoodBanner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AmbientBackground } from "@/components/site/AmbientBackground";
@@ -61,6 +61,11 @@ function MenuPage() {
   const { menu, loading } = useSiteContent();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+
 
   const { categories, groups } = useMemo(() => {
     const q = query.trim().toLowerCase();

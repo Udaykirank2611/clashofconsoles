@@ -105,7 +105,7 @@ export function Branches({
                         </a>
                         <Link
                           to="/book"
-                          className="gradient-ring inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-all duration-500 hover:shadow-[0_20px_60px_-16px_var(--primary)] active:scale-[0.96]"
+                          className="gradient-ring inline-flex items-center rounded-full bg-[linear-gradient(120deg,var(--pink),var(--primary)_55%,var(--violet))] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-all duration-500 hover:shadow-[0_20px_60px_-16px_var(--pink)] active:scale-[0.96]"
                         >
                           Book Now
                         </Link>
