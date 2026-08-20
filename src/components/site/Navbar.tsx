@@ -18,7 +18,7 @@ const LINKS = [
   { label: "Home", href: "/#home", icon: Home },
   { label: "Experiences", href: "/#experiences", icon: Sparkles },
   { label: "Games", href: "/games", icon: Gamepad2 },
-  { label: "Membership and Combo offers", href: "/#membership", icon: Crown },
+  { label: "Membership and Combos", href: "/#membership", icon: Crown },
   { label: "Branches", href: "/#branches", icon: MapPin },
   { label: "Food Menu", href: "/#food", icon: UtensilsCrossed },
   { label: "Contact", href: "/#contact", icon: PhoneCall },
