@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Gamepad2 } from "lucide-react";
 
 /** Elegant glowing cursor. Desktop / fine-pointer only. */
 export function CustomCursor() {
@@ -25,9 +26,8 @@ export function CustomCursor() {
       if (dot.current) dot.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       const t = e.target as HTMLElement | null;
       const interactive = !!t?.closest("a, button, [role='button'], input, summary");
-      if (ring.current) {
-        ring.current.dataset["active"] = interactive ? "true" : "false";
-      }
+      if (ring.current) ring.current.dataset["active"] = interactive ? "true" : "false";
+      if (dot.current) dot.current.dataset["active"] = interactive ? "true" : "false";
     };
 
     const loop = () => {
@@ -54,14 +54,19 @@ export function CustomCursor() {
       <div
         ref={ring}
         data-active="false"
-        className="absolute -left-5 -top-5 size-10 rounded-full border border-cyan/50 transition-[width,height,opacity,background-color,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] data-[active=true]:border-violet/70 data-[active=true]:bg-violet/10 data-[active=true]:scale-125"
-        style={{ boxShadow: "0 0 24px -6px var(--cyan)" }}
-      />
+        className="absolute -left-6 -top-6 grid size-12 place-items-center text-cyan/45 blur-[1.5px] transition-[color,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] data-[active=true]:scale-125 data-[active=true]:text-violet/70"
+        style={{ filter: "drop-shadow(0 0 14px color-mix(in oklab, currentColor 70%, transparent))" }}
+      >
+        <Gamepad2 className="size-10" strokeWidth={1.25} />
+      </div>
       <div
         ref={dot}
-        className="absolute -left-0.75 -top-0.75 size-1.5 rounded-full bg-cyan"
-        style={{ boxShadow: "0 0 12px 2px color-mix(in oklab, var(--cyan) 60%, transparent)" }}
-      />
+        data-active="false"
+        className="absolute -left-3 -top-3 grid size-6 place-items-center text-cyan transition-colors duration-200 data-[active=true]:text-violet"
+        style={{ filter: "drop-shadow(0 0 8px color-mix(in oklab, currentColor 75%, transparent))" }}
+      >
+        <Gamepad2 className="size-5" strokeWidth={2} />
+      </div>
     </div>
   );
 }
