@@ -1017,6 +1017,69 @@ export function BookingFlow() {
   const goNext = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
+  /** Scroll a required-but-empty area into view and pulse it in neon pink. */
+  const highlight = (selector: string, message: string) => {
+    if (typeof document === "undefined") return;
+    toast.error("Something is missing", { description: message });
+    const el = document.querySelector(selector);
+    if (!el) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("coc-flash");
+    // Restart the animation on repeated taps.
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add("coc-flash");
+    const input = el.querySelector("input, textarea, select") as HTMLElement | null;
+    input?.focus({ preventScroll: true });
+    window.setTimeout(() => el.classList.remove("coc-flash"), 3200);
+  };
+
+  /** What is still blocking the visitor on the current step. */
+  const missingOnStep = (): { selector: string; message: string } | null => {
+    if (step === 0)
+      return branchId ? null : { selector: "#branch-step", message: "Please choose a branch to continue." };
+    if (step === 1) {
+      if (isGroup) {
+        if (!groupRate)
+          return { selector: "#gaming-party", message: "Choose a party booking duration." };
+        if (!groupStart) return { selector: "#gaming-party", message: "Choose a start time for your party booking." };
+        return null;
+      }
+      if (consoleTouched && !consoleReady)
+        return {
+          selector: "#gaming-console",
+          message: !startTime
+            ? "Choose a start time for your console session."
+            : "Choose how long you want to play.",
+        };
+      if (!extrasReady)
+        return {
+          selector: "#gaming-extras",
+          message: "Complete the experience you selected — pick a start time and duration.",
+        };
+      if (appliedPass && !consoleReady)
+        return { selector: "#gaming-console", message: "Pick a console, start time and duration to redeem your pass." };
+      return null;
+    }
+    if (step === 2)
+      return hasGaming || cart.length > 0
+        ? null
+        : { selector: "#food-step", message: "You haven't picked any gaming — add at least one food item." };
+    return null;
+  };
+
+  const tryNext = () => {
+    const miss = missingOnStep();
+    if (miss) {
+      highlight(miss.selector, miss.message);
+      return;
+    }
+    goNext();
+  };
+
+
 
   if (isLoading) {
     return (
