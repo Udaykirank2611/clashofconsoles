@@ -2327,17 +2327,16 @@ export function BookingFlow() {
             {step === 0 ? null : step < STEPS.length - 1 ? (
               <button
                 type="button"
-                onClick={goNext}
-                disabled={!canAdvance}
+                onClick={tryNext}
+                aria-disabled={!canAdvance}
                 className={cn(
-                  "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300 sm:flex-none",
-                  canAdvance
-                    ? "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] hover:scale-[1.03] active:scale-[0.99]"
-                    : "cursor-not-allowed border border-border bg-muted/30 text-muted-foreground",
+                  "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] transition-all duration-300 hover:scale-[1.03] active:scale-[0.99] sm:flex-none",
+                  !canAdvance && "opacity-60",
                 )}
               >
                 Next <ArrowRight className="size-3.5" />
               </button>
+
             ) : (
               <button
                 type="button"
