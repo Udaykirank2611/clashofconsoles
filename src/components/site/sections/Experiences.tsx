@@ -87,13 +87,16 @@ export function Experiences({
                           </span>
                           {exp.name.toLowerCase().includes("ps5") ? (
                             <span className="group/info relative inline-flex items-center">
-                              <Info
-                                className="size-3.5 cursor-help text-muted-foreground/70 transition-colors hover:text-cyan"
-                                aria-hidden="true"
-                              />
+                              <button
+                                type="button"
+                                aria-label="Why this price?"
+                                className="inline-flex items-center rounded-full p-0.5 text-muted-foreground/70 transition-colors hover:text-cyan focus:outline-none focus-visible:text-cyan"
+                              >
+                                <Info className="size-3.5" aria-hidden="true" />
+                              </button>
                               <span
                                 role="tooltip"
-                                className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 w-52 rounded-2xl border border-border bg-surface/95 px-3 py-2 text-[0.68rem] font-medium normal-case leading-relaxed tracking-normal text-muted-foreground opacity-0 shadow-[0_20px_50px_-24px_var(--primary)] backdrop-blur-xl transition-opacity duration-300 group-hover/info:opacity-100"
+                                className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-52 -translate-x-1/2 rounded-2xl border border-border bg-surface/95 px-3 py-2 text-[0.68rem] font-medium normal-case leading-relaxed tracking-normal text-muted-foreground opacity-0 shadow-[0_20px_50px_-24px_var(--primary)] backdrop-blur-xl transition-opacity duration-300 group-hover/info:opacity-100 group-focus-within/info:opacity-100 group-active/info:opacity-100"
                               >
                                 Applicable when purchased with a membership plan.
                               </span>
@@ -103,10 +106,11 @@ export function Experiences({
                       </div>
                       <Link
                         to="/book"
-                        className="gradient-ring inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-all duration-500 hover:shadow-[0_20px_60px_-16px_var(--primary)] active:scale-[0.96]"
+                        className="gradient-ring inline-flex items-center rounded-full bg-[linear-gradient(120deg,var(--pink),var(--primary)_55%,var(--violet))] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-all duration-500 hover:shadow-[0_20px_60px_-16px_var(--pink)] active:scale-[0.96]"
                       >
                         Book Now
                       </Link>
+
                     </div>
                   </div>
                 </article>
