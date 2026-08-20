@@ -1987,7 +1987,7 @@ export function BookingFlow() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03]"
+                  className="inline-flex items-center gap-2 coc-cta px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-transform hover:scale-[1.03]"
                 >
                   Skip food <ArrowRight className="size-3.5" />
                 </button>
@@ -2110,7 +2110,7 @@ export function BookingFlow() {
                     type="button"
                     onClick={applyCoupon}
                     disabled={couponBusy || !couponInput.trim()}
-                    className="shrink-0 rounded-xl bg-linear-to-r from-primary via-cyan to-violet px-5 text-sm font-bold text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-40"
+                    className="shrink-0 coc-cta px-5 text-sm font-bold transition-transform hover:scale-[1.03] disabled:opacity-40"
                   >
                     {couponBusy ? <Loader2 className="size-4 animate-spin" /> : "Apply coupon"}
                   </button>
@@ -2338,7 +2338,7 @@ export function BookingFlow() {
                 onClick={tryNext}
                 aria-disabled={!canAdvance}
                 className={cn(
-                  "inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_24px_60px_-30px_var(--primary)] transition-all duration-300 hover:scale-[1.03] active:scale-[0.99] sm:flex-none",
+                  "inline-flex flex-1 items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300 hover:scale-[1.03] active:scale-[0.99] sm:flex-none",
                   !canAdvance && "opacity-60",
                 )}
               >
@@ -2350,7 +2350,7 @@ export function BookingFlow() {
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60 sm:flex-none"
+                className="inline-flex flex-1 items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60 sm:flex-none"
               >
                 {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
                 Confirm Booking

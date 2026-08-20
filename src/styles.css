@@ -352,6 +352,21 @@
   }
 }
 
+/* Shared primary CTA: blue -> cyan -> purple pill with dark ink */
+@utility coc-cta {
+  border-radius: 9999px;
+  border-color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    oklch(0.68 0.19 250) 0%,
+    oklch(0.82 0.16 200) 42%,
+    oklch(0.72 0.14 265) 66%,
+    oklch(0.66 0.21 305) 100%
+  );
+  color: oklch(0.16 0.02 265);
+  box-shadow: 0 18px 50px -24px oklch(0.7 0.19 265);
+}
+
 @utility text-gradient {
   background: var(--gradient-text);
   background-size: 200% auto;

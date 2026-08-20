@@ -106,7 +106,7 @@ export function Experiences({
                       </div>
                       <Link
                         to="/book"
-                        className="gradient-ring inline-flex items-center rounded-full bg-[linear-gradient(120deg,var(--pink),var(--primary)_55%,var(--violet))] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-all duration-500 hover:shadow-[0_20px_60px_-16px_var(--pink)] active:scale-[0.96]"
+                        className="coc-cta inline-flex items-center px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-all duration-500 hover:brightness-110 active:scale-[0.96]"
                       >
                         Book Now
                       </Link>
