@@ -62,6 +62,11 @@ function MenuPage() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<string | null>(null);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+
+
   const { categories, groups } = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = menu.filter(
