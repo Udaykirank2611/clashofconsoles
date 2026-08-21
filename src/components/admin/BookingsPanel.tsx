@@ -152,6 +152,8 @@ export function BookingsPanel({
   const [splitUpi, setSplitUpi] = useState("");
   /** Confirmed booking that is having food added to it. */
   const [addingFood, setAddingFood] = useState<AdminBooking | null>(null);
+  /** Booking waiting for the admin to confirm the extra hour. */
+  const [extendConfirm, setExtendConfirm] = useState<AdminBooking | null>(null);
   /** Console clash while extending — offers the free consoles for that hour. */
   const [extendChoice, setExtendChoice] = useState<{
     booking: AdminBooking;
