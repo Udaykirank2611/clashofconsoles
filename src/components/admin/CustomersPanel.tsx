@@ -5,7 +5,8 @@ import { Check, Copy, Gift, MessageCircle, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { listCustomers, updateCustomerVisits } from "@/lib/admin.functions";
 import { rewardLabel } from "@/lib/loyalty.functions";
-import { loyaltyMessage, whatsappLink } from "@/lib/loyalty-messages";
+import { loyaltyMessage, loyaltyTemplateKey, whatsappLink } from "@/lib/loyalty-messages";
+import { useMessageTemplates } from "@/lib/message-templates";
 import { AdminButton, Panel } from "./primitives";
 
 
@@ -128,7 +129,15 @@ function ThankYouActions({
   rewardMinutes: number | null;
 }) {
   const [copied, setCopied] = useState(false);
-  const message = loyaltyMessage({ name, visits, rewardAvailable, rewardMinutes });
+  const { anyTemplate } = useMessageTemplates();
+  const message = loyaltyMessage({
+    name,
+    visits,
+    rewardAvailable,
+    rewardMinutes,
+    body: anyTemplate(loyaltyTemplateKey(visits, rewardAvailable)),
+  });
+
 
   const copy = async () => {
     try {
