@@ -83,31 +83,52 @@ export function MessagesPanel({ branchId }: { branchId: string }) {
         </p>
       </Panel>
 
-      {KEYS.map((key) => (
-        <Panel
+      {BOOKING_KEYS.map((key) => (
+        <Editor
           key={key}
-          title={TEMPLATE_LABEL[key]}
-          action={
-            <div className="flex gap-2">
-              <AdminButton
-                onClick={() => setBodies((prev) => ({ ...prev, [key]: DEFAULT_TEMPLATE[key] }))}
-              >
-                Reset
-              </AdminButton>
-              <AdminButton variant="primary" disabled={saving === key} onClick={() => void save(key)}>
-                {saving === key ? "Saving…" : "Save"}
-              </AdminButton>
-            </div>
-          }
-        >
-          <p className="mb-3 text-xs text-muted-foreground">{TEMPLATE_HINT[key]}</p>
-          <textarea
-            value={bodies[key] ?? ""}
-            onChange={(e) => setBodies((prev) => ({ ...prev, [key]: e.target.value }))}
-            rows={key === "booking_confirmed" ? 8 : 10}
-            className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm leading-relaxed outline-none focus:border-primary"
-          />
-        </Panel>
+          templateKey={key}
+          rows={key === "booking_confirmed" ? 8 : 10}
+          value={bodies[key] ?? ""}
+          saving={saving === key}
+          onChange={(v) => setBodies((prev) => ({ ...prev, [key]: v }))}
+          onReset={() => setBodies((prev) => ({ ...prev, [key]: DEFAULT_TEMPLATE[key] }))}
+          onSave={() => void save(key)}
+        />
+      ))}
+
+      <Panel title="Loyalty thank-you messages">
+        <p className="text-xs text-muted-foreground">
+          One message per visit count — these appear beside each customer in the Customers tab and
+          are pre-filled into the WhatsApp chat.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {LOYALTY_PLACEHOLDERS.map((p) => (
+            <span
+              key={p}
+              className="rounded-full border border-border bg-surface-2 px-3 py-1 font-mono text-[0.7rem] font-semibold"
+            >
+              {p}
+            </span>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          <span className="font-mono">{"{left}"}</span> is the number of visits still needed for the
+          next free-gaming milestone, and <span className="font-mono">{"{reward}"}</span> is the
+          reward the customer has waiting.
+        </p>
+      </Panel>
+
+      {LOYALTY_KEYS.map((key) => (
+        <Editor
+          key={key}
+          templateKey={key}
+          rows={4}
+          value={bodies[key] ?? ""}
+          saving={saving === key}
+          onChange={(v) => setBodies((prev) => ({ ...prev, [key]: v }))}
+          onReset={() => setBodies((prev) => ({ ...prev, [key]: DEFAULT_TEMPLATE[key] }))}
+          onSave={() => void save(key)}
+        />
       ))}
     </div>
   );
