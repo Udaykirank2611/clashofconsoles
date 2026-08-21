@@ -227,6 +227,77 @@ function PaymentPage() {
                 </ul>
               ) : null}
 
+              {/* Full price breakdown */}
+              <dl className="relative mt-5 space-y-2 border-t border-border pt-5 text-sm">
+                <p className="text-[0.6rem] font-black uppercase tracking-[0.24em] text-muted-foreground">
+                  Price breakdown
+                </p>
+                {booking.session_amount > 0 ? (
+                  <BreakRow label="Gaming session" value={inr(booking.session_amount)} />
+                ) : null}
+                {booking.addons_amount > 0 ? (
+                  <BreakRow label="Experiences & passes" value={inr(booking.addons_amount)} />
+                ) : null}
+                {booking.food_amount > 0 ? (
+                  <BreakRow label="Food & drinks" value={inr(booking.food_amount)} />
+                ) : null}
+                <BreakRow
+                  label="Subtotal"
+                  value={inr(booking.session_amount + booking.addons_amount + booking.food_amount)}
+                  strong
+                />
+                {booking.gaming_discount_amount > 0 ? (
+                  <BreakRow
+                    label={`Gaming discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                    value={`− ${inr(booking.gaming_discount_amount)}`}
+                    tone="green"
+                  />
+                ) : null}
+                {booking.food_discount_amount > 0 ? (
+                  <BreakRow
+                    label={`Food discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                    value={`− ${inr(booking.food_discount_amount)}`}
+                    tone="green"
+                  />
+                ) : null}
+                {booking.bill_discount_amount > 0 ? (
+                  <BreakRow
+                    label={`Bill discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                    value={`− ${inr(booking.bill_discount_amount)}`}
+                    tone="green"
+                  />
+                ) : null}
+                {booking.student_discount_amount > 0 ? (
+                  <BreakRow
+                    label="Student discount (20% of gaming)"
+                    value={`− ${inr(booking.student_discount_amount)}`}
+                    tone="green"
+                  />
+                ) : null}
+                {booking.discount_amount > 0 &&
+                booking.gaming_discount_amount +
+                  booking.food_discount_amount +
+                  booking.bill_discount_amount +
+                  booking.student_discount_amount ===
+                  0 ? (
+                  <BreakRow
+                    label={`Discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                    value={`− ${inr(booking.discount_amount)}`}
+                    tone="green"
+                  />
+                ) : null}
+                {booking.tax_amount > 0 ? (
+                  <BreakRow label="Taxes & fees" value={inr(booking.tax_amount)} />
+                ) : null}
+                {booking.reward_minutes ? (
+                  <BreakRow
+                    label={`Loyalty free time (${booking.reward_minutes} min)`}
+                    value="Free"
+                    tone="green"
+                  />
+                ) : null}
+              </dl>
+
               <div className="relative mt-5 flex items-end justify-between border-t border-border pt-5">
                 <span className="text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                   Amount payable
