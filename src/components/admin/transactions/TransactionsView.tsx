@@ -5,6 +5,7 @@ import { Download, FileSpreadsheet, FileText, Plus, RefreshCw, Trash2 } from "lu
 import {
   addExpense,
   deleteExpense,
+  deleteTransaction,
   getTransactions,
   setOpeningBalance,
   updateTransaction,
