@@ -494,7 +494,10 @@ export const extendBookingSession = createServerFn({ method: "POST" })
           end,
           data.bookingId,
         );
-        if (!busy) alternatives.push({ id: s.id, name: s.name, price: Math.round(Number(s.hourly_price)) });
+        if (!busy) {
+          const p = Math.min(4, Math.max(1, Number(booking.players ?? 1)));
+          alternatives.push({ id: s.id, name: s.name, price: (100 + 50 * p) * data.hours });
+        }
       }
       return {
         ok: false,
