@@ -327,30 +327,45 @@ export const addFoodToBooking = createServerFn({ method: "POST" })
     if (!booking) return { ok: false, message: "You cannot edit this booking." };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: menu } = await supabaseAdmin
-      .from("menu_items")
-      .select("id, name, price")
-      .eq("branch_id", booking.branch_id)
-      .in("id", data.items.map((i) => i.menuItemId));
-    if (!menu?.length) return { ok: false, message: "Those items are not on this branch's menu." };
+    const { data: menu } = data.items.length
+      ? await supabaseAdmin
+          .from("menu_items")
+          .select("id, name, price")
+          .eq("branch_id", booking.branch_id)
+          .in("id", data.items.map((i) => i.menuItemId))
+      : { data: [] as { id: string; name: string; price: number }[] };
+    if (data.items.length && !menu?.length)
+      return { ok: false, message: "Those items are not on this branch's menu." };
 
-    const rows = data.items
-      .map((i) => {
-        const item = menu.find((m) => m.id === i.menuItemId);
-        if (!item) return null;
-        const unit = Number(item.price);
-        return {
-          booking_id: data.bookingId,
-          kind: "food" as const,
-          menu_item_id: item.id,
-          label: item.name,
-          unit_price: unit,
-          quantity: i.quantity,
-          line_total: Math.round(unit * i.quantity),
-        };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+    const rows = [
+      ...data.items
+        .map((i) => {
+          const item = (menu ?? []).find((m) => m.id === i.menuItemId);
+          if (!item) return null;
+          const unit = Number(item.price);
+          return {
+            booking_id: data.bookingId,
+            kind: "food" as const,
+            menu_item_id: item.id as string | null,
+            label: item.name,
+            unit_price: unit,
+            quantity: i.quantity,
+            line_total: Math.round(unit * i.quantity),
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null),
+      ...data.custom.map((c) => ({
+        booking_id: data.bookingId,
+        kind: "food" as const,
+        menu_item_id: null as string | null,
+        label: c.name.trim(),
+        unit_price: Math.round(c.price),
+        quantity: c.quantity,
+        line_total: Math.round(c.price * c.quantity),
+      })),
+    ];
     if (!rows.length) return { ok: false, message: "Nothing to add." };
+
 
     const added = rows.reduce((s, r) => s + r.line_total, 0);
     const { error: insertError } = await supabaseAdmin.from("booking_items").insert(rows);
