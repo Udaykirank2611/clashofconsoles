@@ -8,7 +8,7 @@ import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Tra
 import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
-import { approveBookingPayment, completeBookingWithSplit, extendBookingSession } from "@/lib/booking-admin.functions";
+import { approveBookingPayment, completeBookingWithSplit, extendBookingSession, quoteExtension } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
 import { cn } from "@/lib/utils";
@@ -161,7 +161,10 @@ export function BookingsPanel({
     window: { start: string; end: string };
     alternatives: { id: string; name: string; price: number }[];
   } | null>(null);
+  /** Rate-card price for the extra hour, fetched when the dialog opens. */
+  const [extendQuote, setExtendQuote] = useState<number | null>(null);
   const extendSession = useServerFn(extendBookingSession);
+  const getQuote = useServerFn(quoteExtension);
   const approvePayment = useServerFn(approveBookingPayment);
   const completeWithSplit = useServerFn(completeBookingWithSplit);
   const editHours = useServerFn(updateBookingExtraHours);
@@ -223,7 +226,6 @@ export function BookingsPanel({
     const match = bookings.find((b) => b.reference === focusReference);
     if (!match) return;
     setFilter("all");
-    setOpenId(match.id);
   }, [focusReference, bookings]);
 
 
@@ -457,7 +459,13 @@ export function BookingsPanel({
                           <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         {hasSlot ? (
-                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => setExtendConfirm(b)}>
+                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => {
+                              setExtendQuote(null);
+                              setExtendConfirm(b);
+                              void getQuote({ data: { bookingId: b.id, hours: 1 } }).then((r) =>
+                                setExtendQuote(r.price),
+                              );
+                            }}>
                             <Clock className="size-3.5" /> Extend 1 hour
                           </AdminButton>
                         ) : null}
