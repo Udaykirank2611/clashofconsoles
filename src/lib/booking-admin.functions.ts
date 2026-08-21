@@ -565,3 +565,37 @@ export const extendBookingSession = createServerFn({ method: "POST" })
     await recomputeBookingTotals(data.bookingId);
     return { ok: true, message: `Extended to ${clock(end).slice(0, 5)} on ${station?.name ?? "the same console"}.` };
   });
+
+/** Price preview for extending a session, using the branch rate card. */
+export const quoteExtension = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ bookingId: z.string().uuid(), hours: z.number().int().min(1).max(6).default(1) }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ price: number }> => {
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("branch_id, players, start_time, end_time")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!booking) return { price: 0 };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: items } = await supabaseAdmin
+      .from("booking_items")
+      .select("start_time, end_time")
+      .eq("booking_id", data.bookingId)
+      .not("end_time", "is", null);
+    const current =
+      (booking.start_time && booking.end_time
+        ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
+        : 0) +
+      (items ?? []).reduce(
+        (s, i) =>
+          s + (i.start_time && i.end_time ? toMinutes(String(i.end_time)) - toMinutes(String(i.start_time)) : 0),
+        0,
+      );
+    const { extensionPrice } = await import("@/lib/booking-admin.server");
+    return {
+      price: await extensionPrice(String(booking.branch_id), Number(booking.players ?? 1), current, data.hours),
+    };
+  });
