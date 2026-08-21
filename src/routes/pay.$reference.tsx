@@ -513,3 +513,37 @@ function StateCard({
     </section>
   );
 }
+
+function BreakRow({
+  label,
+  value,
+  tone = "base",
+  strong,
+}: {
+  label: string;
+  value: string;
+  tone?: "base" | "green";
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <dt
+        className={cn(
+          "min-w-0 text-xs",
+          tone === "green" ? "font-semibold text-emerald-300" : "text-foreground/85",
+        )}
+      >
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          "shrink-0 tabular-nums text-sm",
+          strong ? "font-black" : "font-semibold",
+          tone === "green" && "text-emerald-300",
+        )}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
