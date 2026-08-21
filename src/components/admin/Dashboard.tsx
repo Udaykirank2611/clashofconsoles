@@ -6,6 +6,7 @@ import { BookingsPanel, StatusPill } from "./BookingsPanel";
 import { CustomersPanel } from "./CustomersPanel";
 import { MembershipPassesPanel } from "./MembershipPassesPanel";
 import { StationsPanel } from "./StationsPanel";
+import { GamesShowcasePanel } from "./GamesShowcasePanel";
 import { PricingPanel } from "./PricingPanel";
 import { CouponsPanel } from "./CouponsPanel";
 import { MenuPanel } from "./MenuPanel";
@@ -220,6 +221,8 @@ export function AdminDashboard() {
             onChanged={data.refresh}
           />
         ) : null}
+
+        {tab === "Games" ? <GamesShowcasePanel /> : null}
 
         {tab === "Bookings" ? (
           <BookingsPanel

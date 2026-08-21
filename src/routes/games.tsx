@@ -9,6 +9,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Reveal } from "@/components/site/primitives";
 import { TiltCard } from "@/components/site/TiltCard";
+import { GameShowcase } from "@/components/site/GameShowcase";
 import { cn } from "@/lib/utils";
 
 const TITLE = "Games Library — Clash of Consoles Hyderabad";
