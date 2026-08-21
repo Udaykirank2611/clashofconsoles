@@ -171,5 +171,14 @@ export function useMessageTemplates() {
     [map],
   );
 
-  return { template, reload: load };
+  /** First saved body for a key across any branch — used by branch-agnostic screens. */
+  const anyTemplate = useCallback(
+    (key: TemplateKey) => {
+      const hit = Object.entries(map).find(([k]) => k.endsWith(`:${key}`));
+      return hit?.[1] || DEFAULT_TEMPLATE[key];
+    },
+    [map],
+  );
+
+  return { template, anyTemplate, reload: load };
 }
