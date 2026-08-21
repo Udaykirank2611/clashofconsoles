@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, Pill, money } from "./primitives";
@@ -27,7 +27,7 @@ const LABEL: Record<Filter, string> = {
 /** Legacy "pending" rows are grouped with payment verification. */
 const matchesFilter = (status: AdminBooking["status"], filter: Filter) =>
   filter === "all"
-    ? true
+    ? status !== "cancelled"
     : filter === "payment_pending"
       ? status === "payment_pending" || status === "pending"
       : status === filter;
@@ -178,10 +178,16 @@ export function BookingsPanel({
   };
 
 
+  /**
+   * Jump to a booking when a notification asks for it — once per reference, so a
+   * background refresh never yanks the admin back to another tab.
+   */
+  const handledRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!focusReference) return;
+    if (!focusReference || handledRef.current === focusReference) return;
     const match = bookings.find((b) => b.reference === focusReference);
     if (!match) return;
+    handledRef.current = focusReference;
     setFilter("all");
     setOpenId(match.id);
   }, [focusReference, bookings]);
@@ -200,7 +206,15 @@ export function BookingsPanel({
     onChanged();
   };
 
-  const rows = bookings.filter((b) => matchesFilter(b.status, filter));
+  // Newest first everywhere: latest booking date, then latest created.
+  const rows = bookings
+    .filter((b) => matchesFilter(b.status, filter))
+    .slice()
+    .sort(
+      (a, b) =>
+        (b.booking_date ?? "").localeCompare(a.booking_date ?? "") ||
+        (b.created_at ?? "").localeCompare(a.created_at ?? ""),
+    );
 
   const copyConfirmation = async (b: AdminBooking, stationName: string) => {
     try {

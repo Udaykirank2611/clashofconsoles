@@ -30,22 +30,17 @@ export async function loadTransactions(
   supabase: Client,
   input: { branchId: string | null; from: string; to: string },
 ): Promise<TransactionsPayload> {
-  // Finished sessions become completed first; a running/future session is not yet money.
-  {
-    // Runs with server privileges: the routine is not exposed to signed-in clients.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.rpc("complete_past_bookings");
-  }
+  // Bookings are only completed when staff press "Mark completed" — never automatically.
   let q = supabase
     .from("bookings")
     .select(
-      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type)",
+      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name, station_type))",
     )
     .gte("booking_date", input.from)
     .lte("booking_date", input.to)
     .in("status", ["confirmed", "completed", "cancelled"])
-    .order("booking_date", { ascending: true })
-    .order("start_time", { ascending: true })
+    .order("booking_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(2000);
   if (input.branchId) q = q.eq("branch_id", input.branchId);
 
@@ -72,12 +67,19 @@ export async function loadTransactions(
     supabase.from("customers").select("phone, total_visits"),
   ]);
 
-  const bookings = ((bookingsRes.data ?? []) as unknown[]).filter((row) => {
-    const b = row as { status: string; station_id: string | null };
-    return b.status !== "confirmed" || !b.station_id;
-  }) as unknown as (Record<string, unknown> & {
+  const bookings = ((bookingsRes.data ?? []) as unknown[]) as unknown as (Record<string, unknown> & {
     branches: { name: string } | null;
     gaming_stations: { name: string; station_type: string } | null;
+    booking_items:
+      | {
+          kind: string;
+          label: string | null;
+          station_id: string | null;
+          start_time: string | null;
+          end_time: string | null;
+          gaming_stations: { name: string; station_type: string } | null;
+        }[]
+      | null;
   })[];
 
   const txByBooking = new Map(
@@ -90,7 +92,7 @@ export async function loadTransactions(
     ]),
   );
 
-  const rows: TransactionRow[] = bookings.map((b) => {
+  const rows: TransactionRow[] = bookings.flatMap((b) => {
     const tx = txByBooking.get(String(b['id']));
     const gaming = num(b['session_amount']) + num(b['addons_amount']);
     const food = num(b['food_amount']);
@@ -102,16 +104,28 @@ export async function loadTransactions(
       ? Math.max(0, Math.round(gaming + food - coupon - student - total))
       : 0;
 
-    const start = b['start_time'] ? String(b['start_time']) : null;
-    const end = b['end_time'] ? String(b['end_time']) : null;
-    const station = b.gaming_stations;
+    // Experiences (cockpit, VR, theatre, lounge) are booked as add-on line items,
+    // so the station and the slot times live on the item, not the booking row.
+    const addons = (b.booking_items ?? []).filter((i) => i.kind === "addon" && i.gaming_stations);
+    const timed = addons.filter((i) => i.start_time && i.end_time);
+    const station = b.gaming_stations ?? addons[0]?.gaming_stations ?? null;
+    const start = b['start_time']
+      ? String(b['start_time'])
+      : (timed.map((i) => i.start_time!).sort()[0] ?? null);
+    const end = b['end_time']
+      ? String(b['end_time'])
+      : (timed.map((i) => i.end_time!).sort().at(-1) ?? null);
+
+    // A confirmed session is only money once staff mark it completed; passes and
+    // food-only sales have no slot to wait for, so they land in the ledger at once.
+    if (b['status'] === "confirmed" && start && end) return [];
 
     const service = b['booking_type'] === "group"
       ? "Party Booking"
-      : b['pass_id']
-        ? "Membership Redemption"
-        : station
-          ? (SERVICE_BY_TYPE[station.station_type] ?? station.name)
+      : station
+        ? (SERVICE_BY_TYPE[station.station_type] ?? station.name)
+        : b['pass_id']
+          ? "Membership Redemption"
           : food > 0
             ? "Food Only"
             : b['coupon_id']
@@ -120,7 +134,7 @@ export async function loadTransactions(
 
     const phone = String(b['customer_phone'] ?? "");
 
-    return {
+    return [{
       id: String(b['id']),
       bookingId: String(b['id']),
       reference: String(b['reference'] ?? ""),
@@ -130,7 +144,7 @@ export async function loadTransactions(
       customer: String(b['customer_name'] ?? ""),
       phone,
       service,
-      consoleName: station?.name ?? "—",
+      consoleName: station?.name ?? addons[0]?.label ?? "—",
       checkIn: start,
       checkOut: end,
       durationMinutes: start && end ? Math.max(0, minutes(end) - minutes(start)) : 0,
@@ -161,7 +175,7 @@ export async function loadTransactions(
       status: (tx?.['transaction_status'] as TxStatus) ?? (b['status'] === "completed" ? "completed" : "pending"),
       source: (tx?.['booking_source'] as TxSource) ?? "website",
       notes: String(tx?.['admin_notes'] ?? b['special_instructions'] ?? ""),
-    };
+    }];
   });
 
   const expenses: ExpenseRow[] = ((expensesRes.data ?? []) as Record<string, unknown>[]).map((e) => ({

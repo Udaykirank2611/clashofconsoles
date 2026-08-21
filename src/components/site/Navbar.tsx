@@ -3,7 +3,6 @@ import {
   Menu,
   X,
   Home,
-  Sparkles,
   Gamepad2,
   Crown,
   MapPin,
@@ -16,7 +15,6 @@ import logoAsset from "@/assets/coc-logo.png.asset.json";
 
 const LINKS = [
   { label: "Home", href: "/#home", icon: Home },
-  { label: "Experiences", href: "/#experiences", icon: Sparkles },
   { label: "Games", href: "/games", icon: Gamepad2 },
   { label: "Membership and Combos", href: "/#membership", icon: Crown },
   { label: "Branches", href: "/#branches", icon: MapPin },
@@ -73,7 +71,7 @@ export function Navbar() {
       <nav
         aria-label="Primary"
         className={cn(
-          "mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-full px-5 py-3 transition-all duration-500 sm:px-6",
+          "mx-auto flex max-w-[95rem] items-center justify-between gap-2 rounded-full px-4 py-3 transition-all duration-500 sm:px-6 lg:gap-3",
           scrolled
             ? "glass mx-4 shadow-[0_18px_50px_-30px_black] lg:mx-auto"
             : "mx-4 border border-transparent lg:mx-auto",
@@ -85,14 +83,14 @@ export function Navbar() {
             alt="Clash of Consoles logo"
             width={44}
             height={44}
-            className="size-10 shrink-0 object-contain drop-shadow-[0_0_18px_rgba(0,200,255,0.35)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
+            className="size-9 shrink-0 object-contain xl:size-10 drop-shadow-[0_0_18px_rgba(0,200,255,0.35)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
           />
-          <span className="truncate text-sm font-extrabold uppercase tracking-[0.18em]">
+          <span className="truncate text-xs font-extrabold uppercase tracking-[0.14em] xl:text-sm xl:tracking-[0.18em]">
             Clash <span className="text-muted-foreground">of</span> Consoles
           </span>
         </a>
 
-        <ul className="hidden items-center gap-1 lg:flex">
+        <ul className="hidden items-center gap-0 lg:flex xl:gap-1">
           {LINKS.map((l) => {
             const isActive = active === l.href;
             const Icon = l.icon;
@@ -102,14 +100,14 @@ export function Navbar() {
                   href={l.href}
                   aria-current={isActive ? "true" : undefined}
                   className={cn(
-                    "group relative inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-300 hover:text-pink",
+                    "group relative inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-2 text-[0.7rem] font-medium transition-colors duration-300 hover:text-pink xl:gap-1.5 xl:px-3.5 xl:text-sm",
                     isActive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   <Icon
                     aria-hidden="true"
                     className={cn(
-                      "size-4 shrink-0 transition-all duration-300 group-hover:text-pink group-hover:drop-shadow-[0_0_10px_var(--pink)]",
+                      "size-3.5 shrink-0 transition-all xl:size-4 duration-300 group-hover:text-pink group-hover:drop-shadow-[0_0_10px_var(--pink)]",
                       isActive ? "text-cyan" : "text-muted-foreground",
                     )}
                   />
@@ -117,7 +115,7 @@ export function Navbar() {
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "absolute inset-x-3.5 bottom-1 h-px origin-left bg-linear-to-r from-cyan via-primary to-violet transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100 group-hover:from-pink group-hover:via-pink group-hover:to-primary",
+                      "absolute inset-x-2 bottom-1 xl:inset-x-3.5 h-px origin-left bg-linear-to-r from-cyan via-primary to-violet transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100 group-hover:from-pink group-hover:via-pink group-hover:to-primary",
                       isActive ? "scale-x-100" : "scale-x-0",
                     )}
                   />
@@ -128,7 +126,7 @@ export function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
-          <MagneticButton href="/book" className="hidden px-6 py-2.5 sm:inline-flex">
+          <MagneticButton href="/book" className="hidden whitespace-nowrap px-4 py-2.5 text-xs sm:inline-flex xl:px-6 xl:text-sm">
             Book Now
           </MagneticButton>
 
