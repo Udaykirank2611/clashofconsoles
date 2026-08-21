@@ -445,15 +445,18 @@ export const extendBookingSession = createServerFn({ method: "POST" })
     let baseStation = booking.station_id as string | null;
     let endTime = booking.end_time as string | null;
     let itemId: string | null = null;
+
+    // Every timed line on this booking, so the extension is priced against the
+    // total time the guest has already bought (rate-card slabs).
+    const { data: timedItems } = await supabaseAdmin
+      .from("booking_items")
+      .select("id, station_id, start_time, end_time")
+      .eq("booking_id", data.bookingId)
+      .not("end_time", "is", null)
+      .order("end_time", { ascending: false });
+
     if (!endTime) {
-      const { data: item } = await supabaseAdmin
-        .from("booking_items")
-        .select("id, station_id, start_time, end_time")
-        .eq("booking_id", data.bookingId)
-        .not("end_time", "is", null)
-        .order("end_time", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const item = (timedItems ?? [])[0];
       if (item) {
         baseStation = item.station_id;
         endTime = item.end_time;
@@ -461,6 +464,24 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       }
     }
     if (!endTime || !baseStation) return { ok: false, message: "This booking has no timed session to extend." };
+
+    const currentMinutes =
+      (booking.start_time && booking.end_time
+        ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
+        : 0) +
+      (timedItems ?? []).reduce(
+        (s, i) =>
+          s + (i.start_time && i.end_time ? toMinutes(String(i.end_time)) - toMinutes(String(i.start_time)) : 0),
+        0,
+      );
+
+    const { extensionPrice } = await import("@/lib/booking-admin.server");
+    const price = await extensionPrice(
+      String(booking.branch_id),
+      Number(booking.players ?? 1),
+      currentMinutes,
+      data.hours,
+    );
 
     const start = toMinutes(String(endTime));
     const end = start + data.hours * 60;
@@ -494,10 +515,7 @@ export const extendBookingSession = createServerFn({ method: "POST" })
           end,
           data.bookingId,
         );
-        if (!busy) {
-          const p = Math.min(4, Math.max(1, Number(booking.players ?? 1)));
-          alternatives.push({ id: s.id, name: s.name, price: (100 + 50 * p) * data.hours });
-        }
+        if (!busy) alternatives.push({ id: s.id, name: s.name, price });
       }
       return {
         ok: false,
@@ -513,9 +531,7 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       .select("id, name, hourly_price")
       .eq("id", target)
       .maybeSingle();
-    // Extra hours are charged per player: 1p ₹150, 2p ₹200, 3p ₹250, 4p ₹300.
-    const players = Math.min(4, Math.max(1, Number(booking.players ?? 1)));
-    const price = (100 + 50 * players) * data.hours;
+
 
     if (target === baseStation) {
       // Same console: simply push the session end time out.
