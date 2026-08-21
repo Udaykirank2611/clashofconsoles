@@ -404,3 +404,143 @@ export const addFoodToBooking = createServerFn({ method: "POST" })
 
     return { ok: true, total: added };
   });
+
+export interface ExtendResult extends AdminMoveResult {
+  /** Set when the current console is busy for the extra hour. */
+  conflict?: boolean;
+  /** Other consoles that are free for the requested extra window. */
+  alternatives?: { id: string; name: string; price: number }[];
+  window?: { start: string; end: string };
+}
+
+/**
+ * Extends a confirmed booking by one or more hours.
+ * The same console is used when it is free; otherwise the admin is offered the
+ * consoles that are free for that window and the extra hour is booked there as
+ * an add-on line so every calendar and availability check stays in sync.
+ */
+export const extendBookingSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        bookingId: z.string().uuid(),
+        hours: z.number().int().min(1).max(6).default(1),
+        /** Pick another console when the original one is busy. */
+        stationId: z.string().uuid().nullable().default(null),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<ExtendResult> => {
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!booking) return { ok: false, message: "You cannot edit this booking." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // The session window is either on the booking itself or on its add-on line.
+    let baseStation = booking.station_id as string | null;
+    let endTime = booking.end_time as string | null;
+    let itemId: string | null = null;
+    if (!endTime) {
+      const { data: item } = await supabaseAdmin
+        .from("booking_items")
+        .select("id, station_id, start_time, end_time")
+        .eq("booking_id", data.bookingId)
+        .not("end_time", "is", null)
+        .order("end_time", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (item) {
+        baseStation = item.station_id;
+        endTime = item.end_time;
+        itemId = item.id;
+      }
+    }
+    if (!endTime || !baseStation) return { ok: false, message: "This booking has no timed session to extend." };
+
+    const start = toMinutes(String(endTime));
+    const end = start + data.hours * 60;
+    if (end > 24 * 60) return { ok: false, message: "The extension would run past midnight." };
+
+    const target = data.stationId ?? baseStation;
+    const conflict = await isSlotFree(
+      String(booking.branch_id),
+      target,
+      String(booking.booking_date),
+      start,
+      end,
+      data.bookingId,
+    );
+
+    if (conflict) {
+      const { data: stations } = await supabaseAdmin
+        .from("gaming_stations")
+        .select("id, name, hourly_price, status")
+        .eq("branch_id", booking.branch_id)
+        .eq("status", "available")
+        .order("sort_order");
+      const alternatives: { id: string; name: string; price: number }[] = [];
+      for (const s of stations ?? []) {
+        if (s.id === target) continue;
+        const busy = await isSlotFree(
+          String(booking.branch_id),
+          s.id,
+          String(booking.booking_date),
+          start,
+          end,
+          data.bookingId,
+        );
+        if (!busy) alternatives.push({ id: s.id, name: s.name, price: Math.round(Number(s.hourly_price)) });
+      }
+      return {
+        ok: false,
+        conflict: true,
+        message: conflict,
+        alternatives,
+        window: { start: clock(start), end: clock(end) },
+      };
+    }
+
+    const { data: station } = await supabaseAdmin
+      .from("gaming_stations")
+      .select("id, name, hourly_price")
+      .eq("id", target)
+      .maybeSingle();
+    const price = Math.round(Number(station?.hourly_price ?? 0) * data.hours);
+
+    if (target === baseStation) {
+      // Same console: simply push the session end time out.
+      if (itemId) {
+        await supabaseAdmin.from("booking_items").update({ end_time: clock(end) }).eq("id", itemId);
+      } else {
+        await supabaseAdmin.from("bookings").update({ end_time: clock(end) }).eq("id", data.bookingId);
+      }
+      await supabaseAdmin
+        .from("bookings")
+        .update({ session_amount: Number(booking.session_amount ?? 0) + price })
+        .eq("id", data.bookingId);
+    } else {
+      // Different console: book the extra window there as an add-on line so it
+      // blocks that console everywhere.
+      const { error } = await supabaseAdmin.from("booking_items").insert({
+        booking_id: data.bookingId,
+        kind: "addon",
+        station_id: target,
+        label: `${station?.name ?? "Console"} — extra ${data.hours}h`,
+        unit_price: price,
+        quantity: 1,
+        line_total: price,
+        start_time: clock(start),
+        end_time: clock(end),
+      });
+      if (error) return { ok: false, message: error.message };
+    }
+
+    const { recomputeBookingTotals } = await import("@/lib/booking-admin.server");
+    await recomputeBookingTotals(data.bookingId);
+    return { ok: true, message: `Extended to ${clock(end).slice(0, 5)} on ${station?.name ?? "the same console"}.` };
+  });
