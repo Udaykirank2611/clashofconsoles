@@ -362,6 +362,24 @@ export function TransactionsView({
             setEditing(null);
             void load();
           }}
+          onDelete={async () => {
+            if (
+              !window.confirm(
+                `Delete ${editing.reference}? It will be voided and removed from all reports, analytics and reconciliation.`,
+              )
+            )
+              return;
+            const res = await removeTx({
+              data: { bookingId: editing.bookingId, branchId: editing.branchId },
+            });
+            if (!res.ok) {
+              toast.error(res.message ?? "Could not delete this transaction.");
+              return;
+            }
+            toast.success("Transaction deleted everywhere.");
+            setEditing(null);
+            void load();
+          }}
         />
       ) : null}
     </div>
