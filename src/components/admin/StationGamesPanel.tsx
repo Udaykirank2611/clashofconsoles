@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, AdminInput } from "./primitives";
@@ -27,6 +27,9 @@ export function StationGamesPanel({
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
   const [busy, setBusy] = useState(false);
+  /** Text being typed, kept local so a save round-trip never eats keystrokes. */
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const timers = useRef<Record<string, number>>({});
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -40,6 +43,33 @@ export function StationGamesPanel({
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(
+    () => () => {
+      for (const t of Object.values(timers.current)) window.clearTimeout(t);
+    },
+    [],
+  );
+
+  /** Types instantly, saves ~600ms after the admin stops typing. */
+  const typeField = (id: string, field: "name" | "image_url", value: string) => {
+    const key = `${id}:${field}`;
+    setDrafts((d) => ({ ...d, [key]: value }));
+    window.clearTimeout(timers.current[key]);
+    timers.current[key] = window.setTimeout(async () => {
+      const payload =
+        field === "name" ? { name: value.trim() } : { image_url: value.trim() || null };
+      if (field === "name" && !value.trim()) return;
+      const { error } = await supabase.from("station_games").update(payload).eq("id", id);
+      if (error) toast.error("Could not save this change.");
+      setGames((rows) => rows.map((r) => (r.id === id ? { ...r, ...payload } : r)));
+      setDrafts((d) => {
+        const next = { ...d };
+        delete next[key];
+        return next;
+      });
+    }, 600) as unknown as number;
+  };
 
   const add = async () => {
     const clean = name.trim();

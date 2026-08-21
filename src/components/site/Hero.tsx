@@ -103,7 +103,7 @@ export function Hero() {
         className="pointer-events-none absolute -right-8 bottom-24 -z-10 size-48 rotate-12 text-foreground/5 [animation:coc-float_11s_ease-in-out_1s_infinite] sm:size-72"
       />
 
-      <div className="mx-auto w-full max-w-7xl px-6 pb-28 [perspective:1400px]">
+      <div className="mx-auto w-full max-w-7xl px-6 pb-20 [perspective:1400px]">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <img
             src={logoAsset.url}
@@ -111,7 +111,7 @@ export function Hero() {
             width={520}
             height={520}
             fetchPriority="high"
-            className="w-[min(78vw,30rem)] object-contain drop-shadow-[0_0_60px_rgba(0,200,255,0.35)]"
+            className="w-[min(60vw,20rem)] object-contain drop-shadow-[0_0_60px_rgba(0,200,255,0.35)] sm:w-[min(52vw,22rem)]"
             style={{ animation: "coc-rise 1s .15s both" }}
           />
           <a

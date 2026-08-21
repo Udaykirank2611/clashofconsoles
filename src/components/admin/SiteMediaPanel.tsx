@@ -6,7 +6,7 @@ import { AdminButton, AdminInput, Panel } from "./primitives";
 interface MediaRow {
   key: string;
   label: string;
-  media_type: "image" | "video";
+  media_type: "image" | "video" | "text";
   url: string | null;
 }
 
@@ -60,46 +60,57 @@ export function SiteMediaPanel() {
           <li key={row.key} className="rounded-3xl border border-border bg-background/40 p-5">
             <p className="text-sm font-semibold">{row.label || row.key}</p>
             <div className="mt-3 space-y-3">
-              <label className="block">
-                <span className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Media type
-                </span>
-                <select
-                  value={row.media_type}
-                  onChange={(e) =>
-                    patch(row.key, { media_type: e.target.value as MediaRow["media_type"] })
-                  }
-                  className="w-full rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
-                >
-                  <option value="image">Image</option>
-                  <option value="video">Video (MP4 link)</option>
-                </select>
-              </label>
-              <AdminInput
-                label="Link"
-                value={row.url ?? ""}
-                onChange={(v) => patch(row.key, { url: v })}
-                placeholder="https://…/hero.mp4"
-              />
-              {row.url ? (
-                row.media_type === "video" ? (
-                  <video
-                    src={row.url}
-                    muted
-                    loop
-                    autoPlay
-                    playsInline
-                    className="h-32 w-full rounded-2xl object-cover"
+              {row.media_type === "text" ? (
+                <AdminInput
+                  label="Value"
+                  value={row.url ?? ""}
+                  onChange={(v) => patch(row.key, { url: v })}
+                  placeholder="4.9"
+                />
+              ) : (
+                <>
+                  <label className="block">
+                    <span className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Media type
+                    </span>
+                    <select
+                      value={row.media_type}
+                      onChange={(e) =>
+                        patch(row.key, { media_type: e.target.value as MediaRow["media_type"] })
+                      }
+                      className="w-full rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
+                    >
+                      <option value="image">Image</option>
+                      <option value="video">Video (MP4 link)</option>
+                    </select>
+                  </label>
+                  <AdminInput
+                    label="Link"
+                    value={row.url ?? ""}
+                    onChange={(v) => patch(row.key, { url: v })}
+                    placeholder="https://…/hero.mp4"
                   />
-                ) : (
-                  <img
-                    src={row.url}
-                    alt={row.label}
-                    loading="lazy"
-                    className="h-32 w-full rounded-2xl object-cover"
-                  />
-                )
-              ) : null}
+                  {row.url ? (
+                    row.media_type === "video" ? (
+                      <video
+                        src={row.url}
+                        muted
+                        loop
+                        autoPlay
+                        playsInline
+                        className="h-32 w-full rounded-2xl object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={row.url}
+                        alt={row.label}
+                        loading="lazy"
+                        className="h-32 w-full rounded-2xl object-cover"
+                      />
+                    )
+                  ) : null}
+                </>
+              )}
             </div>
             <div className="mt-4">
               <AdminButton variant="primary" disabled={busy === row.key} onClick={() => void save(row)}>
