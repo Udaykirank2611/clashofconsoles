@@ -42,7 +42,7 @@ export function StatCard({
   tone?: "default" | "good" | "warn" | "bad";
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-border bg-surface/70 p-5 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-cyan/40 hover:shadow-[0_28px_70px_-40px_var(--primary)]">
+    <div className="group relative overflow-hidden rounded-2xl border border-border bg-surface/70 p-3.5 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-cyan/40 hover:shadow-[0_20px_50px_-40px_var(--primary)]">
       <span
         aria-hidden="true"
         className={cn(
@@ -53,10 +53,11 @@ export function StatCard({
           tone === "default" && "bg-linear-to-r from-transparent via-primary/70 to-transparent",
         )}
       />
-      <p className="text-[0.6rem] font-semibold uppercase tracking-[0.26em] text-muted-foreground">{label}</p>
-      <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
+      <p className="mt-1.5 text-xl font-black tracking-tight">{value}</p>
+      {hint ? <p className="mt-0.5 text-[0.65rem] text-muted-foreground">{hint}</p> : null}
     </div>
+
   );
 }
 
@@ -71,9 +72,9 @@ export function Pill({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em]",
-        tone === "good" && "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-        tone === "warn" && "border-amber-400/30 bg-amber-400/10 text-amber-300",
-        tone === "bad" && "border-rose-400/30 bg-rose-400/10 text-rose-300",
+        tone === "good" && "border-emerald-500/40 bg-emerald-400/25 text-emerald-950",
+        tone === "warn" && "border-amber-500/40 bg-amber-400/25 text-amber-950",
+        tone === "bad" && "border-rose-500/40 bg-rose-400/25 text-rose-950",
         tone === "muted" && "border-border bg-muted/40 text-muted-foreground",
       )}
     >
@@ -108,8 +109,8 @@ export function AdminButton({
           "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_16px_40px_-18px_var(--primary)] hover:brightness-110 active:scale-[0.97]",
         variant === "ghost" && "border border-border bg-surface/70 text-foreground hover:border-cyan/40",
         variant === "success" &&
-          "border border-emerald-400/40 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20",
-        variant === "danger" && "border border-rose-400/40 bg-rose-400/10 text-rose-300 hover:bg-rose-400/20",
+          "border border-emerald-500/45 bg-emerald-400/25 text-emerald-950 hover:bg-emerald-400/40",
+        variant === "danger" && "border border-rose-500/45 bg-rose-400/25 text-rose-950 hover:bg-rose-400/40",
         className,
       )}
     >

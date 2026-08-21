@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Reveal, SectionHeading } from "../primitives";
 import { cn } from "@/lib/utils";
 import { inr, type Experience, type ExperienceRate, type SiteBranch } from "@/lib/site-content";
@@ -30,7 +30,24 @@ export function RateCard({
     [experiences, branchRates],
   );
   const [active, setActive] = useState<string | null>(null);
+  /** Auto-rotation stops for good once the guest takes control. */
+  const [manual, setManual] = useState(false);
   const current = tabs.find((t) => t.slug === active) ?? tabs[0];
+
+  const step = (dir: 1 | -1, byUser = true) => {
+    if (byUser) setManual(true);
+    setActive((prev) => {
+      const list = tabs.map((t) => t.slug);
+      const i = Math.max(0, list.indexOf(prev ?? list[0]!));
+      return list[(i + dir + list.length) % list.length]!;
+    });
+  };
+
+  useEffect(() => {
+    if (manual || tabs.length < 2) return;
+    const id = window.setInterval(() => step(1, false), 5000);
+    return () => window.clearInterval(id);
+  }, [manual, tabs, active]);
 
   if (!tabs.length || !current) return null;
 
@@ -80,12 +97,24 @@ export function RateCard({
 
         <Reveal>
           <div className="mt-14 overflow-hidden rounded-[2rem] border border-border bg-surface/60 backdrop-blur-2xl">
-            <div className="flex gap-2 overflow-x-auto border-b border-border p-4">
+            <div className="flex items-center gap-2 border-b border-border p-4">
+              <button
+                type="button"
+                aria-label="Previous experience"
+                onClick={() => step(-1)}
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-pink/60 hover:text-pink"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <div className="flex flex-1 gap-2 overflow-x-auto">
               {tabs.map((t) => (
                 <button
                   key={t.slug}
                   type="button"
-                  onClick={() => setActive(t.slug)}
+                  onClick={() => {
+                    setManual(true);
+                    setActive(t.slug);
+                  }}
                   className={cn(
                     "shrink-0 rounded-full border px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] transition-all duration-400",
                     t.slug === current.slug
@@ -96,6 +125,15 @@ export function RateCard({
                   {t.name}
                 </button>
               ))}
+              </div>
+              <button
+                type="button"
+                aria-label="Next experience"
+                onClick={() => step(1)}
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-pink/60 hover:text-pink"
+              >
+                <ChevronRight className="size-4" />
+              </button>
             </div>
 
             <div className="grid gap-8 p-6 sm:p-9 lg:grid-cols-[0.85fr_1.15fr]">

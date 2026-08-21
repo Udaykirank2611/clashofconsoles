@@ -132,7 +132,7 @@ export function AdminDashboard() {
               className="rounded-full border border-border bg-surface/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] outline-none focus:border-cyan/50"
             >
               {branches.map((b) => (
-                <option key={b.id} value={b.id}>
+                <option key={b.id} value={b.id} className="bg-white text-slate-900">
                   {b.name}
                 </option>
               ))}
@@ -176,9 +176,9 @@ export function AdminDashboard() {
               )}
               aria-label="More sections"
             >
-              <option value="">More ▾</option>
+              <option value="" className="bg-white text-slate-900">More ▾</option>
               {more.map((t) => (
-                <option key={t} value={t}>
+                <option key={t} value={t} className="bg-white text-slate-900">
                   {t}
                 </option>
               ))}
