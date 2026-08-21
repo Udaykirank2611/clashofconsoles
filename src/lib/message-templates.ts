@@ -156,7 +156,7 @@ export function useMessageTemplates() {
   useEffect(() => {
     void load();
     const channel = supabase
-      .channel("message-templates")
+      .channel(`message-templates-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "message_templates" }, () =>
         void load(),
       )
