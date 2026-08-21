@@ -451,14 +451,11 @@ export function BookingsPanel({
 
                     ) : b.status === "confirmed" ? (
                       <>
-                        <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
-                          <Copy className="size-3.5" /> Copy confirmation
-                        </AdminButton>
                         <AdminButton disabled={busy === b.id} onClick={() => setAddingFood(b)}>
                           <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         {hasSlot ? (
-                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => void extend(b)}>
+                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => setExtendConfirm(b)}>
                             <Clock className="size-3.5" /> Extend 1 hour
                           </AdminButton>
                         ) : null}
