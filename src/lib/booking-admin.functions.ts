@@ -510,7 +510,9 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       .select("id, name, hourly_price")
       .eq("id", target)
       .maybeSingle();
-    const price = Math.round(Number(station?.hourly_price ?? 0) * data.hours);
+    // Extra hours are charged per player: 1p ₹150, 2p ₹200, 3p ₹250, 4p ₹300.
+    const players = Math.min(4, Math.max(1, Number(booking.players ?? 1)));
+    const price = (100 + 50 * players) * data.hours;
 
     if (target === baseStation) {
       // Same console: simply push the session end time out.
