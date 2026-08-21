@@ -679,6 +679,15 @@ export function BookingsPanel({
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
 
+            <div className="mt-4 rounded-2xl border-2 border-pink-500/60 bg-pink-500/10 px-4 py-3">
+              <p className="text-[0.6rem] font-black uppercase tracking-[0.22em] text-pink-600">
+                UTR / Txn reference
+              </p>
+              <p className="mt-1 font-mono text-lg font-black tracking-wide break-all text-pink-700">
+                {approving.payment_utr ?? "Not submitted"}
+              </p>
+            </div>
+
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setApproving(null)}>Cancel</AdminButton>
               <AdminButton
