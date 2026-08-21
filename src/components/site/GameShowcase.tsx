@@ -45,7 +45,7 @@ export function GameShowcase() {
                   <article
                     className={cn(
                       "relative h-full overflow-hidden rounded-3xl border border-border bg-surface transition-[border-color,box-shadow] duration-500",
-                      ACCENT_GLOW[section.accent] ?? ACCENT_GLOW.pink,
+                      ACCENT_GLOW[section.accent] ?? ACCENT_GLOW["pink"],
                     )}
                   >
                     {item.image_url ? (
