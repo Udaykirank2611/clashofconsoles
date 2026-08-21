@@ -138,11 +138,15 @@ export function StationGamesPanel({
               !g.is_active && "opacity-50",
             )}
           >
-            <AdminInput label="Name" value={g.name} onChange={(v) => void patch(g.id, { name: v })} />
+            <AdminInput
+              label="Name"
+              value={drafts[`${g.id}:name`] ?? g.name}
+              onChange={(v) => typeField(g.id, "name", v)}
+            />
             <AdminInput
               label="Image link"
-              value={g.image_url ?? ""}
-              onChange={(v) => void patch(g.id, { image_url: v.trim() || null })}
+              value={drafts[`${g.id}:image_url`] ?? g.image_url ?? ""}
+              onChange={(v) => typeField(g.id, "image_url", v)}
               placeholder="https://…"
             />
             <div className="flex items-end gap-1.5">
