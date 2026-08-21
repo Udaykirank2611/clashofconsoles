@@ -121,7 +121,9 @@ export function BookingCalendar({
       .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "booking_items" }, () => void load())
       .subscribe();
-    const timer = window.setInterval(() => void load(), 30000);
+    // A short polling fallback keeps this operational view live even when a
+    // browser briefly loses its realtime socket.
+    const timer = window.setInterval(() => void load(), 5000);
     return () => {
       window.clearInterval(timer);
       void supabase.removeChannel(channel);
@@ -411,7 +413,7 @@ function Card({
       onDragStart={(e) => e.dataTransfer.setData("text/booking", booking.id)}
       onClick={() => onOpen(booking)}
       className={cn(
-        "w-full cursor-grab overflow-hidden rounded-xl border px-2 py-1.5 text-left text-[0.65rem] leading-tight active:cursor-grabbing",
+        "h-full w-full cursor-grab overflow-hidden rounded-xl border px-2 py-1.5 text-left text-[0.65rem] leading-tight active:cursor-grabbing",
         STATUS_CLASS[booking.status as CalStatus],
       )}
     >

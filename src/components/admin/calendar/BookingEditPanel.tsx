@@ -7,6 +7,7 @@ import { updateBookingDetails } from "@/lib/booking-admin.functions";
 import { STATUS_CLASS, STATUS_LABEL, paymentStatus, type CalStatus } from "./status";
 import { hhmm, prettyTime, type CalBooking, type CalStation } from "./types";
 import { cn } from "@/lib/utils";
+import { ModalPortal } from "../ModalPortal";
 
 const STATUS_OPTIONS: CalStatus[] = [
   "awaiting_payment",
@@ -76,7 +77,8 @@ export function BookingEditPanel({
   };
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col overflow-y-auto border-l border-border bg-background/95 p-6 backdrop-blur-2xl">
+    <ModalPortal onClose={onClose}>
+    <section className="mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-y-auto rounded-2xl border border-border bg-background p-5 shadow-2xl sm:p-6">
       <header className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[0.6rem] font-semibold uppercase tracking-[0.32em] text-cyan">Edit booking</p>
@@ -183,6 +185,7 @@ export function BookingEditPanel({
           {saving ? "Saving…" : "Save changes"}
         </AdminButton>
       </div>
-    </aside>
+    </section>
+    </ModalPortal>
   );
 }
