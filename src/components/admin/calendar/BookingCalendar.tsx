@@ -113,6 +113,22 @@ export function BookingCalendar({
     void load();
   }, [load]);
 
+  // Keep the grid live: extensions, moves and new bookings show up without a refresh.
+  useEffect(() => {
+    if (!branchId) return;
+    const channel = supabase
+      .channel(`calendar-bookings-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "booking_items" }, () => void load())
+      .subscribe();
+    const timer = window.setInterval(() => void load(), 30000);
+    return () => {
+      window.clearInterval(timer);
+      void supabase.removeChannel(channel);
+    };
+  }, [branchId, load]);
+
+
   const filtered = useMemo(
     () =>
       bookings.filter(
@@ -339,14 +355,24 @@ export function BookingCalendar({
               {pending.booking.customer_name} · {pending.booking.reference}
             </p>
             <dl className="mt-4 space-y-2 text-xs">
-              <Row label="Old time" value={`${pending.booking.booking_date} · ${prettyTime(pending.booking.start_time)}`} />
+              <Row
+                label="Old time"
+                value={`${pending.booking.booking_date} · ${prettyTime(pending.booking.start_time)} – ${prettyTime(pending.booking.end_time)}`}
+              />
               <Row
                 label="New time"
-                value={`${pending.date} · ${prettyTime(pending.startTime)}`}
+                value={`${pending.date} · ${prettyTime(pending.startTime)} – ${prettyTime(
+                  clock(
+                    toMinutes(pending.startTime) +
+                      (toMinutes(pending.booking.end_time ?? "00:00") -
+                        toMinutes(pending.booking.start_time ?? "00:00")),
+                  ),
+                )}`}
               />
               <Row label="Old console" value={pending.booking.gaming_stations?.name ?? "—"} />
               <Row label="New console" value={pending.stationName} />
             </dl>
+
             <div className="mt-5 flex gap-2">
               <AdminButton onClick={() => setPending(null)}>Cancel</AdminButton>
               <AdminButton variant="primary" disabled={moving} onClick={() => void confirmMove()}>
@@ -466,20 +492,35 @@ function DayView({
           </div>
 
           {lanes.map((lane) => (
-            <div key={lane.id} className="relative">
+            <div
+              key={lane.id}
+              className="relative"
+              onDragOver={(e) => {
+                // Allow dropping anywhere in the lane, including on top of other cards.
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData("text/booking");
+                const b = byId.get(id);
+                if (!b) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const index = Math.max(
+                  0,
+                  Math.min(slots.length - 1, Math.floor((e.clientY - rect.top) / ROW_PX)),
+                );
+                onDrop(b, lane.id, date, clock(slots[index] ?? openMinutes));
+              }}
+            >
               {slots.map((m) => (
                 <div
                   key={m}
                   style={{ height: ROW_PX }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    const id = e.dataTransfer.getData("text/booking");
-                    const b = byId.get(id);
-                    if (b) onDrop(b, lane.id, date, clock(m));
-                  }}
                   className="border-t border-l border-border/40 transition-colors hover:bg-primary/5"
                 />
               ))}
+
 
               {bookings
                 .filter((b) => b.station_id === lane.id && b.start_time && b.end_time)
