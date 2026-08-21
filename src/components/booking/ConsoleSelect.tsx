@@ -309,32 +309,22 @@ export function ConsoleSelect({
                     </span>
                   ) : null}
                 </Label>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">
-                  {slots.map((slot) => {
-                    const blocked =
-                      timeBlocked(slot, needed) || slotBlocked(stationId, slot, needed);
-
-                    const on = startTime === slot;
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        disabled={blocked}
-                        aria-pressed={on}
-                        onClick={() => onStartTime(slot)}
-                        className={cn(
-                          "rounded-xl border border-border bg-surface/60 px-2 py-2 text-xs font-bold backdrop-blur-xl transition-all duration-300",
-                          !blocked && "hover:-translate-y-0.5 hover:border-cyan/40",
-                          on &&
-                            "border-transparent bg-cyan/15 shadow-[0_0_0_1px_var(--cyan)] text-cyan",
-                          blocked && "cursor-not-allowed opacity-35",
-                        )}
-                      >
-                        {formatTime(slot)}
-                      </button>
-                    );
-                  })}
-                </div>
+                <SlotGrid
+                  slots={slots}
+                  value={startTime}
+                  onSelect={onStartTime}
+                  isDisabled={(slot) =>
+                    timeBlocked(slot, needed) || slotBlocked(stationId, slot, needed)
+                  }
+                />
+                <p className="mt-3 flex flex-wrap items-center gap-4 text-[0.65rem] font-semibold uppercase tracking-[0.16em]">
+                  <span className="flex items-center gap-1.5 text-emerald-300">
+                    <span className="size-1.5 rounded-full bg-emerald-400" /> Available
+                  </span>
+                  <span className="flex items-center gap-1.5 text-rose-300/80">
+                    <span className="size-1.5 rounded-full bg-rose-400" /> Booked
+                  </span>
+                </p>
               </div>
 
               <div className="grid gap-6 sm:grid-cols-2">
