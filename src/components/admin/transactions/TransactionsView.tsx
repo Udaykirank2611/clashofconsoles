@@ -5,6 +5,7 @@ import { Download, FileSpreadsheet, FileText, Plus, RefreshCw, Trash2 } from "lu
 import {
   addExpense,
   deleteExpense,
+  deleteTransaction,
   getTransactions,
   setOpeningBalance,
   updateTransaction,
@@ -62,6 +63,7 @@ export function TransactionsView({
 
   const fetchData = useServerFn(getTransactions);
   const saveTx = useServerFn(updateTransaction);
+  const removeTx = useServerFn(deleteTransaction);
   const createExpense = useServerFn(addExpense);
   const removeExpense = useServerFn(deleteExpense);
   const saveOpening = useServerFn(setOpeningBalance);
@@ -360,6 +362,24 @@ export function TransactionsView({
             setEditing(null);
             void load();
           }}
+          onDelete={async () => {
+            if (
+              !window.confirm(
+                `Delete ${editing.reference}? It will be voided and removed from all reports, analytics and reconciliation.`,
+              )
+            )
+              return;
+            const res = await removeTx({
+              data: { bookingId: editing.bookingId, branchId: editing.branchId },
+            });
+            if (!res.ok) {
+              toast.error(res.message ?? "Could not delete this transaction.");
+              return;
+            }
+            toast.success("Transaction deleted everywhere.");
+            setEditing(null);
+            void load();
+          }}
         />
       ) : null}
     </div>
@@ -542,6 +562,7 @@ function EditDialog({
   row,
   onClose,
   onSave,
+  onDelete,
 }: {
   row: TransactionRow;
   onClose: () => void;
@@ -553,6 +574,7 @@ function EditDialog({
     upiAmount: number;
     notes: string;
   }) => Promise<unknown>;
+  onDelete: () => Promise<unknown>;
 }) {
   const [status, setStatus] = useState<(typeof STATUSES)[number]>(row.status);
   const [source, setSource] = useState<(typeof SOURCES)[number][0]>(row.source);
@@ -624,7 +646,7 @@ function EditDialog({
           placeholder="Admin notes"
           className={cn(box, "mt-3")}
         />
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <AdminButton onClick={onClose}>Cancel</AdminButton>
           <AdminButton
             variant="primary"
@@ -640,6 +662,9 @@ function EditDialog({
             }
           >
             Save
+          </AdminButton>
+          <AdminButton variant="danger" className="ml-auto" onClick={() => void onDelete()}>
+            <Trash2 className="size-3.5" /> Delete
           </AdminButton>
         </div>
       </Panel>

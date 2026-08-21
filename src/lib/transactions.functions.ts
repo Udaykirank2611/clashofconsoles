@@ -89,6 +89,39 @@ export const addExpense = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Deletes a transaction: the booking is voided (cancelled) and its ledger row
+ * zeroed, so the money disappears from reports, analytics and reconciliation.
+ */
+export const deleteTransaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ bookingId: z.string().uuid(), branchId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message?: string }> => {
+    const booking = await context.supabase
+      .from("bookings")
+      .update({ status: "cancelled" as const })
+      .eq("id", data.bookingId);
+    if (booking.error) return { ok: false, message: booking.error.message };
+
+    const ledger = await context.supabase
+      .from("booking_transactions")
+      .upsert(
+        {
+          booking_id: data.bookingId,
+          branch_id: data.branchId,
+          transaction_status: "cancelled",
+          cash_amount: 0,
+          upi_amount: 0,
+        },
+        { onConflict: "booking_id" },
+      );
+    if (ledger.error) return { ok: false, message: ledger.error.message };
+    return { ok: true };
+  });
+
+
 /** Removes a daily expense entry. */
 export const deleteExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
