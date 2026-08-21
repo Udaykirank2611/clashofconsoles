@@ -31,7 +31,7 @@ export function ModalPortal({ children, onClose }: { children: ReactNode; onClos
       onClick={onClose}
       className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm"
     >
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-3xl">
+      <div onClick={(e) => e.stopPropagation()} className="mx-auto w-full max-w-3xl">
         {children}
       </div>
     </div>,

@@ -563,7 +563,7 @@ function EditDialog({
 
   return (
     <ModalPortal onClose={onClose}>
-      <Panel className="max-h-[88vh] w-full max-w-md overflow-y-auto" >
+      <Panel className="mx-auto max-h-[88vh] w-full max-w-md overflow-y-auto">
         <h3 className="text-sm font-black tracking-tight">{row.reference}</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           {row.customer} · {row.service} · {inr(row.finalAmount)}
