@@ -210,9 +210,7 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
 
     // A longer or shorter session is repriced off the branch rate card, then the
     // bill (and with it the ledger and every report) is rebuilt.
-    const { extensionPrice, priceForMinutes, recomputeBookingTotals } = await import(
-      "@/lib/booking-admin.server"
-    );
+    const { extensionPrice, recomputeBookingTotals } = await import("@/lib/booking-admin.server");
     const oldMinutes =
       booking.start_time && booking.end_time
         ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
@@ -225,13 +223,7 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
         newMinutes > oldMinutes
           ? await extensionPrice(branch, players, oldMinutes, (newMinutes - oldMinutes) / 60)
           : -(await extensionPrice(branch, players, newMinutes, (oldMinutes - newMinutes) / 60));
-      const next = Math.max(
-        0,
-        Math.min(
-          Number(booking.session_amount ?? 0) + delta,
-          await priceForMinutes(branch, players, newMinutes) * 2,
-        ),
-      );
+      const next = Math.max(0, Math.round(Number(booking.session_amount ?? 0) + delta));
       await supabaseAdmin.from("bookings").update({ session_amount: next }).eq("id", data.bookingId);
     }
     await recomputeBookingTotals(data.bookingId);
