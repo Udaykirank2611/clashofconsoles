@@ -8,7 +8,7 @@ import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Tra
 import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
-import { approveBookingPayment, completeBookingWithSplit, extendBookingSession } from "@/lib/booking-admin.functions";
+import { approveBookingPayment, completeBookingWithSplit, extendBookingSession, quoteExtension } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
 import { cn } from "@/lib/utils";
@@ -161,7 +161,10 @@ export function BookingsPanel({
     window: { start: string; end: string };
     alternatives: { id: string; name: string; price: number }[];
   } | null>(null);
+  /** Rate-card price for the extra hour, fetched when the dialog opens. */
+  const [extendQuote, setExtendQuote] = useState<number | null>(null);
   const extendSession = useServerFn(extendBookingSession);
+  const getQuote = useServerFn(quoteExtension);
   const approvePayment = useServerFn(approveBookingPayment);
   const completeWithSplit = useServerFn(completeBookingWithSplit);
   const editHours = useServerFn(updateBookingExtraHours);
@@ -223,7 +226,6 @@ export function BookingsPanel({
     const match = bookings.find((b) => b.reference === focusReference);
     if (!match) return;
     setFilter("all");
-    setOpenId(match.id);
   }, [focusReference, bookings]);
 
 
@@ -457,7 +459,13 @@ export function BookingsPanel({
                           <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         {hasSlot ? (
-                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => setExtendConfirm(b)}>
+                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => {
+                              setExtendQuote(null);
+                              setExtendConfirm(b);
+                              void getQuote({ data: { bookingId: b.id, hours: 1 } }).then((r) =>
+                                setExtendQuote(r.price),
+                              );
+                            }}>
                             <Clock className="size-3.5" /> Extend 1 hour
                           </AdminButton>
                         ) : null}
@@ -539,7 +547,19 @@ export function BookingsPanel({
                           <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
                             Payment
                           </p>
-                          <Detail label="UTR / Txn" value={b.payment_utr ?? "Not submitted"} />
+                          {b.payment_utr ? (
+                            <div className="mb-2 rounded-xl border-2 border-pink-500/60 bg-pink-500/10 px-3 py-2">
+                              <p className="text-[0.6rem] font-black uppercase tracking-[0.22em] text-pink-600">
+                                UTR / Txn reference
+                              </p>
+                              <p className="mt-1 font-mono text-base font-black tracking-wide break-all text-pink-700">
+                                {b.payment_utr}
+                              </p>
+                            </div>
+                          ) : (
+                            <Detail label="UTR / Txn" value="Not submitted" />
+                          )}
+
                           <Detail
                             label="Submitted"
                             value={
@@ -659,6 +679,15 @@ export function BookingsPanel({
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
 
+            <div className="mt-4 rounded-2xl border-2 border-pink-500/60 bg-pink-500/10 px-4 py-3">
+              <p className="text-[0.6rem] font-black uppercase tracking-[0.22em] text-pink-600">
+                UTR / Txn reference
+              </p>
+              <p className="mt-1 font-mono text-lg font-black tracking-wide break-all text-pink-700">
+                {approving.payment_utr ?? "Not submitted"}
+              </p>
+            </div>
+
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setApproving(null)}>Cancel</AdminButton>
               <AdminButton
@@ -723,9 +752,10 @@ export function BookingsPanel({
               <p className="mt-1.5 flex items-center justify-between">
                 <span className="text-muted-foreground">Extra hour charge</span>
                 <span className="font-black">
-                  {money(100 + 50 * Math.min(4, Math.max(1, extendConfirm.players ?? 1)))}
+                  {extendQuote === null ? "Calculating…" : money(extendQuote)}
                 </span>
               </p>
+
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setExtendConfirm(null)}>Cancel</AdminButton>

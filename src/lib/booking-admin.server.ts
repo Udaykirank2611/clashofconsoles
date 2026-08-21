@@ -78,3 +78,47 @@ export async function setLedgerSplit(bookingId: string, cash: number, upi: numbe
     .update({ cash_amount: Math.max(0, Math.round(cash)), upi_amount: Math.max(0, Math.round(upi)) })
     .eq("id", row.id);
 }
+
+/**
+ * Rate-card pricing for a session length, taken from the branch's pricing_rates
+ * (the same table that feeds the public rate card).
+ *
+ * The first hour costs the 1-hour rate, the second hour costs the difference up
+ * to the 2-hour rate, and every hour after that costs half of the 2-hour rate.
+ */
+export async function priceForMinutes(branchId: string, players: number, minutes: number) {
+  const p = Math.min(4, Math.max(1, Math.round(players || 1)));
+  const { data: rates } = await supabaseAdmin
+    .from("pricing_rates")
+    .select("duration_minutes, price")
+    .eq("branch_id", branchId)
+    .eq("players", p);
+  const at = (d: number) => {
+    const row = (rates ?? []).find((r) => Number(r.duration_minutes) === d);
+    return row ? Number(row.price) : null;
+  };
+  const oneHour = at(60) ?? 100 + 50 * p;
+  const twoHours = at(120) ?? oneHour * 2;
+
+  const hourCost = (n: number) => (n === 1 ? oneHour : n === 2 ? twoHours - oneHour : twoHours / 2);
+
+  const total = Math.max(0, Math.round(minutes));
+  const whole = Math.floor(total / 60);
+  const rest = total - whole * 60;
+  let sum = 0;
+  for (let i = 1; i <= whole; i += 1) sum += hourCost(i);
+  if (rest > 0) sum += (hourCost(whole + 1) * rest) / 60;
+  return Math.round(sum);
+}
+
+/** Cost of adding `hours` on top of a session that currently runs `currentMinutes`. */
+export async function extensionPrice(
+  branchId: string,
+  players: number,
+  currentMinutes: number,
+  hours: number,
+) {
+  const now = await priceForMinutes(branchId, players, currentMinutes);
+  const later = await priceForMinutes(branchId, players, currentMinutes + hours * 60);
+  return Math.max(0, later - now);
+}

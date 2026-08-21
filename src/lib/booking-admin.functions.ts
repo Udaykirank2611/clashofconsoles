@@ -133,6 +133,10 @@ export const moveBooking = createServerFn({ method: "POST" })
       })
       .eq("id", data.bookingId);
     if (error) return { ok: false, message: error.message };
+    // Keep the ledger, reports and reconciliation in step with the moved slot.
+    const { recomputeBookingTotals } = await import("@/lib/booking-admin.server");
+    await recomputeBookingTotals(data.bookingId);
+
     return { ok: true };
   });
 
@@ -203,7 +207,28 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
       })
       .eq("id", data.bookingId);
     if (error) return { ok: false, message: error.message };
+
+    // A longer or shorter session is repriced off the branch rate card, then the
+    // bill (and with it the ledger and every report) is rebuilt.
+    const { extensionPrice, recomputeBookingTotals } = await import("@/lib/booking-admin.server");
+    const oldMinutes =
+      booking.start_time && booking.end_time
+        ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
+        : 0;
+    const newMinutes = start !== null && end !== null ? end - start : 0;
+    if (oldMinutes > 0 && newMinutes > 0 && newMinutes !== oldMinutes && !booking.pass_id) {
+      const players = Number(booking.players ?? 1);
+      const branch = String(booking.branch_id);
+      const delta =
+        newMinutes > oldMinutes
+          ? await extensionPrice(branch, players, oldMinutes, (newMinutes - oldMinutes) / 60)
+          : -(await extensionPrice(branch, players, newMinutes, (oldMinutes - newMinutes) / 60));
+      const next = Math.max(0, Math.round(Number(booking.session_amount ?? 0) + delta));
+      await supabaseAdmin.from("bookings").update({ session_amount: next }).eq("id", data.bookingId);
+    }
+    await recomputeBookingTotals(data.bookingId);
     return { ok: true };
+
   });
 
 /** Approve a payment, optionally applying a last-minute admin discount. */
@@ -445,15 +470,18 @@ export const extendBookingSession = createServerFn({ method: "POST" })
     let baseStation = booking.station_id as string | null;
     let endTime = booking.end_time as string | null;
     let itemId: string | null = null;
+
+    // Every timed line on this booking, so the extension is priced against the
+    // total time the guest has already bought (rate-card slabs).
+    const { data: timedItems } = await supabaseAdmin
+      .from("booking_items")
+      .select("id, station_id, start_time, end_time")
+      .eq("booking_id", data.bookingId)
+      .not("end_time", "is", null)
+      .order("end_time", { ascending: false });
+
     if (!endTime) {
-      const { data: item } = await supabaseAdmin
-        .from("booking_items")
-        .select("id, station_id, start_time, end_time")
-        .eq("booking_id", data.bookingId)
-        .not("end_time", "is", null)
-        .order("end_time", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const item = (timedItems ?? [])[0];
       if (item) {
         baseStation = item.station_id;
         endTime = item.end_time;
@@ -461,6 +489,24 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       }
     }
     if (!endTime || !baseStation) return { ok: false, message: "This booking has no timed session to extend." };
+
+    const currentMinutes =
+      (booking.start_time && booking.end_time
+        ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
+        : 0) +
+      (timedItems ?? []).reduce(
+        (s, i) =>
+          s + (i.start_time && i.end_time ? toMinutes(String(i.end_time)) - toMinutes(String(i.start_time)) : 0),
+        0,
+      );
+
+    const { extensionPrice } = await import("@/lib/booking-admin.server");
+    const price = await extensionPrice(
+      String(booking.branch_id),
+      Number(booking.players ?? 1),
+      currentMinutes,
+      data.hours,
+    );
 
     const start = toMinutes(String(endTime));
     const end = start + data.hours * 60;
@@ -494,10 +540,7 @@ export const extendBookingSession = createServerFn({ method: "POST" })
           end,
           data.bookingId,
         );
-        if (!busy) {
-          const p = Math.min(4, Math.max(1, Number(booking.players ?? 1)));
-          alternatives.push({ id: s.id, name: s.name, price: (100 + 50 * p) * data.hours });
-        }
+        if (!busy) alternatives.push({ id: s.id, name: s.name, price });
       }
       return {
         ok: false,
@@ -513,9 +556,7 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       .select("id, name, hourly_price")
       .eq("id", target)
       .maybeSingle();
-    // Extra hours are charged per player: 1p ₹150, 2p ₹200, 3p ₹250, 4p ₹300.
-    const players = Math.min(4, Math.max(1, Number(booking.players ?? 1)));
-    const price = (100 + 50 * players) * data.hours;
+
 
     if (target === baseStation) {
       // Same console: simply push the session end time out.
@@ -548,4 +589,38 @@ export const extendBookingSession = createServerFn({ method: "POST" })
     const { recomputeBookingTotals } = await import("@/lib/booking-admin.server");
     await recomputeBookingTotals(data.bookingId);
     return { ok: true, message: `Extended to ${clock(end).slice(0, 5)} on ${station?.name ?? "the same console"}.` };
+  });
+
+/** Price preview for extending a session, using the branch rate card. */
+export const quoteExtension = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ bookingId: z.string().uuid(), hours: z.number().int().min(1).max(6).default(1) }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ price: number }> => {
+    const { data: booking } = await context.supabase
+      .from("bookings")
+      .select("branch_id, players, start_time, end_time")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!booking) return { price: 0 };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: items } = await supabaseAdmin
+      .from("booking_items")
+      .select("start_time, end_time")
+      .eq("booking_id", data.bookingId)
+      .not("end_time", "is", null);
+    const current =
+      (booking.start_time && booking.end_time
+        ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
+        : 0) +
+      (items ?? []).reduce(
+        (s, i) =>
+          s + (i.start_time && i.end_time ? toMinutes(String(i.end_time)) - toMinutes(String(i.start_time)) : 0),
+        0,
+      );
+    const { extensionPrice } = await import("@/lib/booking-admin.server");
+    return {
+      price: await extensionPrice(String(booking.branch_id), Number(booking.players ?? 1), current, data.hours),
+    };
   });
