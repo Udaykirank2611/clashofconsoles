@@ -301,9 +301,21 @@ export const addFoodToBooking = createServerFn({ method: "POST" })
         paymentMode: z.enum(["upi", "cash"]),
         items: z
           .array(z.object({ menuItemId: z.string().uuid(), quantity: z.number().int().min(1).max(99) }))
-          .min(1)
-          .max(50),
+          .max(50)
+          .default([]),
+        /** Free-text lines the admin typed in (name + price), for anything off-menu. */
+        custom: z
+          .array(
+            z.object({
+              name: z.string().min(1).max(80),
+              price: z.number().min(0).max(100000),
+              quantity: z.number().int().min(1).max(99),
+            }),
+          )
+          .max(20)
+          .default([]),
       })
+
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<AdminMoveResult & { total?: number }> => {
