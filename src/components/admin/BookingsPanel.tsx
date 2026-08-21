@@ -723,9 +723,10 @@ export function BookingsPanel({
               <p className="mt-1.5 flex items-center justify-between">
                 <span className="text-muted-foreground">Extra hour charge</span>
                 <span className="font-black">
-                  {money(100 + 50 * Math.min(4, Math.max(1, extendConfirm.players ?? 1)))}
+                  {extendQuote === null ? "Calculating…" : money(extendQuote)}
                 </span>
               </p>
+
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setExtendConfirm(null)}>Cancel</AdminButton>
