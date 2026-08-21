@@ -74,7 +74,7 @@ export function Navbar() {
           "mx-auto flex max-w-[95rem] items-center justify-between gap-2 rounded-full px-4 py-3 transition-all duration-500 sm:px-6 lg:gap-3",
           scrolled
             ? "glass mx-4 shadow-[0_18px_50px_-30px_black] lg:mx-auto"
-            : "mx-4 border border-transparent lg:mx-auto",
+            : "mx-4 border border-transparent bg-transparent hover:border-pink/45 hover:bg-surface/35 hover:shadow-[0_18px_50px_-30px_var(--pink)] hover:backdrop-blur-2xl lg:mx-auto",
         )}
       >
         <a href="/#home" className="group flex min-w-0 items-center gap-2.5">
@@ -85,7 +85,7 @@ export function Navbar() {
             height={44}
             className="size-9 shrink-0 object-contain xl:size-10 drop-shadow-[0_0_18px_rgba(0,200,255,0.35)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
           />
-          <span className="truncate text-xs font-extrabold uppercase tracking-[0.14em] xl:text-sm xl:tracking-[0.18em]">
+          <span className="font-esports truncate text-[0.68rem] uppercase xl:text-[0.82rem]">
             Clash <span className="text-muted-foreground">of</span> Consoles
           </span>
         </a>

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface SiteMediaRow {
   key: string;
   label: string;
-  media_type: "image" | "video";
+  media_type: "image" | "video" | "text";
   url: string | null;
 }
 

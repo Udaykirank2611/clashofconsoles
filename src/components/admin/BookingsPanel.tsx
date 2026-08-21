@@ -152,6 +152,8 @@ export function BookingsPanel({
   const [splitUpi, setSplitUpi] = useState("");
   /** Confirmed booking that is having food added to it. */
   const [addingFood, setAddingFood] = useState<AdminBooking | null>(null);
+  /** Booking waiting for the admin to confirm the extra hour. */
+  const [extendConfirm, setExtendConfirm] = useState<AdminBooking | null>(null);
   /** Console clash while extending — offers the free consoles for that hour. */
   const [extendChoice, setExtendChoice] = useState<{
     booking: AdminBooking;
@@ -451,14 +453,11 @@ export function BookingsPanel({
 
                     ) : b.status === "confirmed" ? (
                       <>
-                        <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
-                          <Copy className="size-3.5" /> Copy confirmation
-                        </AdminButton>
                         <AdminButton disabled={busy === b.id} onClick={() => setAddingFood(b)}>
                           <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         {hasSlot ? (
-                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => void extend(b)}>
+                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => setExtendConfirm(b)}>
                             <Clock className="size-3.5" /> Extend 1 hour
                           </AdminButton>
                         ) : null}
@@ -707,6 +706,43 @@ export function BookingsPanel({
           onClose={() => setAddingFood(null)}
           onSaved={onChanged}
         />
+      ) : null}
+
+      {extendConfirm ? (
+        <ModalPortal onClose={() => setExtendConfirm(null)}>
+          <div className="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
+            <h3 className="text-sm font-black uppercase tracking-[0.18em]">Extend this session?</h3>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Are you sure you want to extend this booking by 1 more hour?
+            </p>
+            <div className="mt-4 rounded-2xl border border-border bg-background/40 px-4 py-3 text-sm">
+              <p className="flex items-center justify-between">
+                <span className="text-muted-foreground">Players</span>
+                <span className="font-bold">{extendConfirm.players ?? 1}</span>
+              </p>
+              <p className="mt-1.5 flex items-center justify-between">
+                <span className="text-muted-foreground">Extra hour charge</span>
+                <span className="font-black">
+                  {money(100 + 50 * Math.min(4, Math.max(1, extendConfirm.players ?? 1)))}
+                </span>
+              </p>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <AdminButton onClick={() => setExtendConfirm(null)}>Cancel</AdminButton>
+              <AdminButton
+                variant="primary"
+                disabled={busy === extendConfirm.id}
+                onClick={() => {
+                  const b = extendConfirm;
+                  setExtendConfirm(null);
+                  void extend(b);
+                }}
+              >
+                Yes, extend 1 hour
+              </AdminButton>
+            </div>
+          </div>
+        </ModalPortal>
       ) : null}
 
       {extendChoice ? (

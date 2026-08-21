@@ -45,6 +45,7 @@ import g2 from "@/assets/gallery-2.jpg";
 import g3 from "@/assets/gallery-3.jpg";
 import g4 from "@/assets/gallery-4.jpg";
 import g5 from "@/assets/gallery-5.jpg";
+import { useSiteMedia } from "@/lib/site-media";
 import { Counter, MagneticButton, Reveal, SectionHeading } from "./primitives";
 
 /* ---------------------------------- About --------------------------------- */
@@ -269,14 +270,15 @@ export function Food() {
 /* --------------------------------- Gallery -------------------------------- */
 
 const GALLERY = [
-  { img: g1, alt: "Player holding a controller under blue light", span: "sm:row-span-2" },
-  { img: g2, alt: "Row of gaming stations with violet lighting", span: "" },
-  { img: g3, alt: "Friends celebrating a win in the lounge", span: "" },
-  { img: g4, alt: "Lounge seating with ambient lighting", span: "sm:row-span-2" },
-  { img: g5, alt: "Macro shot of a controller", span: "sm:col-span-2" },
+  { key: "gallery_1", img: g1, alt: "Player holding a controller under blue light", span: "sm:row-span-2" },
+  { key: "gallery_2", img: g2, alt: "Row of gaming stations with violet lighting", span: "" },
+  { key: "gallery_3", img: g3, alt: "Friends celebrating a win in the lounge", span: "" },
+  { key: "gallery_4", img: g4, alt: "Lounge seating with ambient lighting", span: "sm:row-span-2" },
+  { key: "gallery_5", img: g5, alt: "Macro shot of a controller", span: "sm:col-span-2" },
 ];
 
 export function Gallery() {
+  const { media } = useSiteMedia();
   return (
     <section id="gallery" className="relative py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
@@ -294,12 +296,23 @@ export function Gallery() {
             >
               <TiltCard max={8} glare className="size-full">
                 <div className="group relative size-full overflow-hidden rounded-3xl border border-border transition-[border-color] duration-500 group-hover/tilt:border-primary/50">
-                  <img
-                    src={item.img}
-                    alt={item.alt}
-                    loading="lazy"
-                    className="size-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
-                  />
+                  {media[item.key]?.media_type === "video" && media[item.key]?.url ? (
+                    <video
+                      src={media[item.key]!.url!}
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={media[item.key]?.url || item.img}
+                      alt={item.alt}
+                      loading="lazy"
+                      className="size-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
+                    />
+                  )}
                   <div
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-0 bg-linear-to-t from-background/80 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover/tilt:opacity-100"
@@ -361,6 +374,25 @@ const REVIEWS = [
 ];
 
 export function Reviews() {
+  const { media } = useSiteMedia();
+  const rating = media["google_rating"]?.url?.trim() || "4.9";
+  const caption = media["google_rating_caption"]?.url?.trim() || "Rated on Google Maps";
+  const reviewsUrl = media["google_reviews_url"]?.url?.trim() || "";
+
+  const badge = (
+    <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-pink/45 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_18%,transparent),color-mix(in_oklab,var(--primary)_16%,transparent))] px-6 py-3 shadow-[0_20px_60px_-30px_var(--pink)] transition-transform hover:-translate-y-0.5">
+      <span className="text-2xl font-black tracking-tight text-gradient">{rating}/5</span>
+      <span className="flex gap-0.5 text-pink" aria-hidden="true">
+        {Array.from({ length: 5 }).map((_, s) => (
+          <Star key={s} className="size-4 fill-current" />
+        ))}
+      </span>
+      <span className="text-[0.62rem] font-black uppercase tracking-[0.24em] text-foreground">
+        {caption}
+      </span>
+    </div>
+  );
+
   return (
     <section id="reviews" className="relative py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
@@ -370,17 +402,13 @@ export function Reviews() {
         />
         <Reveal>
           <div className="mt-8 flex justify-center">
-            <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-pink/45 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_18%,transparent),color-mix(in_oklab,var(--primary)_16%,transparent))] px-6 py-3 shadow-[0_20px_60px_-30px_var(--pink)]">
-              <span className="text-2xl font-black tracking-tight text-gradient">4.9/5</span>
-              <span className="flex gap-0.5 text-pink" aria-hidden="true">
-                {Array.from({ length: 5 }).map((_, s) => (
-                  <Star key={s} className="size-4 fill-current" />
-                ))}
-              </span>
-              <span className="text-[0.62rem] font-black uppercase tracking-[0.24em] text-foreground">
-                Rated on Google Maps
-              </span>
-            </div>
+            {reviewsUrl ? (
+              <a href={reviewsUrl} target="_blank" rel="noopener noreferrer">
+                {badge}
+              </a>
+            ) : (
+              badge
+            )}
           </div>
         </Reveal>
 
