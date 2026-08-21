@@ -90,8 +90,9 @@ export const addExpense = createServerFn({ method: "POST" })
   });
 
 /**
- * Deletes a transaction: the booking is voided (cancelled) and its ledger row
- * zeroed, so the money disappears from reports, analytics and reconciliation.
+ * Permanently deletes a transaction: the booking and every record attached to
+ * it (ledger row, items, redemptions, notifications, rewards, passes) are
+ * removed, so it disappears from bookings, reports and reconciliation.
  */
 export const deleteTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -99,27 +100,34 @@ export const deleteTransaction = createServerFn({ method: "POST" })
     z.object({ bookingId: z.string().uuid(), branchId: z.string().uuid() }).parse(i),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean; message?: string }> => {
-    const booking = await context.supabase
+    // Caller must already be able to see this booking under RLS.
+    const { data: allowed, error: readError } = await context.supabase
       .from("bookings")
-      .update({ status: "cancelled" as const })
-      .eq("id", data.bookingId);
-    if (booking.error) return { ok: false, message: booking.error.message };
+      .select("id")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (readError) return { ok: false, message: readError.message };
+    if (!allowed) return { ok: false, message: "Booking not found for this branch." };
 
-    const ledger = await context.supabase
-      .from("booking_transactions")
-      .upsert(
-        {
-          booking_id: data.bookingId,
-          branch_id: data.branchId,
-          transaction_status: "cancelled",
-          cash_amount: 0,
-          upi_amount: 0,
-        },
-        { onConflict: "booking_id" },
-      );
-    if (ledger.error) return { ok: false, message: ledger.error.message };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const id = data.bookingId;
+
+    await Promise.all([
+      supabaseAdmin.from("booking_transactions").delete().eq("booking_id", id),
+      supabaseAdmin.from("booking_items").delete().eq("booking_id", id),
+      supabaseAdmin.from("coupon_redemptions").delete().eq("booking_id", id),
+      supabaseAdmin.from("admin_notifications").delete().eq("booking_id", id),
+      supabaseAdmin.from("payments").delete().eq("booking_id", id),
+      supabaseAdmin.from("loyalty_points").delete().eq("booking_id", id),
+      supabaseAdmin.from("rewards").delete().eq("booking_id", id),
+      supabaseAdmin.from("membership_passes").delete().eq("source_booking_id", id),
+    ]);
+
+    const { error } = await supabaseAdmin.from("bookings").delete().eq("id", id);
+    if (error) return { ok: false, message: error.message };
     return { ok: true };
   });
+
 
 
 /** Removes a daily expense entry. */
