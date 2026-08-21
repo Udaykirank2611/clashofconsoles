@@ -133,6 +133,10 @@ export const moveBooking = createServerFn({ method: "POST" })
       })
       .eq("id", data.bookingId);
     if (error) return { ok: false, message: error.message };
+    // Keep the ledger, reports and reconciliation in step with the moved slot.
+    const { recomputeBookingTotals } = await import("@/lib/booking-admin.server");
+    await recomputeBookingTotals(data.bookingId);
+
     return { ok: true };
   });
 
