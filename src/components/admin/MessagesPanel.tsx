@@ -133,3 +133,44 @@ export function MessagesPanel({ branchId }: { branchId: string }) {
     </div>
   );
 }
+
+/** One editable template card. */
+function Editor({
+  templateKey,
+  value,
+  rows,
+  saving,
+  onChange,
+  onReset,
+  onSave,
+}: {
+  templateKey: TemplateKey;
+  value: string;
+  rows: number;
+  saving: boolean;
+  onChange: (value: string) => void;
+  onReset: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <Panel
+      title={TEMPLATE_LABEL[templateKey]}
+      action={
+        <div className="flex gap-2">
+          <AdminButton onClick={onReset}>Reset</AdminButton>
+          <AdminButton variant="primary" disabled={saving} onClick={onSave}>
+            {saving ? "Saving…" : "Save"}
+          </AdminButton>
+        </div>
+      }
+    >
+      <p className="mb-3 text-xs text-muted-foreground">{TEMPLATE_HINT[templateKey]}</p>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+        className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm leading-relaxed outline-none focus:border-primary"
+      />
+    </Panel>
+  );
+}
