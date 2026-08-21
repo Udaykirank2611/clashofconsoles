@@ -31,7 +31,7 @@ export function GamesShowcasePanel() {
       sort_order: sections.length + 1,
     } as never);
     setBusy(false);
-    if (error) return toast.error("Could not add the section.");
+    if (error) { toast.error("Could not add the section."); return; }
     toast.success("Section added.");
     void refresh();
   };
@@ -92,7 +92,7 @@ function SectionEditor({ section, onChanged }: { section: GameSection; onChanged
       .update({ ...draft, sort_order: Number(draft.sort_order) || 0 } as never)
       .eq("id", section.id);
     setSaving(false);
-    if (error) return toast.error("Could not save the section.");
+    if (error) { toast.error("Could not save the section."); return; }
     toast.success("Section saved.");
     onChanged();
   };
@@ -102,14 +102,14 @@ function SectionEditor({ section, onChanged }: { section: GameSection; onChanged
       .from("game_sections")
       .update({ is_active: !section.is_active } as never)
       .eq("id", section.id);
-    if (error) return toast.error("Could not update visibility.");
+    if (error) { toast.error("Could not update visibility."); return; }
     onChanged();
   };
 
   const remove = async () => {
     if (!window.confirm(`Delete "${section.title}" and all its games?`)) return;
     const { error } = await supabase.from("game_sections").delete().eq("id", section.id);
-    if (error) return toast.error("Could not delete the section.");
+    if (error) { toast.error("Could not delete the section."); return; }
     toast.success("Section deleted.");
     onChanged();
   };
@@ -122,7 +122,7 @@ function SectionEditor({ section, onChanged }: { section: GameSection; onChanged
       badge: "",
       sort_order: section.items.length + 1,
     } as never);
-    if (error) return toast.error("Could not add the game.");
+    if (error) { toast.error("Could not add the game."); return; }
     onChanged();
   };
 
@@ -217,14 +217,14 @@ function ItemRow({ item, onChanged }: { item: GameSectionItem; onChanged: () => 
         sort_order: Number(draft.sort_order) || 0,
       } as never)
       .eq("id", item.id);
-    if (error) return toast.error("Could not save the game.");
+    if (error) { toast.error("Could not save the game."); return; }
     toast.success("Game saved.");
     onChanged();
   };
 
   const remove = async () => {
     const { error } = await supabase.from("game_section_items").delete().eq("id", item.id);
-    if (error) return toast.error("Could not delete the game.");
+    if (error) { toast.error("Could not delete the game."); return; }
     onChanged();
   };
 
@@ -262,7 +262,7 @@ function ItemRow({ item, onChanged }: { item: GameSectionItem; onChanged: () => 
         className={cn(box, "w-16")}
       />
       <div className="flex gap-1.5">
-        <AdminButton variant={dirty ? "primary" : undefined} onClick={() => void save()}>
+        <AdminButton variant={dirty ? "primary" : "ghost"} onClick={() => void save()}>
           Save
         </AdminButton>
         <AdminButton onClick={() => void remove()}>
