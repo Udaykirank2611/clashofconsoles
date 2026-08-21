@@ -14,6 +14,7 @@ import { formatDuration, inr } from "@/lib/reporting/format";
 import { AdminButton, Panel, StatCard } from "../primitives";
 import { exportTransactionsCsv, exportTransactionsPdf, exportTransactionsXlsx } from "./exports";
 import { cn } from "@/lib/utils";
+import { ModalPortal } from "../ModalPortal";
 
 const field =
   "rounded-full border border-border bg-surface/70 px-3 py-1.5 text-xs outline-none focus:border-cyan/50";
@@ -561,8 +562,8 @@ function EditDialog({
   const [notes, setNotes] = useState(row.notes);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
-      <Panel className="w-full max-w-md">
+    <ModalPortal onClose={onClose}>
+      <Panel className="max-h-[88vh] w-full max-w-md overflow-y-auto" >
         <h3 className="text-sm font-black tracking-tight">{row.reference}</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           {row.customer} · {row.service} · {inr(row.finalAmount)}
@@ -642,6 +643,6 @@ function EditDialog({
           </AdminButton>
         </div>
       </Panel>
-    </div>
+    </ModalPortal>
   );
 }
