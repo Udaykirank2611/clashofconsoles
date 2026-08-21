@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { formatTime, inr } from "@/lib/booking/pricing";
 import type { Station, StationGame } from "@/lib/booking/types";
 import { GamesModal } from "./GamesModal";
+import { SlotGrid } from "./parts";
 
 /** Status of a console for the currently chosen slot. */
 type Availability = "available" | "occupied" | "maintenance";
