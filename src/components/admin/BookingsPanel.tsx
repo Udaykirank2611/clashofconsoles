@@ -708,7 +708,57 @@ export function BookingsPanel({
           onSaved={onChanged}
         />
       ) : null}
+
+      {extendChoice ? (
+        <ModalPortal onClose={() => setExtendChoice(null)}>
+          <div className="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
+            <h3 className="text-sm font-black uppercase tracking-[0.18em]">Console not free</h3>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Sorry — this console is already booked for{" "}
+              {extendChoice.window.start
+                ? `${formatTime(extendChoice.window.start)} – ${formatTime(extendChoice.window.end)}`
+                : "the next hour"}
+              . {extendChoice.message}
+            </p>
+            {extendChoice.alternatives.length ? (
+              <>
+                <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                  Free right now — switch and keep playing
+                </p>
+                <ul className="mt-2 space-y-2">
+                  {extendChoice.alternatives.map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background/40 px-4 py-2.5"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">{a.name}</span>
+                        <span className="text-[0.65rem] text-muted-foreground">{money(a.price)} / hour</span>
+                      </span>
+                      <AdminButton
+                        variant="primary"
+                        disabled={busy === extendChoice.booking.id}
+                        onClick={() => void extend(extendChoice.booking, a.id)}
+                      >
+                        Use this
+                      </AdminButton>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="mt-4 text-xs text-muted-foreground">
+                No other console is free for that hour either.
+              </p>
+            )}
+            <div className="mt-5 flex justify-end">
+              <AdminButton onClick={() => setExtendChoice(null)}>Close</AdminButton>
+            </div>
+          </div>
+        </ModalPortal>
+      ) : null}
     </Panel>
+
   );
 }
 
