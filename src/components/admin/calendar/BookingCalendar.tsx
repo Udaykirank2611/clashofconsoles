@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { moveBooking } from "@/lib/booking-admin.functions";
 import { AdminButton, Panel } from "../primitives";
 import { BookingEditPanel } from "./BookingEditPanel";
+import { ModalPortal } from "../ModalPortal";
 import {
   PAYMENT_FILTERS,
   STATUS_CLASS,
@@ -121,7 +122,9 @@ export function BookingCalendar({
       .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "booking_items" }, () => void load())
       .subscribe();
-    const timer = window.setInterval(() => void load(), 30000);
+    // A short polling fallback keeps this operational view live even when a
+    // browser briefly loses its realtime socket.
+    const timer = window.setInterval(() => void load(), 5000);
     return () => {
       window.clearInterval(timer);
       void supabase.removeChannel(channel);
@@ -348,8 +351,8 @@ export function BookingCalendar({
       ) : null}
 
       {pending ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
-          <Panel className="w-full max-w-md">
+        <ModalPortal onClose={() => setPending(null)}>
+          <Panel className="mx-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto bg-background">
             <h3 className="text-sm font-black tracking-tight">Move this booking?</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {pending.booking.customer_name} · {pending.booking.reference}
@@ -380,7 +383,7 @@ export function BookingCalendar({
               </AdminButton>
             </div>
           </Panel>
-        </div>
+        </ModalPortal>
       ) : null}
     </div>
   );
@@ -411,7 +414,7 @@ function Card({
       onDragStart={(e) => e.dataTransfer.setData("text/booking", booking.id)}
       onClick={() => onOpen(booking)}
       className={cn(
-        "w-full cursor-grab overflow-hidden rounded-xl border px-2 py-1.5 text-left text-[0.65rem] leading-tight active:cursor-grabbing",
+        "h-full w-full cursor-grab overflow-hidden rounded-xl border px-2 py-1.5 text-left text-[0.65rem] leading-tight active:cursor-grabbing",
         STATUS_CLASS[booking.status as CalStatus],
       )}
     >

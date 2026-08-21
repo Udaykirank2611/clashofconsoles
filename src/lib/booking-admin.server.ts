@@ -80,19 +80,30 @@ export async function setLedgerSplit(bookingId: string, cash: number, upi: numbe
 }
 
 /**
- * Rate-card pricing for a session length, taken from the branch's pricing_rates
- * (the same table that feeds the public rate card).
+ * Rate-card pricing for a session length, taken from the branch's active
+ * session options (the same prices used during PS5 checkout).
  *
  * The first hour costs the 1-hour rate, the second hour costs the difference up
  * to the 2-hour rate, and every hour after that costs half of the 2-hour rate.
  */
 export async function priceForMinutes(branchId: string, players: number, minutes: number) {
   const p = Math.min(4, Math.max(1, Math.round(players || 1)));
-  const { data: rates } = await supabaseAdmin
-    .from("pricing_rates")
-    .select("duration_minutes, price")
-    .eq("branch_id", branchId)
-    .eq("players", p);
+  // session_options is the admin-managed PS5 rate card used by checkout.
+  // Keep pricing_rates only as a compatibility fallback for older branches.
+  const [{ data: sessions }, { data: legacyRates }] = await Promise.all([
+    supabaseAdmin
+      .from("session_options")
+      .select("duration_minutes, price")
+      .eq("branch_id", branchId)
+      .eq("players", p)
+      .eq("is_active", true),
+    supabaseAdmin
+      .from("pricing_rates")
+      .select("duration_minutes, price")
+      .eq("branch_id", branchId)
+      .eq("players", p),
+  ]);
+  const rates = sessions?.length ? sessions : legacyRates;
   const at = (d: number) => {
     const row = (rates ?? []).find((r) => Number(r.duration_minutes) === d);
     return row ? Number(row.price) : null;

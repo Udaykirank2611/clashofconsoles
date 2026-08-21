@@ -29,7 +29,7 @@ export function ModalPortal({ children, onClose }: { children: ReactNode; onClos
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm"
+      className="theme-admin-light fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-background/80 p-4 text-foreground backdrop-blur-sm"
     >
       <div onClick={(e) => e.stopPropagation()} className="mx-auto w-full max-w-3xl">
         {children}
