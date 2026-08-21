@@ -113,6 +113,22 @@ export function BookingCalendar({
     void load();
   }, [load]);
 
+  // Keep the grid live: extensions, moves and new bookings show up without a refresh.
+  useEffect(() => {
+    if (!branchId) return;
+    const channel = supabase
+      .channel(`calendar-bookings-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "booking_items" }, () => void load())
+      .subscribe();
+    const timer = window.setInterval(() => void load(), 30000);
+    return () => {
+      window.clearInterval(timer);
+      void supabase.removeChannel(channel);
+    };
+  }, [branchId, load]);
+
+
   const filtered = useMemo(
     () =>
       bookings.filter(
