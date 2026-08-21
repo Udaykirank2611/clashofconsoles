@@ -1106,6 +1106,16 @@ export const getPaymentDetails = createServerFn({ method: "POST" })
 
         customer_name: string;
         customer_phone: string;
+        session_amount: number;
+        addons_amount: number;
+        food_amount: number;
+        discount_amount: number;
+        gaming_discount_amount: number;
+        food_discount_amount: number;
+        bill_discount_amount: number;
+        student_discount_amount: number;
+        tax_amount: number;
+        coupon_code: string | null;
         total_amount: number;
         payment_utr: string | null;
         payment_expires_at: string | null;
@@ -1161,6 +1171,16 @@ export const getPaymentDetails = createServerFn({ method: "POST" })
 
           customer_name: row["customer_name"],
           customer_phone: row["customer_phone"],
+          session_amount: Number(row["session_amount"] ?? 0),
+          addons_amount: Number(row["addons_amount"] ?? 0),
+          food_amount: Number(row["food_amount"] ?? 0),
+          discount_amount: Number(row["discount_amount"] ?? 0),
+          gaming_discount_amount: Number(row["gaming_discount_amount"] ?? 0),
+          food_discount_amount: Number(row["food_discount_amount"] ?? 0),
+          bill_discount_amount: Number(row["bill_discount_amount"] ?? 0),
+          student_discount_amount: Number(row["student_discount_amount"] ?? 0),
+          tax_amount: Number(row["tax_amount"] ?? 0),
+          coupon_code: row["coupon_code"] ?? null,
           total_amount: Number(row["total_amount"]),
           payment_utr: row["payment_utr"] ?? null,
           payment_expires_at: row["payment_expires_at"] ?? null,
