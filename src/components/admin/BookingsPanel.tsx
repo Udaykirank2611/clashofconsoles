@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, Pill, money } from "./primitives";
 import type { AdminBooking, AdminBookingItem, AdminMenuItem, AdminStation } from "@/lib/admin/useBranchData";
 import { formatTime } from "@/lib/booking/pricing";
-import { ChevronDown, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
+import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
+import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
-import { approveBookingPayment, completeBookingWithSplit } from "@/lib/booking-admin.functions";
+import { approveBookingPayment, completeBookingWithSplit, extendBookingSession } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
 import { cn } from "@/lib/utils";
@@ -151,10 +152,41 @@ export function BookingsPanel({
   const [splitUpi, setSplitUpi] = useState("");
   /** Confirmed booking that is having food added to it. */
   const [addingFood, setAddingFood] = useState<AdminBooking | null>(null);
+  /** Console clash while extending — offers the free consoles for that hour. */
+  const [extendChoice, setExtendChoice] = useState<{
+    booking: AdminBooking;
+    message: string;
+    window: { start: string; end: string };
+    alternatives: { id: string; name: string; price: number }[];
+  } | null>(null);
+  const extendSession = useServerFn(extendBookingSession);
   const approvePayment = useServerFn(approveBookingPayment);
   const completeWithSplit = useServerFn(completeBookingWithSplit);
   const editHours = useServerFn(updateBookingExtraHours);
   const { template } = useMessageTemplates();
+
+  /** Adds an hour to a confirmed booking, moving it to a free console if needed. */
+  const extend = async (b: AdminBooking, stationId: string | null = null) => {
+    setBusy(b.id);
+    const res = await extendSession({ data: { bookingId: b.id, hours: 1, stationId } });
+    setBusy(null);
+    if (res.ok) {
+      setExtendChoice(null);
+      toast.success(res.message ?? "Session extended by 1 hour.");
+      onChanged();
+      return;
+    }
+    if (res.conflict) {
+      setExtendChoice({
+        booking: b,
+        message: res.message ?? "That console is already booked for the next hour.",
+        window: res.window ?? { start: "", end: "" },
+        alternatives: res.alternatives ?? [],
+      });
+      return;
+    }
+    toast.error(res.message ?? "Could not extend this booking.");
+  };
 
   /** Renders the admin-editable WhatsApp message for a booking. */
   const customerMessage = (b: AdminBooking, stationName: string, key?: TemplateKey) => {
@@ -185,9 +217,9 @@ export function BookingsPanel({
   const handledRef = useRef<string | null>(null);
   useEffect(() => {
     if (!focusReference || handledRef.current === focusReference) return;
+    handledRef.current = focusReference;
     const match = bookings.find((b) => b.reference === focusReference);
     if (!match) return;
-    handledRef.current = focusReference;
     setFilter("all");
     setOpenId(match.id);
   }, [focusReference, bookings]);
@@ -425,6 +457,11 @@ export function BookingsPanel({
                         <AdminButton disabled={busy === b.id} onClick={() => setAddingFood(b)}>
                           <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
+                        {hasSlot ? (
+                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => void extend(b)}>
+                            <Clock className="size-3.5" /> Extend 1 hour
+                          </AdminButton>
+                        ) : null}
                         <AdminButton
                           variant="success"
                           disabled={busy === b.id}
