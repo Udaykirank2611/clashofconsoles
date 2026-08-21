@@ -63,6 +63,7 @@ export function TransactionsView({
 
   const fetchData = useServerFn(getTransactions);
   const saveTx = useServerFn(updateTransaction);
+  const removeTx = useServerFn(deleteTransaction);
   const createExpense = useServerFn(addExpense);
   const removeExpense = useServerFn(deleteExpense);
   const saveOpening = useServerFn(setOpeningBalance);
