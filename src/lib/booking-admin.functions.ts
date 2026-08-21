@@ -207,7 +207,36 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
       })
       .eq("id", data.bookingId);
     if (error) return { ok: false, message: error.message };
+
+    // A longer or shorter session is repriced off the branch rate card, then the
+    // bill (and with it the ledger and every report) is rebuilt.
+    const { extensionPrice, priceForMinutes, recomputeBookingTotals } = await import(
+      "@/lib/booking-admin.server"
+    );
+    const oldMinutes =
+      booking.start_time && booking.end_time
+        ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
+        : 0;
+    const newMinutes = start !== null && end !== null ? end - start : 0;
+    if (oldMinutes > 0 && newMinutes > 0 && newMinutes !== oldMinutes && !booking.pass_id) {
+      const players = Number(booking.players ?? 1);
+      const branch = String(booking.branch_id);
+      const delta =
+        newMinutes > oldMinutes
+          ? await extensionPrice(branch, players, oldMinutes, (newMinutes - oldMinutes) / 60)
+          : -(await extensionPrice(branch, players, newMinutes, (oldMinutes - newMinutes) / 60));
+      const next = Math.max(
+        0,
+        Math.min(
+          Number(booking.session_amount ?? 0) + delta,
+          await priceForMinutes(branch, players, newMinutes) * 2,
+        ),
+      );
+      await supabaseAdmin.from("bookings").update({ session_amount: next }).eq("id", data.bookingId);
+    }
+    await recomputeBookingTotals(data.bookingId);
     return { ok: true };
+
   });
 
 /** Approve a payment, optionally applying a last-minute admin discount. */
