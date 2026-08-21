@@ -547,7 +547,19 @@ export function BookingsPanel({
                           <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
                             Payment
                           </p>
-                          <Detail label="UTR / Txn" value={b.payment_utr ?? "Not submitted"} />
+                          {b.payment_utr ? (
+                            <div className="mb-2 rounded-xl border-2 border-pink-500/60 bg-pink-500/10 px-3 py-2">
+                              <p className="text-[0.6rem] font-black uppercase tracking-[0.22em] text-pink-600">
+                                UTR / Txn reference
+                              </p>
+                              <p className="mt-1 font-mono text-base font-black tracking-wide break-all text-pink-700">
+                                {b.payment_utr}
+                              </p>
+                            </div>
+                          ) : (
+                            <Detail label="UTR / Txn" value="Not submitted" />
+                          )}
+
                           <Detail
                             label="Submitted"
                             value={
