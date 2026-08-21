@@ -355,14 +355,24 @@ export function BookingCalendar({
               {pending.booking.customer_name} · {pending.booking.reference}
             </p>
             <dl className="mt-4 space-y-2 text-xs">
-              <Row label="Old time" value={`${pending.booking.booking_date} · ${prettyTime(pending.booking.start_time)}`} />
+              <Row
+                label="Old time"
+                value={`${pending.booking.booking_date} · ${prettyTime(pending.booking.start_time)} – ${prettyTime(pending.booking.end_time)}`}
+              />
               <Row
                 label="New time"
-                value={`${pending.date} · ${prettyTime(pending.startTime)}`}
+                value={`${pending.date} · ${prettyTime(pending.startTime)} – ${prettyTime(
+                  clock(
+                    toMinutes(pending.startTime) +
+                      (toMinutes(pending.booking.end_time ?? "00:00") -
+                        toMinutes(pending.booking.start_time ?? "00:00")),
+                  ),
+                )}`}
               />
               <Row label="Old console" value={pending.booking.gaming_stations?.name ?? "—"} />
               <Row label="New console" value={pending.stationName} />
             </dl>
+
             <div className="mt-5 flex gap-2">
               <AdminButton onClick={() => setPending(null)}>Cancel</AdminButton>
               <AdminButton variant="primary" disabled={moving} onClick={() => void confirmMove()}>
