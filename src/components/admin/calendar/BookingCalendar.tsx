@@ -466,20 +466,35 @@ function DayView({
           </div>
 
           {lanes.map((lane) => (
-            <div key={lane.id} className="relative">
+            <div
+              key={lane.id}
+              className="relative"
+              onDragOver={(e) => {
+                // Allow dropping anywhere in the lane, including on top of other cards.
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData("text/booking");
+                const b = byId.get(id);
+                if (!b) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const index = Math.max(
+                  0,
+                  Math.min(slots.length - 1, Math.floor((e.clientY - rect.top) / ROW_PX)),
+                );
+                onDrop(b, lane.id, date, clock(slots[index] ?? openMinutes));
+              }}
+            >
               {slots.map((m) => (
                 <div
                   key={m}
                   style={{ height: ROW_PX }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    const id = e.dataTransfer.getData("text/booking");
-                    const b = byId.get(id);
-                    if (b) onDrop(b, lane.id, date, clock(m));
-                  }}
                   className="border-t border-l border-border/40 transition-colors hover:bg-primary/5"
                 />
               ))}
+
 
               {bookings
                 .filter((b) => b.station_id === lane.id && b.start_time && b.end_time)
