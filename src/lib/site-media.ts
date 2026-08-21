@@ -28,8 +28,10 @@ export function useSiteMedia(): { media: SiteMediaMap; loading: boolean } {
 
   useEffect(() => {
     void load();
+    // Unique per hook instance: several components use this hook on one page
+    // and Supabase rejects re-using a channel name that is already subscribed.
     const channel = supabase
-      .channel("site-media")
+      .channel(`site-media-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "site_media" }, () => void load())
       .subscribe();
     return () => {
