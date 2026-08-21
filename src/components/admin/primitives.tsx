@@ -42,7 +42,7 @@ export function StatCard({
   tone?: "default" | "good" | "warn" | "bad";
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-border bg-surface/70 p-5 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-cyan/40 hover:shadow-[0_28px_70px_-40px_var(--primary)]">
+    <div className="group relative overflow-hidden rounded-2xl border border-border bg-surface/70 p-3.5 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-cyan/40 hover:shadow-[0_20px_50px_-40px_var(--primary)]">
       <span
         aria-hidden="true"
         className={cn(
@@ -53,10 +53,11 @@ export function StatCard({
           tone === "default" && "bg-linear-to-r from-transparent via-primary/70 to-transparent",
         )}
       />
-      <p className="text-[0.6rem] font-semibold uppercase tracking-[0.26em] text-muted-foreground">{label}</p>
-      <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
+      <p className="mt-1.5 text-xl font-black tracking-tight">{value}</p>
+      {hint ? <p className="mt-0.5 text-[0.65rem] text-muted-foreground">{hint}</p> : null}
     </div>
+
   );
 }
 
