@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel } from "./primitives";
 import {
   DEFAULT_TEMPLATE,
+  LOYALTY_KEYS,
+  LOYALTY_PLACEHOLDERS,
   PLACEHOLDERS,
   TEMPLATE_HINT,
   TEMPLATE_LABEL,
   type TemplateKey,
 } from "@/lib/message-templates";
 
-const KEYS: TemplateKey[] = ["booking_placed", "booking_confirmed"];
+const BOOKING_KEYS: TemplateKey[] = ["booking_placed", "booking_confirmed"];
+const KEYS: TemplateKey[] = [...BOOKING_KEYS, ...LOYALTY_KEYS];
 
 /** Lets the branch team edit the two automated customer messages. */
 export function MessagesPanel({ branchId }: { branchId: string }) {
