@@ -72,9 +72,9 @@ export function Pill({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em]",
-        tone === "good" && "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-        tone === "warn" && "border-amber-400/30 bg-amber-400/10 text-amber-300",
-        tone === "bad" && "border-rose-400/30 bg-rose-400/10 text-rose-300",
+        tone === "good" && "border-emerald-500/40 bg-emerald-400/25 text-emerald-950",
+        tone === "warn" && "border-amber-500/40 bg-amber-400/25 text-amber-950",
+        tone === "bad" && "border-rose-500/40 bg-rose-400/25 text-rose-950",
         tone === "muted" && "border-border bg-muted/40 text-muted-foreground",
       )}
     >
@@ -109,8 +109,8 @@ export function AdminButton({
           "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_16px_40px_-18px_var(--primary)] hover:brightness-110 active:scale-[0.97]",
         variant === "ghost" && "border border-border bg-surface/70 text-foreground hover:border-cyan/40",
         variant === "success" &&
-          "border border-emerald-400/40 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20",
-        variant === "danger" && "border border-rose-400/40 bg-rose-400/10 text-rose-300 hover:bg-rose-400/20",
+          "border border-emerald-500/45 bg-emerald-400/25 text-emerald-950 hover:bg-emerald-400/40",
+        variant === "danger" && "border border-rose-500/45 bg-rose-400/25 text-rose-950 hover:bg-rose-400/40",
         className,
       )}
     >
