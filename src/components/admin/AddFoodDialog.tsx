@@ -26,11 +26,17 @@ export function AddFoodDialog({
   const [qty, setQty] = useState<Record<string, number>>({});
   const [payMode, setPayMode] = useState<"upi" | "cash">("cash");
   const [saving, setSaving] = useState(false);
+  /** Off-menu lines the admin types in by hand. */
+  const [customName, setCustomName] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
+  const [customQty, setCustomQty] = useState(1);
+  const [customLines, setCustomLines] = useState<{ name: string; price: number; quantity: number }[]>([]);
   const addFood = useServerFn(addFoodToBooking);
 
   const items = menu.filter((m) => m.is_available && m.category === category);
   const picked = menu.filter((m) => (qty[m.id] ?? 0) > 0);
-  const total = picked.reduce((s, m) => s + Number(m.price) * (qty[m.id] ?? 0), 0);
+  const customTotal = customLines.reduce((s, c) => s + c.price * c.quantity, 0);
+  const total = picked.reduce((s, m) => s + Number(m.price) * (qty[m.id] ?? 0), 0) + customTotal;
 
   const bump = (id: string, delta: number) =>
     setQty((q) => {
@@ -42,13 +48,14 @@ export function AddFoodDialog({
     });
 
   const submit = async () => {
-    if (!picked.length) return;
+    if (!picked.length && !customLines.length) return;
     setSaving(true);
     const res = await addFood({
       data: {
         bookingId: booking.id,
         paymentMode: payMode,
         items: picked.map((m) => ({ menuItemId: m.id, quantity: qty[m.id]! })),
+        custom: customLines,
       },
     });
     setSaving(false);
@@ -56,7 +63,8 @@ export function AddFoodDialog({
       toast.error(res.message ?? "Could not add these items.");
       return;
     }
-    toast.success(`Food added — ${money(total)} paid by ${payMode === "cash" ? "cash" : "UPI"}.`);
+    setCustomLines([]);
+    toast.success(`Items added — ${money(total)} paid by ${payMode === "cash" ? "cash" : "UPI"}.`);
     onSaved();
     onClose();
   };
@@ -119,8 +127,79 @@ export function AddFoodDialog({
               ))}
             </ul>
 
-            {picked.length ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-border bg-background/40 p-3">
+              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                Other item (not on the menu)
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-[1.4fr_0.8fr_auto_auto]">
+                <input
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="Item name"
+                  className="rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm outline-none focus:border-cyan/50"
+                />
+                <input
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="Price ₹"
+                  inputMode="numeric"
+                  className="rounded-2xl border border-border bg-surface/70 px-3 py-2 text-sm tabular-nums outline-none focus:border-cyan/50"
+                />
+                <span className="flex items-center gap-2">
+                  <AdminButton disabled={customQty <= 1} onClick={() => setCustomQty((q) => Math.max(1, q - 1))}>
+                    −
+                  </AdminButton>
+                  <span className="w-5 text-center text-sm font-black">{customQty}</span>
+                  <AdminButton onClick={() => setCustomQty((q) => q + 1)}>+</AdminButton>
+                </span>
+                <AdminButton
+                  variant="primary"
+                  onClick={() => {
+                    const name = customName.trim();
+                    const price = Number(customPrice);
+                    if (!name || !Number.isFinite(price)) return;
+                    setCustomLines((l) => [...l, { name, price, quantity: customQty }]);
+                    setCustomName("");
+                    setCustomPrice("");
+                    setCustomQty(1);
+                  }}
+                >
+                  Add
+                </AdminButton>
+              </div>
+              {customLines.length ? (
+                <ul className="mt-2 space-y-1 text-xs">
+                  {customLines.map((c, i) => (
+                    <li key={`${c.name}-${i}`} className="flex items-center justify-between gap-3">
+                      <span>
+                        {c.quantity} × {c.name}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-semibold tabular-nums">{money(c.price * c.quantity)}</span>
+                        <button
+                          type="button"
+                          onClick={() => setCustomLines((l) => l.filter((_, j) => j !== i))}
+                          className="text-rose-500 hover:underline"
+                        >
+                          remove
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+
+            {picked.length || customLines.length ? (
               <div className="mt-3 rounded-2xl border border-border/70 bg-background/40 p-3 text-xs">
+                {customLines.map((c, i) => (
+                  <div key={`c-${i}`} className="flex justify-between gap-3">
+                    <span>
+                      {c.quantity} × {c.name}
+                    </span>
+                    <span className="font-semibold tabular-nums">{money(c.price * c.quantity)}</span>
+                  </div>
+                ))}
                 {picked.map((m) => (
                   <div key={m.id} className="flex justify-between gap-3">
                     <span>
@@ -154,7 +233,7 @@ export function AddFoodDialog({
 
             <div className="mt-4 flex justify-end gap-2">
               <AdminButton onClick={onClose}>Cancel</AdminButton>
-              <AdminButton variant="success" disabled={saving || !picked.length} onClick={() => void submit()}>
+              <AdminButton variant="success" disabled={saving || (!picked.length && !customLines.length)} onClick={() => void submit()}>
                 {saving ? "Saving…" : `Paid · ${money(total)}`}
               </AdminButton>
             </div>
