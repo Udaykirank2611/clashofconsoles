@@ -7,7 +7,8 @@ import { StationGamesPanel } from "./StationGamesPanel";
 import type { AdminBooking, AdminStation } from "@/lib/admin/useBranchData";
 import { formatTime } from "@/lib/booking/pricing";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, Gamepad2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ModalPortal } from "./ModalPortal";
 
 const STATUSES = [
   { value: "available", label: "Available" },
@@ -48,6 +49,8 @@ export function StationsPanel({
   const [newType, setNewType] = useState<(typeof TYPES)[number]["value"]>("console");
   const [newPrice, setNewPrice] = useState("200");
   const [newGroup, setNewGroup] = useState("");
+  /** Station whose game library is open in the editor dialog. */
+  const [editingGames, setEditingGames] = useState<AdminStation | null>(null);
 
   // Timed experiences are only bookable once they have at least one rate card.
   const [rateCounts, setRateCounts] = useState<Record<string, number>>({});
@@ -402,7 +405,11 @@ export function StationsPanel({
                 />
               </div>
 
-              <StationGamesPanel stationId={s.id} branchId={branchId} stationName={s.name} />
+              <div className="mt-4">
+                <AdminButton variant="primary" onClick={() => setEditingGames(s)} className="w-full py-2.5">
+                  <Gamepad2 className="size-3.5" /> Edit games
+                </AdminButton>
+              </div>
 
               {s.station_type !== "console" && !rateCounts[s.id] ? (
                 <p className="mt-4 flex items-start gap-2 rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-xs text-red-200">
@@ -435,6 +442,24 @@ export function StationsPanel({
           );
         })}
       </div>
+
+      {editingGames ? (
+        <ModalPortal onClose={() => setEditingGames(null)}>
+          <Panel className="mx-auto max-h-[85vh] w-full max-w-2xl overflow-y-auto">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-black uppercase tracking-[0.18em]">Games · {editingGames.name}</h3>
+              <AdminButton onClick={() => setEditingGames(null)}>
+                <X className="size-3.5" /> Close
+              </AdminButton>
+            </div>
+            <StationGamesPanel
+              stationId={editingGames.id}
+              branchId={branchId}
+              stationName={editingGames.name}
+            />
+          </Panel>
+        </ModalPortal>
+      ) : null}
 
       {!stations.length ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
