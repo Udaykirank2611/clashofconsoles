@@ -111,7 +111,9 @@ function GamesPage() {
           </p>
         </Reveal>
 
-        <div className="mt-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <GameShowcase />
+
+        <div className="mt-14 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <label className="group relative block w-full lg:max-w-sm">
             <span className="sr-only">Search games</span>
             <Search
