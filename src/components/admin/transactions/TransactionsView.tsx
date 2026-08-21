@@ -562,6 +562,7 @@ function EditDialog({
   row,
   onClose,
   onSave,
+  onDelete,
 }: {
   row: TransactionRow;
   onClose: () => void;
@@ -573,6 +574,7 @@ function EditDialog({
     upiAmount: number;
     notes: string;
   }) => Promise<unknown>;
+  onDelete: () => Promise<unknown>;
 }) {
   const [status, setStatus] = useState<(typeof STATUSES)[number]>(row.status);
   const [source, setSource] = useState<(typeof SOURCES)[number][0]>(row.source);
