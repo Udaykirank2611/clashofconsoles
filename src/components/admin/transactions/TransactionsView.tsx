@@ -646,7 +646,7 @@ function EditDialog({
           placeholder="Admin notes"
           className={cn(box, "mt-3")}
         />
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <AdminButton onClick={onClose}>Cancel</AdminButton>
           <AdminButton
             variant="primary"
@@ -662,6 +662,9 @@ function EditDialog({
             }
           >
             Save
+          </AdminButton>
+          <AdminButton variant="danger" className="ml-auto" onClick={() => void onDelete()}>
+            <Trash2 className="size-3.5" /> Delete
           </AdminButton>
         </div>
       </Panel>
