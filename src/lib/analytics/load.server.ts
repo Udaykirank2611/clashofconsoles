@@ -43,12 +43,6 @@ async function resolveScope(supabase: Client, userId: string, branchId: string |
 }
 
 async function fetchBookings(supabase: Client, ids: string[], from: string, to: string) {
-  // Flip finished sessions to completed so revenue only lands after the slot ends.
-  {
-    // Runs with server privileges: the routine is not exposed to signed-in clients.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.rpc("complete_past_bookings");
-  }
   const { data } = await supabase
     .from("bookings")
     .select(BOOKING_SELECT)

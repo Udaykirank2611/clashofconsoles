@@ -9,6 +9,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Reveal } from "@/components/site/primitives";
 import { TiltCard } from "@/components/site/TiltCard";
+import { GameShowcase } from "@/components/site/GameShowcase";
 import { cn } from "@/lib/utils";
 
 const TITLE = "Games Library — Clash of Consoles Hyderabad";
@@ -111,7 +112,9 @@ function GamesPage() {
           </p>
         </Reveal>
 
-        <div className="mt-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <GameShowcase />
+
+        <div className="mt-14 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <label className="group relative block w-full lg:max-w-sm">
             <span className="sr-only">Search games</span>
             <Search

@@ -15,11 +15,6 @@ export async function loadReconciliation(
   supabase: Client,
   input: { branchId: string | null; from: string; to: string },
 ): Promise<ReconciliationPayload> {
-  {
-    // Runs with server privileges: the routine is not exposed to signed-in clients.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.rpc("complete_past_bookings");
-  }
   let bq = supabase
     .from("bookings")
     .select(

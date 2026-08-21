@@ -868,6 +868,83 @@ export type Database = {
         }
         Relationships: []
       }
+      game_section_items: {
+        Row: {
+          badge: string
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          platform: string
+          section_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          badge?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          platform?: string
+          section_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          badge?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          platform?: string
+          section_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_section_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "game_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_sections: {
+        Row: {
+          accent: string
+          created_at: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          subtitle: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accent?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          subtitle?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          accent?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gaming_stations: {
         Row: {
           branch_id: string

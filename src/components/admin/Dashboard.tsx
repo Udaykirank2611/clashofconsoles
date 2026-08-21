@@ -6,6 +6,7 @@ import { BookingsPanel, StatusPill } from "./BookingsPanel";
 import { CustomersPanel } from "./CustomersPanel";
 import { MembershipPassesPanel } from "./MembershipPassesPanel";
 import { StationsPanel } from "./StationsPanel";
+import { GamesShowcasePanel } from "./GamesShowcasePanel";
 import { PricingPanel } from "./PricingPanel";
 import { CouponsPanel } from "./CouponsPanel";
 import { MenuPanel } from "./MenuPanel";
@@ -28,20 +29,18 @@ import { DailyClosingView } from "./closing/DailyClosingView";
 import { TransactionsView } from "./transactions/TransactionsView";
 import { ReconciliationView } from "./transactions/ReconciliationView";
 
-const BRANCH_TABS = [
-  "Dashboard",
+/** Always-visible tabs — the day-to-day workflow. */
+const PRIMARY_TABS = ["Dashboard", "Bookings", "Transactions", "Customers"] as const;
+/** Everything else lives behind the "More" dropdown. */
+const MORE_TABS = [
   "Booking Calendar",
-  "Bookings",
-  "Transactions",
   "Reconciliation",
-  "Customers",
   "Memberships",
   "Daily Closing",
-
   "Analytics",
   "Reports",
-
   "Stations",
+  "Games",
   "Sessions & Pricing",
   "Menu",
   "Offers",
@@ -49,10 +48,12 @@ const BRANCH_TABS = [
   "Payments",
   "Messages",
   "Settings",
-
 ] as const;
 const OWNER_TABS = ["Home page"] as const;
-type Tab = (typeof BRANCH_TABS)[number] | (typeof OWNER_TABS)[number];
+type Tab =
+  | (typeof PRIMARY_TABS)[number]
+  | (typeof MORE_TABS)[number]
+  | (typeof OWNER_TABS)[number];
 
 
 export function AdminDashboard() {
@@ -143,8 +144,8 @@ export function AdminDashboard() {
         </div>
       </header>
 
-      <nav className="flex flex-wrap gap-2">
-        {[...BRANCH_TABS, ...(isOwner ? OWNER_TABS : [])].map((t) => (
+      <nav className="flex flex-wrap items-center gap-2">
+        {PRIMARY_TABS.map((t) => (
           <button
             key={t}
             type="button"
@@ -159,6 +160,31 @@ export function AdminDashboard() {
             {t}
           </button>
         ))}
+
+        {(() => {
+          const more = [...MORE_TABS, ...(isOwner ? OWNER_TABS : [])];
+          const onMore = more.includes(tab as (typeof more)[number]);
+          return (
+            <select
+              value={onMore ? tab : ""}
+              onChange={(e) => e.target.value && setTab(e.target.value as Tab)}
+              className={cn(
+                "rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] outline-none transition-all duration-300",
+                onMore
+                  ? "border-transparent bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_16px_40px_-20px_var(--primary)]"
+                  : "border-border bg-surface/60 text-muted-foreground hover:text-foreground",
+              )}
+              aria-label="More sections"
+            >
+              <option value="">More ▾</option>
+              {more.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          );
+        })()}
       </nav>
 
       <div key={tab} className="animate-[step-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both] space-y-6">
@@ -195,6 +221,8 @@ export function AdminDashboard() {
             onChanged={data.refresh}
           />
         ) : null}
+
+        {tab === "Games" ? <GamesShowcasePanel /> : null}
 
         {tab === "Bookings" ? (
           <BookingsPanel

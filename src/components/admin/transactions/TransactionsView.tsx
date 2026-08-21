@@ -188,9 +188,9 @@ export function TransactionsView({
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1900px] text-left text-[0.7rem]">
-                  <thead className="text-[0.55rem] uppercase tracking-[0.16em] text-muted-foreground">
-                    <tr>
+                <table className="w-full min-w-[2100px] text-left text-[0.82rem]">
+                  <thead className="text-[0.62rem] font-black uppercase tracking-[0.16em] text-foreground">
+                    <tr className="border-b-2 border-pink/40 bg-surface-2/80">
                       {[
                         "S.No",
                         "Date",
@@ -221,7 +221,7 @@ export function TransactionsView({
                         "Notes",
                         "",
                       ].map((h) => (
-                        <th key={h} className="whitespace-nowrap py-2 pr-3">
+                        <th key={h} className="whitespace-nowrap px-2 py-3">
                           {h}
                         </th>
                       ))}
@@ -229,37 +229,46 @@ export function TransactionsView({
                   </thead>
                   <tbody>
                     {filtered.map((r, i) => (
-                      <tr key={r.id} className="border-t border-border/60 align-middle">
-                        <td className="py-2 pr-3">{i + 1}</td>
-                        <td className="whitespace-nowrap pr-3">{r.date}</td>
-                        <td className="whitespace-nowrap pr-3 font-semibold">{r.reference}</td>
-                        <td className="whitespace-nowrap pr-3">{r.customer}</td>
-                        <td className="whitespace-nowrap pr-3">{r.phone}</td>
-                        <td className="whitespace-nowrap pr-3">{r.branch}</td>
-                        <td className="whitespace-nowrap pr-3">{r.service}</td>
-                        <td className="whitespace-nowrap pr-3">{r.consoleName}</td>
-                        <td className="pr-3">{r.checkIn?.slice(0, 5) ?? "—"}</td>
-                        <td className="pr-3">{r.checkOut?.slice(0, 5) ?? "—"}</td>
-                        <td className="whitespace-nowrap pr-3">{formatDuration(r.durationMinutes)}</td>
-                        <td className="pr-3">{r.players}</td>
-                        <td className="whitespace-nowrap pr-3">{r.visitNumber || "—"}</td>
-                        <td className="pr-3">{inr(r.gamingAmount)}</td>
-                        <td className="pr-3">{inr(r.foodAmount)}</td>
-                        <td className="pr-3">{inr(r.membershipDiscount)}</td>
-                        <td className="pr-3">{inr(r.couponDiscount)}</td>
-                        <td className="pr-3">{inr(r.studentDiscount)}</td>
-                        <td className="pr-3">{inr(r.totalDiscount)}</td>
-                        <td className="pr-3 font-semibold">{inr(r.finalAmount)}</td>
-                        <td className="pr-3 uppercase">{r.paymentMode || "—"}</td>
-                        <td className="pr-3">
+                      <tr
+                        key={r.id}
+                        className={cn(
+                          "border-t border-border/60 align-middle transition-colors",
+                          "hover:bg-pink/10 hover:shadow-[inset_0_0_0_1px_var(--pink)]",
+                          i % 2 ? "bg-surface/40" : "",
+                        )}
+                      >
+                        <td className="px-2 py-3 font-semibold">{i + 1}</td>
+                        <td className="whitespace-nowrap px-2">{r.date}</td>
+                        <td className="whitespace-nowrap px-2 font-black tracking-wide text-foreground">
+                          {r.reference}
+                        </td>
+                        <td className="whitespace-nowrap px-2 font-semibold">{r.customer}</td>
+                        <td className="whitespace-nowrap px-2">{r.phone}</td>
+                        <td className="whitespace-nowrap px-2">{r.branch}</td>
+                        <td className="whitespace-nowrap px-2 font-bold">{r.service}</td>
+                        <td className="whitespace-nowrap px-2 font-bold">{r.consoleName}</td>
+                        <td className="px-2">{r.checkIn?.slice(0, 5) ?? "—"}</td>
+                        <td className="px-2">{r.checkOut?.slice(0, 5) ?? "—"}</td>
+                        <td className="whitespace-nowrap px-2">{formatDuration(r.durationMinutes)}</td>
+                        <td className="px-2">{r.players}</td>
+                        <td className="whitespace-nowrap px-2">{r.visitNumber || "—"}</td>
+                        <td className="px-2">{inr(r.gamingAmount)}</td>
+                        <td className="px-2">{inr(r.foodAmount)}</td>
+                        <td className="px-2">{inr(r.membershipDiscount)}</td>
+                        <td className="px-2">{inr(r.couponDiscount)}</td>
+                        <td className="px-2">{inr(r.studentDiscount)}</td>
+                        <td className="px-2">{inr(r.totalDiscount)}</td>
+                        <td className="px-2 font-black">{inr(r.finalAmount)}</td>
+                        <td className="px-2 font-semibold uppercase">{r.paymentMode || "—"}</td>
+                        <td className="px-2">
                           {PROVIDERS.find(([v]) => v === (r.upiProvider ?? ""))?.[1] ?? "—"}
                         </td>
-                        <td className="pr-3">{inr(r.cashAmount)}</td>
-                        <td className="pr-3">{inr(r.upiAmount)}</td>
-                        <td className="pr-3 capitalize">{r.status}</td>
-                        <td className="pr-3">{SOURCES.find(([v]) => v === r.source)?.[1] ?? r.source}</td>
-                        <td className="max-w-[200px] truncate pr-3 text-muted-foreground">{r.notes}</td>
-                        <td className="pr-1 text-right">
+                        <td className="px-2">{inr(r.cashAmount)}</td>
+                        <td className="px-2">{inr(r.upiAmount)}</td>
+                        <td className="px-2 font-semibold capitalize">{r.status}</td>
+                        <td className="px-2">{SOURCES.find(([v]) => v === r.source)?.[1] ?? r.source}</td>
+                        <td className="max-w-[200px] truncate px-2 text-muted-foreground">{r.notes}</td>
+                        <td className="px-2 text-right">
                           <AdminButton onClick={() => setEditing(r)}>Edit</AdminButton>
                         </td>
                       </tr>
