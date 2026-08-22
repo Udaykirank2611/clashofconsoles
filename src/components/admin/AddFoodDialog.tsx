@@ -5,6 +5,7 @@ import { addFoodToBooking } from "@/lib/booking-admin.functions";
 import type { AdminBooking, AdminMenuItem } from "@/lib/admin/useBranchData";
 import { AdminButton, money } from "./primitives";
 import { cn } from "@/lib/utils";
+import { ModalPortal } from "./ModalPortal";
 
 /** Add extra food/drinks to a confirmed booking and record how it was paid. */
 export function AddFoodDialog({
@@ -70,16 +71,8 @@ export function AddFoodDialog({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-3xl border border-border bg-surface p-6 shadow-2xl"
-      >
+    <ModalPortal onClose={onClose}>
+      <div className="mx-auto flex max-h-[88dvh] w-full max-w-lg flex-col rounded-3xl border border-border bg-surface p-6 shadow-2xl">
         <h3 className="text-sm font-black uppercase tracking-[0.18em]">Add food</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           {booking.reference} · {booking.customer_name} · current total {money(booking.total_amount)}
@@ -240,6 +233,6 @@ export function AddFoodDialog({
           </>
         )}
       </div>
-    </div>
+    </ModalPortal>
   );
 }

@@ -6,6 +6,7 @@ import { getDrilldown } from "@/lib/analytics.functions";
 import { money } from "../primitives";
 import { ScrollTable } from "./TodayPanel";
 import { cn } from "@/lib/utils";
+import { ModalPortal } from "../ModalPortal";
 
 export interface Drilldown {
   kind: "hour" | "station" | "service";
@@ -48,16 +49,8 @@ export function DrilldownDialog({
   const totalHours = Math.round((rows.reduce((s, r) => s + r.minutes, 0) / 60) * 10) / 10;
 
   return (
-    <div
-      className="fixed inset-0 z-100 flex items-end justify-center bg-background/80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[86vh] w-full max-w-5xl overflow-auto rounded-3xl border border-border bg-surface p-5 shadow-2xl sm:p-6"
-      >
+    <ModalPortal onClose={onClose}>
+      <div className="mx-auto max-h-[88dvh] w-full max-w-5xl overflow-auto rounded-3xl border border-border bg-surface p-5 shadow-2xl sm:p-6">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-cyan">Drill-down</h2>
@@ -128,6 +121,6 @@ export function DrilldownDialog({
           ])}
         />
       </div>
-    </div>
+    </ModalPortal>
   );
 }
