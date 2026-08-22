@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ModalPortal } from "./ModalPortal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, Pill, money } from "./primitives";
@@ -660,16 +661,8 @@ export function BookingsPanel({
       )}
 
       {approving ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
-          onClick={() => setApproving(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl"
-          >
+        <ModalPortal onClose={() => setApproving(null)}>
+          <div className="mx-auto max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl">
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Verify Payment</h3>
             <p className="mt-2 text-xs text-muted-foreground">
               Confirm this booking. You will record how it was paid — and apply any last-minute discount — when you
@@ -704,7 +697,7 @@ export function BookingsPanel({
             </div>
 
           </div>
-        </div>
+        </ModalPortal>
       ) : null}
 
       {settling ? (
@@ -948,16 +941,8 @@ function SettleDialog({
   );
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl"
-      >
+    <ModalPortal onClose={onClose}>
+      <div className="mx-auto max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl">
         <h3 className="text-sm font-black uppercase tracking-[0.18em]">Collect payment</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           {booking.reference} · {booking.customer_name}
@@ -1036,6 +1021,6 @@ function SettleDialog({
           </AdminButton>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
