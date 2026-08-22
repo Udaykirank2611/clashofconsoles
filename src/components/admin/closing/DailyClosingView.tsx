@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ModalPortal } from "../ModalPortal";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { CalendarCheck, Download, FileSpreadsheet, FileText, History, RefreshCw } from "lucide-react";
@@ -191,8 +192,8 @@ export function DailyClosingView({
           </Panel>
 
           {confirming ? (
-            <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
-              <Panel className="w-full max-w-md">
+            <ModalPortal onClose={() => setConfirming(false)}>
+              <Panel className="mx-auto max-h-[88dvh] w-full max-w-md overflow-y-auto">
                 <h3 className="text-sm font-black tracking-tight">Close business day?</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {summary.branchName} · {summary.date} · {t.totalBookings} bookings ·{" "}
@@ -213,7 +214,7 @@ export function DailyClosingView({
                   </AdminButton>
                 </div>
               </Panel>
-            </div>
+            </ModalPortal>
           ) : null}
         </>
       )}
@@ -349,8 +350,8 @@ function ClosingHistory({
       )}
 
       {open ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
-          <Panel className="max-h-[85vh] w-full max-w-lg overflow-y-auto">
+        <ModalPortal onClose={() => setOpen(null)}>
+          <Panel className="mx-auto max-h-[88dvh] w-full max-w-lg overflow-y-auto">
             <h3 className="text-sm font-black tracking-tight">
               {open.branchName} · {open.reportDate}
             </h3>
@@ -385,7 +386,7 @@ function ClosingHistory({
               <AdminButton onClick={() => setOpen(null)}>Close</AdminButton>
             </div>
           </Panel>
-        </div>
+        </ModalPortal>
       ) : null}
     </Panel>
   );
