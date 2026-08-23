@@ -227,6 +227,7 @@ export const listCustomers = createServerFn({ method: "GET" })
           rewardStatus: (reward ? "available" : "none") as "available" | "none",
           rewardExpiresAtVisit:
             reward?.expiresAtVisit ?? (reward ? visits + (5 - (visits % 5)) : null),
+          createdAt: (c as { created_at?: string | null }).created_at ?? null,
         };
       });
     },
