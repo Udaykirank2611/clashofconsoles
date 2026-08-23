@@ -187,6 +187,7 @@ export const listCustomers = createServerFn({ method: "GET" })
         rewardMinutes: number | null;
         rewardStatus: "available" | "none";
         rewardExpiresAtVisit: number | null;
+        createdAt: string | null;
       }[]
     > => {
       const { data: role } = await context.supabase
