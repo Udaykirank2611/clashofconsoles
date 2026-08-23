@@ -188,6 +188,11 @@ export const listCustomers = createServerFn({ method: "GET" })
         rewardStatus: "available" | "none";
         rewardExpiresAtVisit: number | null;
         createdAt: string | null;
+        lastPlayedDate: string | null;
+        lastPlayedTime: string | null;
+        lastActivityDate: string | null;
+        lastActivityTime: string | null;
+        lastActivityReason: string | null;
       }[]
     > => {
       const { data: role } = await context.supabase
@@ -198,7 +203,7 @@ export const listCustomers = createServerFn({ method: "GET" })
       if (!role) return [];
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const [{ data: customers }, { data: rewards }] = await Promise.all([
+      const [{ data: customers }, { data: rewards }, { data: bookings }] = await Promise.all([
         supabaseAdmin
           .from("customers")
           .select("phone, name, total_visits, created_at")
@@ -207,6 +212,11 @@ export const listCustomers = createServerFn({ method: "GET" })
           .from("rewards")
           .select("phone, minutes, expires_at_visit")
           .eq("status", "available"),
+        supabaseAdmin
+          .from("bookings")
+          .select("customer_phone, booking_date, start_time, status, created_at")
+          .order("booking_date", { ascending: false })
+          .order("created_at", { ascending: false }),
       ]);
       // A customer never holds more than one milestone reward.
       const active = new Map<string, { minutes: number; expiresAtVisit: number | null }>();
@@ -215,9 +225,42 @@ export const listCustomers = createServerFn({ method: "GET" })
           minutes: Number(r.minutes ?? 30),
           expiresAtVisit: r.expires_at_visit === null ? null : Number(r.expires_at_visit),
         });
+
+      // Latest booking overall + latest completed booking, per phone.
+      type B = { booking_date: string | null; start_time: string | null; status: string; created_at: string | null };
+      const latest = new Map<string, B>();
+      const latestPlayed = new Map<string, B>();
+      for (const b of bookings ?? []) {
+        const phone = b.customer_phone;
+        if (!phone) continue;
+        if (!latest.has(phone)) latest.set(phone, b as B);
+        if (b.status === "completed" && !latestPlayed.has(phone)) latestPlayed.set(phone, b as B);
+      }
+
+      const reasonFor = (b: B | undefined): string | null => {
+        if (!b) return "No bookings yet — added manually or phone captured without a booking";
+        const upcoming = b.booking_date ? b.booking_date > new Date().toISOString().slice(0, 10) : false;
+        switch (b.status) {
+          case "cancelled":
+            return "Booking was cancelled";
+          case "expired":
+            return "Booking expired before payment";
+          case "pending":
+          case "payment_pending":
+          case "awaiting_payment":
+            return "Payment still pending";
+          case "confirmed":
+            return upcoming ? "Booked for a future date" : "Confirmed, not marked completed yet";
+          default:
+            return `Booking status: ${b.status}`;
+        }
+      };
+
       return (customers ?? []).map((c) => {
         const reward = active.get(c.phone) ?? null;
         const visits = Number(c.total_visits ?? 0);
+        const played = latestPlayed.get(c.phone);
+        const last = latest.get(c.phone);
         return {
           phone: c.phone,
           name: c.name,
@@ -228,10 +271,16 @@ export const listCustomers = createServerFn({ method: "GET" })
           rewardExpiresAtVisit:
             reward?.expiresAtVisit ?? (reward ? visits + (5 - (visits % 5)) : null),
           createdAt: (c as { created_at?: string | null }).created_at ?? null,
+          lastPlayedDate: played?.booking_date ?? null,
+          lastPlayedTime: played?.start_time ?? null,
+          lastActivityDate: last?.booking_date ?? null,
+          lastActivityTime: last?.start_time ?? null,
+          lastActivityReason: visits === 0 ? reasonFor(last) : null,
         };
       });
     },
   );
+
 
 /** Admin > Customers: manually correct a customer's completed-visit count. */
 export const updateCustomerVisits = createServerFn({ method: "POST" })
