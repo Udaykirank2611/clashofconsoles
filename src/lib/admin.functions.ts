@@ -199,7 +199,10 @@ export const listCustomers = createServerFn({ method: "GET" })
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const [{ data: customers }, { data: rewards }] = await Promise.all([
-        supabaseAdmin.from("customers").select("phone, name, total_visits").order("total_visits", { ascending: false }),
+        supabaseAdmin
+          .from("customers")
+          .select("phone, name, total_visits, created_at")
+          .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("rewards")
           .select("phone, minutes, expires_at_visit")
