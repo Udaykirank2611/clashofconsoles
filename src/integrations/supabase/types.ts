@@ -580,16 +580,19 @@ export type Database = {
       }
       customers: {
         Row: {
+          created_at: string
           name: string
           phone: string
           total_visits: number
         }
         Insert: {
+          created_at?: string
           name: string
           phone: string
           total_visits?: number
         }
         Update: {
+          created_at?: string
           name?: string
           phone?: string
           total_visits?: number

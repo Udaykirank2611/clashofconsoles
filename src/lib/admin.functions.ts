@@ -187,6 +187,7 @@ export const listCustomers = createServerFn({ method: "GET" })
         rewardMinutes: number | null;
         rewardStatus: "available" | "none";
         rewardExpiresAtVisit: number | null;
+        createdAt: string | null;
       }[]
     > => {
       const { data: role } = await context.supabase
@@ -198,7 +199,10 @@ export const listCustomers = createServerFn({ method: "GET" })
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const [{ data: customers }, { data: rewards }] = await Promise.all([
-        supabaseAdmin.from("customers").select("phone, name, total_visits").order("total_visits", { ascending: false }),
+        supabaseAdmin
+          .from("customers")
+          .select("phone, name, total_visits, created_at")
+          .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("rewards")
           .select("phone, minutes, expires_at_visit")
@@ -223,6 +227,7 @@ export const listCustomers = createServerFn({ method: "GET" })
           rewardStatus: (reward ? "available" : "none") as "available" | "none",
           rewardExpiresAtVisit:
             reward?.expiresAtVisit ?? (reward ? visits + (5 - (visits % 5)) : null),
+          createdAt: (c as { created_at?: string | null }).created_at ?? null,
         };
       });
     },

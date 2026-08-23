@@ -13,21 +13,43 @@ import { AdminButton, Panel } from "./primitives";
 /** Loyalty roster: name, phone, editable visit count and available rewards. */
 export function CustomersPanel() {
   const fn = useServerFn(listCustomers);
+  const [sortBy, setSortBy] = useState<"latest" | "visits">("latest");
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-customers"],
     queryFn: () => fn(),
     staleTime: 30_000,
   });
 
+  const rows = [...data].sort((a, b) =>
+    sortBy === "visits"
+      ? b.totalVisits - a.totalVisits
+      : (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+  );
+
   return (
-    <Panel title="Customers">
+    <Panel
+      title="Customers"
+      action={
+        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          Sort by
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "latest" | "visits")}
+            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-sm font-bold text-foreground outline-none focus:border-primary"
+          >
+            <option value="latest">Latest first</option>
+            <option value="visits">Most visits</option>
+          </select>
+        </label>
+      }
+    >
       {isLoading ? (
         <p className="py-10 text-center text-sm text-muted-foreground">Loading customers…</p>
-      ) : data.length === 0 ? (
+      ) : rows.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">No customers yet.</p>
       ) : (
         <div className="space-y-2">
-          {data.map((c) => (
+          {rows.map((c) => (
             <div
               key={c.phone}
               className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
