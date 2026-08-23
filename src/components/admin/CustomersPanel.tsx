@@ -66,7 +66,9 @@ export function CustomersPanel() {
                 >
                   <Phone className="size-3" /> {c.phone}
                 </a>
+                <ActivityLine c={c} />
               </div>
+
               <VisitsEditor phone={c.phone} visits={c.totalVisits} />
               {c.rewardStatus === "available" ? (
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-300">
