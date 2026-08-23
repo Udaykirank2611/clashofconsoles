@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Copy, Gift, MessageCircle, Phone } from "lucide-react";
+import { CalendarClock, Check, Copy, Gift, MessageCircle, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { listCustomers, updateCustomerVisits } from "@/lib/admin.functions";
 import { rewardLabel } from "@/lib/loyalty.functions";
