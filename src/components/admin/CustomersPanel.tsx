@@ -22,9 +22,13 @@ export function CustomersPanel() {
 
   const rows = [...data].sort((a, b) =>
     sortBy === "visits"
-      ? b.totalVisits - a.totalVisits
-      : (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+      ? b.totalVisits - a.totalVisits ||
+        (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+      : (b.createdAt ?? b.lastActivityDate ?? "").localeCompare(
+          a.createdAt ?? a.lastActivityDate ?? "",
+        ),
   );
+
 
   return (
     <Panel
