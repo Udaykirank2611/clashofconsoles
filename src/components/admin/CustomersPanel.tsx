@@ -98,7 +98,57 @@ export function CustomersPanel() {
   );
 }
 
+/** Shows last played date/time, or why a 0-visit customer is listed. */
+function ActivityLine({
+  c,
+}: {
+  c: {
+    totalVisits: number;
+    lastPlayedDate: string | null;
+    lastPlayedTime: string | null;
+    lastActivityDate: string | null;
+    lastActivityTime: string | null;
+    lastActivityReason: string | null;
+  };
+}) {
+  const fmt = (d: string | null, t: string | null) => {
+    if (!d) return null;
+    const date = new Date(`${d}T00:00:00`).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    if (!t) return date;
+    const [h, m] = t.split(":").map(Number);
+    const hh = ((h ?? 0) % 12) || 12;
+    const ampm = (h ?? 0) < 12 ? "AM" : "PM";
+    return `${date} · ${hh}:${String(m ?? 0).padStart(2, "0")} ${ampm}`;
+  };
+
+  if (c.totalVisits > 0) {
+    const when = fmt(c.lastPlayedDate, c.lastPlayedTime);
+    return (
+      <p className="mt-1 flex items-center gap-1 text-[0.68rem] text-muted-foreground">
+        <CalendarClock className="size-3 shrink-0" />
+        {when ? <>Last played {when}</> : <>No completed session recorded</>}
+      </p>
+    );
+  }
+
+  const when = fmt(c.lastActivityDate, c.lastActivityTime);
+  return (
+    <p className="mt-1 flex items-start gap-1 text-[0.68rem] text-amber-500">
+      <CalendarClock className="mt-0.5 size-3 shrink-0" />
+      <span>
+        {when ? `${when} — ` : ""}
+        {c.lastActivityReason ?? "No completed visit yet"}
+      </span>
+    </p>
+  );
+}
+
 /** Inline editor for a customer's completed-visit count (level). */
+
 function VisitsEditor({ phone, visits }: { phone: string; visits: number }) {
   const [value, setValue] = useState(String(visits));
   const [saving, setSaving] = useState(false);
