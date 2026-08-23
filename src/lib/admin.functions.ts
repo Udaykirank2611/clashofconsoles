@@ -193,6 +193,7 @@ export const listCustomers = createServerFn({ method: "GET" })
         lastActivityDate: string | null;
         lastActivityTime: string | null;
         lastActivityReason: string | null;
+        latestActivityAt: string | null;
       }[]
     > => {
       const { data: role } = await context.supabase
@@ -216,6 +217,7 @@ export const listCustomers = createServerFn({ method: "GET" })
           .from("bookings")
           .select("customer_phone, booking_date, start_time, status, created_at")
           .order("booking_date", { ascending: false })
+          .order("start_time", { ascending: false })
           .order("created_at", { ascending: false }),
       ]);
       // A customer never holds more than one milestone reward.
@@ -276,6 +278,13 @@ export const listCustomers = createServerFn({ method: "GET" })
           lastActivityDate: last?.booking_date ?? null,
           lastActivityTime: last?.start_time ?? null,
           lastActivityReason: visits === 0 ? reasonFor(last) : null,
+          latestActivityAt:
+            (visits > 0 ? played?.booking_date : last?.booking_date) &&
+            (visits > 0 ? played?.start_time : last?.start_time)
+              ? `${visits > 0 ? played?.booking_date : last?.booking_date}T${
+                  visits > 0 ? played?.start_time : last?.start_time
+                }`
+              : last?.created_at ?? (c as { created_at?: string | null }).created_at ?? null,
         };
       });
     },
