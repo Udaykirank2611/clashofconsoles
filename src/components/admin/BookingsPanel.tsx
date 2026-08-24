@@ -161,8 +161,8 @@ export function BookingsPanel({
     window: { start: string; end: string };
     alternatives: { id: string; name: string; price: number }[];
   } | null>(null);
-  /** Rate-card price for the extra hour, fetched when the dialog opens. */
-  const [extendQuote, setExtendQuote] = useState<number | null>(null);
+  /** Next extension step (length + rate-card price) for the open dialog. */
+  const [extendQuote, setExtendQuote] = useState<{ price: number; label: string; newTotal: number } | null>(null);
   const extendSession = useServerFn(extendBookingSession);
   const getQuote = useServerFn(quoteExtension);
   const approvePayment = useServerFn(approveBookingPayment);
@@ -170,21 +170,33 @@ export function BookingsPanel({
   const editHours = useServerFn(updateBookingExtraHours);
   const { template } = useMessageTemplates();
 
-  /** Adds an hour to a confirmed booking, moving it to a free console if needed. */
+  /** Opens the extend dialog with the next allowed step for this service. */
+  const openExtend = async (b: AdminBooking) => {
+    setExtendQuote(null);
+    const q = await getQuote({ data: { bookingId: b.id, hours: 1 } });
+    if (!q.available) {
+      toast.error("This session is already at its maximum length.");
+      return;
+    }
+    setExtendQuote({ price: q.price, label: q.label, newTotal: q.newTotal });
+    setExtendConfirm(b);
+  };
+
+  /** Adds the next step to a confirmed booking, moving it to a free console if needed. */
   const extend = async (b: AdminBooking, stationId: string | null = null) => {
     setBusy(b.id);
     const res = await extendSession({ data: { bookingId: b.id, hours: 1, stationId } });
     setBusy(null);
     if (res.ok) {
       setExtendChoice(null);
-      toast.success(res.message ?? "Session extended by 1 hour.");
+      toast.success(res.message ?? "Session extended.");
       onChanged();
       return;
     }
     if (res.conflict) {
       setExtendChoice({
         booking: b,
-        message: res.message ?? "That console is already booked for the next hour.",
+        message: res.message ?? "That console is already booked for the next slot.",
         window: res.window ?? { start: "", end: "" },
         alternatives: res.alternatives ?? [],
       });
@@ -459,14 +471,12 @@ export function BookingsPanel({
                           <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         {hasSlot ? (
-                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => {
-                              setExtendQuote(null);
-                              setExtendConfirm(b);
-                              void getQuote({ data: { bookingId: b.id, hours: 1 } }).then((r) =>
-                                setExtendQuote(r.price),
-                              );
-                            }}>
-                            <Clock className="size-3.5" /> Extend 1 hour
+                          <AdminButton
+                            variant="primary"
+                            disabled={busy === b.id}
+                            onClick={() => void openExtend(b)}
+                          >
+                            <Clock className="size-3.5" /> Extend session
                           </AdminButton>
                         ) : null}
                         <AdminButton
@@ -734,7 +744,7 @@ export function BookingsPanel({
           <div className="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Extend this session?</h3>
             <p className="mt-2 text-xs text-muted-foreground">
-              Are you sure you want to extend this booking by 1 more hour?
+              Extend this booking by {extendQuote?.label ?? "the next step"}?
             </p>
             <div className="mt-4 rounded-2xl border border-border bg-background/40 px-4 py-3 text-sm">
               <p className="flex items-center justify-between">
@@ -742,12 +752,17 @@ export function BookingsPanel({
                 <span className="font-bold">{extendConfirm.players ?? 1}</span>
               </p>
               <p className="mt-1.5 flex items-center justify-between">
-                <span className="text-muted-foreground">Extra hour charge</span>
+                <span className="text-muted-foreground">Extra {extendQuote?.label ?? "time"} charge</span>
                 <span className="font-black">
-                  {extendQuote === null ? "Calculating…" : money(extendQuote)}
+                  {extendQuote === null ? "Calculating…" : money(extendQuote.price)}
                 </span>
               </p>
-
+              <p className="mt-1.5 flex items-center justify-between">
+                <span className="text-muted-foreground">New booking total</span>
+                <span className="font-black">
+                  {extendQuote === null ? "…" : money(extendQuote.newTotal)}
+                </span>
+              </p>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setExtendConfirm(null)}>Cancel</AdminButton>
@@ -760,7 +775,7 @@ export function BookingsPanel({
                   void extend(b);
                 }}
               >
-                Yes, extend 1 hour
+                Yes, extend {extendQuote?.label ?? ""}
               </AdminButton>
             </div>
           </div>
