@@ -579,7 +579,7 @@ export const extendBookingSession = createServerFn({ method: "POST" })
         booking_id: data.bookingId,
         kind: "addon",
         station_id: target,
-        label: `${station?.name ?? "Console"} — extra ${data.hours}h`,
+        label: `${station?.name ?? "Console"} — extra ${option.label}`,
         unit_price: price,
         quantity: 1,
         line_total: price,
