@@ -133,3 +133,78 @@ export async function extensionPrice(
   const later = await priceForMinutes(branchId, players, currentMinutes + hours * 60);
   return Math.max(0, later - now);
 }
+
+export interface ExtensionOption {
+  minutes: number;
+  price: number;
+  label: string;
+}
+
+/** Human label for a minute step ("15 minutes", "1 hour"). */
+const stepLabel = (m: number) =>
+  m % 60 === 0 ? `${m / 60} hour${m / 60 > 1 ? "s" : ""}` : `${m} minutes`;
+
+/**
+ * Next extension step for a booking's station.
+ *
+ * PS5/console sessions extend in whole hours off the branch rate card.
+ * Slab-priced services (driving simulator, VR, …) climb their own rate ladder:
+ * a 15-minute booking may extend by 15 minutes (to the 30-minute price), then by
+ * 30 minutes (to the 1-hour price), after which no extension is offered.
+ */
+export async function extensionOption(
+  branchId: string,
+  stationId: string | null,
+  players: number,
+  currentMinutes: number,
+): Promise<ExtensionOption | null> {
+  const hourly = async (): Promise<ExtensionOption> => ({
+    minutes: 60,
+    price: await extensionPrice(branchId, players, currentMinutes, 1),
+    label: "1 hour",
+  });
+  if (!stationId) return hourly();
+
+  const [{ data: station }, { data: rates }] = await Promise.all([
+    supabaseAdmin.from("gaming_stations").select("station_type").eq("id", stationId).maybeSingle(),
+    supabaseAdmin
+      .from("station_rates")
+      .select("duration_minutes, price, is_extra_hour")
+      .eq("station_id", stationId)
+      .eq("is_active", true),
+  ]);
+  if (!station || station.station_type === "console") return hourly();
+
+  // Cheapest price per duration builds the ladder (rates can list party sizes).
+  const ladder = new Map<number, number>();
+  for (const r of rates ?? []) {
+    if (r.is_extra_hour) continue;
+    const d = Number(r.duration_minutes);
+    const p = Number(r.price);
+    if (!ladder.has(d) || p < (ladder.get(d) ?? 0)) ladder.set(d, p);
+  }
+  const steps = [...ladder.entries()].map(([minutes, price]) => ({ minutes, price })).sort((a, b) => a.minutes - b.minutes);
+  if (!steps.length) return hourly();
+
+  const priceAt = (m: number) => {
+    const exact = steps.find((s) => s.minutes === m);
+    if (exact) return exact.price;
+    const below = [...steps].reverse().find((s) => s.minutes <= m);
+    return below ? below.price : 0;
+  };
+
+  const next = steps.find((s) => s.minutes > currentMinutes);
+  if (next) {
+    return {
+      minutes: next.minutes - currentMinutes,
+      price: Math.max(0, next.price - priceAt(currentMinutes)),
+      label: stepLabel(next.minutes - currentMinutes),
+    };
+  }
+
+  // Past the ladder: only services with an explicit extra-hour rate can extend.
+  const extra = (rates ?? []).find((r) => r.is_extra_hour);
+  if (extra) return { minutes: 60, price: Number(extra.price), label: "1 hour" };
+  return null;
+}
+
