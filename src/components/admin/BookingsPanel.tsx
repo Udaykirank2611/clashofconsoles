@@ -471,14 +471,12 @@ export function BookingsPanel({
                           <UtensilsCrossed className="size-3.5" /> Add food
                         </AdminButton>
                         {hasSlot ? (
-                          <AdminButton variant="primary" disabled={busy === b.id} onClick={() => {
-                              setExtendQuote(null);
-                              setExtendConfirm(b);
-                              void getQuote({ data: { bookingId: b.id, hours: 1 } }).then((r) =>
-                                setExtendQuote(r.price),
-                              );
-                            }}>
-                            <Clock className="size-3.5" /> Extend 1 hour
+                          <AdminButton
+                            variant="primary"
+                            disabled={busy === b.id}
+                            onClick={() => void openExtend(b)}
+                          >
+                            <Clock className="size-3.5" /> Extend session
                           </AdminButton>
                         ) : null}
                         <AdminButton
