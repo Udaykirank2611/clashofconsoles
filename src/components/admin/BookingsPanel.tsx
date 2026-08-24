@@ -161,8 +161,8 @@ export function BookingsPanel({
     window: { start: string; end: string };
     alternatives: { id: string; name: string; price: number }[];
   } | null>(null);
-  /** Rate-card price for the extra hour, fetched when the dialog opens. */
-  const [extendQuote, setExtendQuote] = useState<number | null>(null);
+  /** Next extension step (length + rate-card price) for the open dialog. */
+  const [extendQuote, setExtendQuote] = useState<{ price: number; label: string; newTotal: number } | null>(null);
   const extendSession = useServerFn(extendBookingSession);
   const getQuote = useServerFn(quoteExtension);
   const approvePayment = useServerFn(approveBookingPayment);
@@ -170,21 +170,33 @@ export function BookingsPanel({
   const editHours = useServerFn(updateBookingExtraHours);
   const { template } = useMessageTemplates();
 
-  /** Adds an hour to a confirmed booking, moving it to a free console if needed. */
+  /** Opens the extend dialog with the next allowed step for this service. */
+  const openExtend = async (b: AdminBooking) => {
+    setExtendQuote(null);
+    const q = await getQuote({ data: { bookingId: b.id, hours: 1 } });
+    if (!q.available) {
+      toast.error("This session is already at its maximum length.");
+      return;
+    }
+    setExtendQuote({ price: q.price, label: q.label, newTotal: q.newTotal });
+    setExtendConfirm(b);
+  };
+
+  /** Adds the next step to a confirmed booking, moving it to a free console if needed. */
   const extend = async (b: AdminBooking, stationId: string | null = null) => {
     setBusy(b.id);
     const res = await extendSession({ data: { bookingId: b.id, hours: 1, stationId } });
     setBusy(null);
     if (res.ok) {
       setExtendChoice(null);
-      toast.success(res.message ?? "Session extended by 1 hour.");
+      toast.success(res.message ?? "Session extended.");
       onChanged();
       return;
     }
     if (res.conflict) {
       setExtendChoice({
         booking: b,
-        message: res.message ?? "That console is already booked for the next hour.",
+        message: res.message ?? "That console is already booked for the next slot.",
         window: res.window ?? { start: "", end: "" },
         alternatives: res.alternatives ?? [],
       });
