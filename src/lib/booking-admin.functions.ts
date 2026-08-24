@@ -600,30 +600,49 @@ export const quoteExtension = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) =>
     z.object({ bookingId: z.string().uuid(), hours: z.number().int().min(1).max(6).default(1) }).parse(i),
   )
-  .handler(async ({ data, context }): Promise<{ price: number }> => {
-    const { data: booking } = await context.supabase
-      .from("bookings")
-      .select("branch_id, players, start_time, end_time")
-      .eq("id", data.bookingId)
-      .maybeSingle();
-    if (!booking) return { price: 0 };
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: items } = await supabaseAdmin
-      .from("booking_items")
-      .select("start_time, end_time")
-      .eq("booking_id", data.bookingId)
-      .not("end_time", "is", null);
-    const current =
-      (booking.start_time && booking.end_time
-        ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
-        : 0) +
-      (items ?? []).reduce(
-        (s, i) =>
-          s + (i.start_time && i.end_time ? toMinutes(String(i.end_time)) - toMinutes(String(i.start_time)) : 0),
-        0,
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ price: number; minutes: number; label: string; available: boolean; newTotal: number }> => {
+      const none = { price: 0, minutes: 0, label: "", available: false, newTotal: 0 };
+      const { data: booking } = await context.supabase
+        .from("bookings")
+        .select("branch_id, players, station_id, start_time, end_time, total_amount")
+        .eq("id", data.bookingId)
+        .maybeSingle();
+      if (!booking) return none;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: items } = await supabaseAdmin
+        .from("booking_items")
+        .select("station_id, start_time, end_time")
+        .eq("booking_id", data.bookingId)
+        .not("end_time", "is", null)
+        .order("end_time", { ascending: false });
+      const current =
+        (booking.start_time && booking.end_time
+          ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
+          : 0) +
+        (items ?? []).reduce(
+          (s, i) =>
+            s + (i.start_time && i.end_time ? toMinutes(String(i.end_time)) - toMinutes(String(i.start_time)) : 0),
+          0,
+        );
+      const station = (booking.station_id as string | null) ?? (items ?? [])[0]?.station_id ?? null;
+      const { extensionOption } = await import("@/lib/booking-admin.server");
+      const option = await extensionOption(
+        String(booking.branch_id),
+        station,
+        Number(booking.players ?? 1),
+        current,
       );
-    const { extensionPrice } = await import("@/lib/booking-admin.server");
-    return {
-      price: await extensionPrice(String(booking.branch_id), Number(booking.players ?? 1), current, data.hours),
-    };
-  });
+      if (!option) return none;
+      return {
+        price: option.price,
+        minutes: option.minutes,
+        label: option.label,
+        available: true,
+        newTotal: Number(booking.total_amount ?? 0) + option.price,
+      };
+    },
+  );
