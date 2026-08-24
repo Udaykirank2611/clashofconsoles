@@ -500,17 +500,20 @@ export const extendBookingSession = createServerFn({ method: "POST" })
         0,
       );
 
-    const { extensionPrice } = await import("@/lib/booking-admin.server");
-    const price = await extensionPrice(
+    const { extensionOption } = await import("@/lib/booking-admin.server");
+    const option = await extensionOption(
       String(booking.branch_id),
+      baseStation,
       Number(booking.players ?? 1),
       currentMinutes,
-      data.hours,
     );
+    if (!option) return { ok: false, message: "This session is already at its maximum length." };
+    const price = option.price;
 
     const start = toMinutes(String(endTime));
-    const end = start + data.hours * 60;
+    const end = start + option.minutes;
     if (end > 24 * 60) return { ok: false, message: "The extension would run past midnight." };
+
 
     const target = data.stationId ?? baseStation;
     const conflict = await isSlotFree(
