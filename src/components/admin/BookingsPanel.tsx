@@ -744,7 +744,7 @@ export function BookingsPanel({
           <div className="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Extend this session?</h3>
             <p className="mt-2 text-xs text-muted-foreground">
-              Are you sure you want to extend this booking by 1 more hour?
+              Extend this booking by {extendQuote?.label ?? "the next step"}?
             </p>
             <div className="mt-4 rounded-2xl border border-border bg-background/40 px-4 py-3 text-sm">
               <p className="flex items-center justify-between">
@@ -752,12 +752,17 @@ export function BookingsPanel({
                 <span className="font-bold">{extendConfirm.players ?? 1}</span>
               </p>
               <p className="mt-1.5 flex items-center justify-between">
-                <span className="text-muted-foreground">Extra hour charge</span>
+                <span className="text-muted-foreground">Extra {extendQuote?.label ?? "time"} charge</span>
                 <span className="font-black">
-                  {extendQuote === null ? "Calculating…" : money(extendQuote)}
+                  {extendQuote === null ? "Calculating…" : money(extendQuote.price)}
                 </span>
               </p>
-
+              <p className="mt-1.5 flex items-center justify-between">
+                <span className="text-muted-foreground">New booking total</span>
+                <span className="font-black">
+                  {extendQuote === null ? "…" : money(extendQuote.newTotal)}
+                </span>
+              </p>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setExtendConfirm(null)}>Cancel</AdminButton>
@@ -770,7 +775,7 @@ export function BookingsPanel({
                   void extend(b);
                 }}
               >
-                Yes, extend 1 hour
+                Yes, extend {extendQuote?.label ?? ""}
               </AdminButton>
             </div>
           </div>
