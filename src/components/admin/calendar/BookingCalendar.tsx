@@ -90,7 +90,7 @@ export function BookingCalendar({
       supabase
         .from("bookings")
         .select(
-          "id, reference, branch_id, station_id, booking_date, start_time, end_time, customer_name, customer_phone, booking_type, players, game_title, status, payment_utr, payment_mode, special_instructions, total_amount, gaming_stations(name)",
+          "id, reference, branch_id, station_id, booking_date, start_time, end_time, customer_name, customer_phone, booking_type, players, game_title, status, payment_utr, payment_mode, special_instructions, total_amount, gaming_stations(name), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name))",
         )
         .eq("branch_id", branchId)
         .gte("booking_date", range.from)
