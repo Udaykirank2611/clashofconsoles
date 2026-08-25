@@ -18,6 +18,17 @@ export interface CalBooking {
   special_instructions: string | null;
   total_amount: number;
   gaming_stations: { name: string } | null;
+  /** Add-on line items (snooker, VR, cockpit, theatre) carry their own station + slot. */
+  booking_items?:
+    | {
+        kind: string;
+        label: string | null;
+        station_id: string | null;
+        start_time: string | null;
+        end_time: string | null;
+        gaming_stations: { name: string } | null;
+      }[]
+    | null;
 }
 
 export interface CalStation {

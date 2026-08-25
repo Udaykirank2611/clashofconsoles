@@ -90,7 +90,7 @@ export function BookingCalendar({
       supabase
         .from("bookings")
         .select(
-          "id, reference, branch_id, station_id, booking_date, start_time, end_time, customer_name, customer_phone, booking_type, players, game_title, status, payment_utr, payment_mode, special_instructions, total_amount, gaming_stations(name)",
+          "id, reference, branch_id, station_id, booking_date, start_time, end_time, customer_name, customer_phone, booking_type, players, game_title, status, payment_utr, payment_mode, special_instructions, total_amount, gaming_stations(name), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name))",
         )
         .eq("branch_id", branchId)
         .gte("booking_date", range.from)
@@ -103,7 +103,21 @@ export function BookingCalendar({
         .order("sort_order"),
       supabase.from("branches").select("opens_at, closes_at").eq("id", branchId).maybeSingle(),
     ]);
-    setBookings((b.data ?? []) as unknown as CalBooking[]);
+    // Experiences (snooker, VR, cockpit, theatre, lounge) live on add-on line items,
+    // so borrow their station + slot times to place the booking in the right lane.
+    setBookings(
+      ((b.data ?? []) as unknown as CalBooking[]).map((bk) => {
+        const addon = (bk.booking_items ?? []).find((i) => i.kind === "addon" && i.station_id);
+        if (!addon || bk.station_id) return bk;
+        return {
+          ...bk,
+          station_id: addon.station_id,
+          start_time: bk.start_time ?? addon.start_time,
+          end_time: bk.end_time ?? addon.end_time,
+          gaming_stations: addon.gaming_stations ?? (addon.label ? { name: addon.label } : null),
+        };
+      }),
+    );
     setStations((s.data ?? []) as unknown as CalStation[]);
     if (br.data)
       setHours({ open: String(br.data.opens_at).slice(0, 5), close: String(br.data.closes_at).slice(0, 5) });
@@ -423,7 +437,7 @@ function Card({
         <>
           <span className="block truncate opacity-90">{booking.customer_phone}</span>
           <span className="block truncate opacity-90">
-            {booking.gaming_stations?.name ?? "No console"} ·{" "}
+            {booking.gaming_stations?.name ?? "Food / pass order"} ·{" "}
             {booking.booking_type === "group" ? "Group" : "Single"}
           </span>
         </>
@@ -546,7 +560,7 @@ function DayView({
       {unassigned.length ? (
         <div className="mt-4 space-y-2">
           <p className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            Food orders & passes (no console)
+            Food orders & passes
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {unassigned.map((b) => (

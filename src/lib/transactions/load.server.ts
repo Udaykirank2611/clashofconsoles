@@ -20,7 +20,7 @@ const SERVICE_BY_TYPE: Record<string, string> = {
   console: "PS5",
   driving_simulator: "Cockpit",
   vr: "VR",
-  snooker: "Snooker",
+  snooker: "Snooker Table",
   private_theatre: "Private Theatre",
   private_lounge: "Gaming Lounge",
 };
@@ -201,7 +201,11 @@ export async function loadTransactions(
     averageBookingValue: live.length
       ? Math.round(live.reduce((s, r) => s + r.finalAmount, 0) / live.length)
       : 0,
+    totalGamingHours:
+      Math.round((live.reduce((s, r) => s + r.durationMinutes, 0) / 60) * 10) / 10,
   };
+
+
 
   const opening = ((openingRes.data ?? []) as Record<string, unknown>[]).reduce(
     (acc: { cash: number; bank: number }, r) => ({
