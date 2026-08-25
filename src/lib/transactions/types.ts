@@ -54,6 +54,8 @@ export interface TransactionTotals {
   totalDiscounts: number;
   totalBookings: number;
   averageBookingValue: number;
+  /** Total gaming time booked in the window, in hours. */
+  totalGamingHours: number;
 }
 
 export interface CashBankSummary {
