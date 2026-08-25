@@ -437,7 +437,7 @@ function Card({
         <>
           <span className="block truncate opacity-90">{booking.customer_phone}</span>
           <span className="block truncate opacity-90">
-            {booking.gaming_stations?.name ?? "No console"} ·{" "}
+            {booking.gaming_stations?.name ?? "Food / pass order"} ·{" "}
             {booking.booking_type === "group" ? "Group" : "Single"}
           </span>
         </>
@@ -560,7 +560,7 @@ function DayView({
       {unassigned.length ? (
         <div className="mt-4 space-y-2">
           <p className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            Food orders & passes (no console)
+            Food orders & passes
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {unassigned.map((b) => (

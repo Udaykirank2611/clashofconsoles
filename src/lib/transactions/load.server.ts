@@ -20,7 +20,7 @@ const SERVICE_BY_TYPE: Record<string, string> = {
   console: "PS5",
   driving_simulator: "Cockpit",
   vr: "VR",
-  snooker: "Snooker",
+  snooker: "Snooker Table",
   private_theatre: "Private Theatre",
   private_lounge: "Gaming Lounge",
 };
