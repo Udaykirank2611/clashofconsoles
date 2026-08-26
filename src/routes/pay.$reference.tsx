@@ -158,6 +158,155 @@ function PaymentPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            {status === "payment_pending" || status === "pending" ? (
+              <StateCard
+                tone="yellow"
+                title="Payment submitted — verification pending"
+                body="We've received your transaction details. Our team is verifying the payment and will confirm your booking shortly. You can close this page; your booking is safe."
+                extra={booking.payment_utr ? `UTR · ${booking.payment_utr}` : undefined}
+              />
+            ) : null}
+
+            {status === "confirmed" || status === "completed" ? (
+              <StateCard
+                tone="green"
+                title="Payment verified — booking confirmed"
+                body="See you at the arena! Please arrive 10 minutes before your slot."
+                extra={booking.payment_utr ? `UTR · ${booking.payment_utr}` : undefined}
+              />
+            ) : null}
+
+            {status === "cancelled" ? (
+              <StateCard
+                tone="red"
+                title="Booking rejected"
+                body="This booking was rejected and the slot has been released. Please contact us or make a new booking."
+              />
+            ) : null}
+
+            {status === "expired" ? (
+              <StateCard
+                tone="gray"
+                title="Booking expired"
+                body="No payment was submitted in time, so the slot was released. Please make a new booking."
+              />
+            ) : null}
+
+            {awaiting ? (
+              <>
+                {/* Instructions + QR */}
+                <section className="rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
+                  <h2 className="text-[0.62rem] font-semibold uppercase tracking-[0.32em] text-cyan">
+                    Payment instructions
+                  </h2>
+                  <p className="mt-3 text-sm text-muted-foreground">{settings.instructions}</p>
+
+                  <div className="mt-6 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
+                    <div className="mx-auto grid size-56 place-items-center overflow-hidden rounded-3xl border border-border bg-background/60">
+                      {settings.qr_image_url ? (
+                        <img
+                          src={settings.qr_image_url}
+                          alt={`UPI QR code for ${settings.account_name}`}
+                          className="size-full object-contain p-2"
+                        />
+                      ) : (
+                        <span className="grid place-items-center gap-2 text-muted-foreground">
+                          <QrCode className="size-16" />
+                          <span className="text-[0.6rem] uppercase tracking-[0.2em]">
+                            QR code coming soon
+                          </span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="rounded-3xl border border-border bg-background/40 p-4">
+                        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                          UPI ID
+                        </p>
+                        <div className="mt-1 flex items-center justify-between gap-3">
+                          <p className="truncate text-base font-extrabold">{settings.upi_id}</p>
+                          <button
+                            type="button"
+                            onClick={() => void copy(settings.upi_id, "UPI ID")}
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-[0.62rem] font-bold uppercase tracking-[0.16em] transition-colors hover:border-cyan/50 hover:text-cyan"
+                          >
+                            <Copy className="size-3.5" /> Copy UPI
+                          </button>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {settings.account_name}
+                        </p>
+                      </div>
+                      <div className="rounded-3xl border border-border bg-background/40 p-4">
+                        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                          Amount
+                        </p>
+                        <p className="mt-1 text-2xl font-black">{inr(booking.total_amount)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* UTR form */}
+                <section className="rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
+                  <h2 className="text-[0.62rem] font-semibold uppercase tracking-[0.32em] text-cyan">
+                    Confirm your payment
+                  </h2>
+                  <div className="mt-5 grid gap-4">
+                    <label className="block">
+                      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                        Transaction / UTR number
+                      </span>
+                      <input
+                        value={utr}
+                        onChange={(e) => setUtr(e.target.value)}
+                        placeholder="e.g. 412345678901"
+                        className="mt-2 w-full rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none transition-colors focus:border-cyan/60"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                        Optional note
+                      </span>
+                      <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        rows={2}
+                        placeholder="Anything we should know?"
+                        className="mt-2 w-full resize-none rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none transition-colors focus:border-cyan/60"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void submit()}
+                      disabled={busy}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
+                    >
+                      {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                      Submit payment
+                    </button>
+                    <Link
+                      to="/book"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-border px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40 hover:text-cyan"
+                    >
+                      <ArrowLeft className="size-3.5" /> Back
+                    </Link>
+                  </div>
+
+                  <p className="mt-5 flex items-center gap-2 text-[0.68rem] text-muted-foreground">
+                    <ShieldCheck className="size-3.5 text-cyan" />
+                    Your slot is reserved while you pay. We verify every payment manually before
+                    confirming.
+                  </p>
+                </section>
+
+              </>
+            ) : null}
+
             {/* Booking header */}
             <section className="relative overflow-hidden rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
               <div
@@ -316,154 +465,6 @@ function PaymentPage() {
                 </div>
               ) : null}
             </section>
-
-            {status === "payment_pending" || status === "pending" ? (
-              <StateCard
-                tone="yellow"
-                title="Payment submitted — verification pending"
-                body="We've received your transaction details. Our team is verifying the payment and will confirm your booking shortly. You can close this page; your booking is safe."
-                extra={booking.payment_utr ? `UTR · ${booking.payment_utr}` : undefined}
-              />
-            ) : null}
-
-            {status === "confirmed" || status === "completed" ? (
-              <StateCard
-                tone="green"
-                title="Payment verified — booking confirmed"
-                body="See you at the arena! Please arrive 10 minutes before your slot."
-                extra={booking.payment_utr ? `UTR · ${booking.payment_utr}` : undefined}
-              />
-            ) : null}
-
-            {status === "cancelled" ? (
-              <StateCard
-                tone="red"
-                title="Booking rejected"
-                body="This booking was rejected and the slot has been released. Please contact us or make a new booking."
-              />
-            ) : null}
-
-            {status === "expired" ? (
-              <StateCard
-                tone="gray"
-                title="Booking expired"
-                body="No payment was submitted in time, so the slot was released. Please make a new booking."
-              />
-            ) : null}
-
-            {awaiting ? (
-              <>
-                {/* Instructions + QR */}
-                <section className="rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
-                  <h2 className="text-[0.62rem] font-semibold uppercase tracking-[0.32em] text-cyan">
-                    Payment instructions
-                  </h2>
-                  <p className="mt-3 text-sm text-muted-foreground">{settings.instructions}</p>
-
-                  <div className="mt-6 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
-                    <div className="mx-auto grid size-56 place-items-center overflow-hidden rounded-3xl border border-border bg-background/60">
-                      {settings.qr_image_url ? (
-                        <img
-                          src={settings.qr_image_url}
-                          alt={`UPI QR code for ${settings.account_name}`}
-                          className="size-full object-contain p-2"
-                        />
-                      ) : (
-                        <span className="grid place-items-center gap-2 text-muted-foreground">
-                          <QrCode className="size-16" />
-                          <span className="text-[0.6rem] uppercase tracking-[0.2em]">
-                            QR code coming soon
-                          </span>
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="rounded-3xl border border-border bg-background/40 p-4">
-                        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                          UPI ID
-                        </p>
-                        <div className="mt-1 flex items-center justify-between gap-3">
-                          <p className="truncate text-base font-extrabold">{settings.upi_id}</p>
-                          <button
-                            type="button"
-                            onClick={() => void copy(settings.upi_id, "UPI ID")}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-[0.62rem] font-bold uppercase tracking-[0.16em] transition-colors hover:border-cyan/50 hover:text-cyan"
-                          >
-                            <Copy className="size-3.5" /> Copy UPI
-                          </button>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {settings.account_name}
-                        </p>
-                      </div>
-                      <div className="rounded-3xl border border-border bg-background/40 p-4">
-                        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                          Amount
-                        </p>
-                        <p className="mt-1 text-2xl font-black">{inr(booking.total_amount)}</p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* UTR form */}
-                <section className="rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
-                  <h2 className="text-[0.62rem] font-semibold uppercase tracking-[0.32em] text-cyan">
-                    Confirm your payment
-                  </h2>
-                  <div className="mt-5 grid gap-4">
-                    <label className="block">
-                      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                        Transaction / UTR number
-                      </span>
-                      <input
-                        value={utr}
-                        onChange={(e) => setUtr(e.target.value)}
-                        placeholder="e.g. 412345678901"
-                        className="mt-2 w-full rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none transition-colors focus:border-cyan/60"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                        Optional note
-                      </span>
-                      <textarea
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        rows={2}
-                        placeholder="Anything we should know?"
-                        className="mt-2 w-full resize-none rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none transition-colors focus:border-cyan/60"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => void submit()}
-                      disabled={busy}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary via-cyan to-violet px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
-                    >
-                      {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                      Submit payment
-                    </button>
-                    <Link
-                      to="/book"
-                      className="inline-flex items-center gap-2 rounded-2xl border border-border px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40 hover:text-cyan"
-                    >
-                      <ArrowLeft className="size-3.5" /> Back
-                    </Link>
-                  </div>
-
-                  <p className="mt-5 flex items-center gap-2 text-[0.68rem] text-muted-foreground">
-                    <ShieldCheck className="size-3.5 text-cyan" />
-                    Your slot is reserved while you pay. We verify every payment manually before
-                    confirming.
-                  </p>
-                </section>
-              </>
-            ) : null}
           </div>
         )}
       </main>

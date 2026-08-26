@@ -301,6 +301,57 @@ export function ConsoleSelect({
               ref={nextRef}
               className="scroll-mt-24 space-y-7 animate-[step-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]"
             >
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <Label>Players</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {playerOptions.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        aria-pressed={players === p}
+                        onClick={() => onPlayers(p)}
+                        className={cn(
+                          "rounded-xl border border-border bg-surface/60 px-3.5 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300",
+                          "hover:-translate-y-0.5 hover:border-cyan/40",
+                          players === p &&
+                            "border-transparent shadow-[0_0_0_1px_var(--cyan)] text-cyan",
+                        )}
+                      >
+                        {p} {p === 1 ? "Player" : "Players"}
+                        <span className="ml-2 text-[0.65rem] font-bold text-muted-foreground">
+                          {inr(playerPrice(p))}/hr
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>Duration</Label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {durations.map((d) => (
+                      <button
+                        key={d.minutes}
+                        type="button"
+                        aria-pressed={durationMinutes === d.minutes}
+                        onClick={() => onDuration(d.minutes)}
+                        className={cn(
+                          "rounded-2xl border border-border bg-surface/60 px-3 py-2.5 text-left backdrop-blur-xl transition-all duration-300",
+                          "hover:-translate-y-0.5 hover:border-cyan/40",
+                          durationMinutes === d.minutes &&
+                            "border-transparent shadow-[0_0_0_1px_var(--cyan)]",
+                        )}
+                      >
+                        <span className="block text-xs font-extrabold">{d.label}</span>
+                        <span className="mt-0.5 block text-sm font-black text-cyan">
+                          {inr(priceFor(d.minutes))}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <Label>
                   Start time
@@ -327,61 +378,10 @@ export function ConsoleSelect({
                   </span>
                 </p>
               </div>
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <Label>Duration</Label>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {durations.map((d) => (
-                      <button
-                        key={d.minutes}
-                        type="button"
-                        aria-pressed={durationMinutes === d.minutes}
-                        onClick={() => onDuration(d.minutes)}
-                        className={cn(
-                          "rounded-2xl border border-border bg-surface/60 px-3 py-2.5 text-left backdrop-blur-xl transition-all duration-300",
-                          "hover:-translate-y-0.5 hover:border-cyan/40",
-                          durationMinutes === d.minutes &&
-                            "border-transparent shadow-[0_0_0_1px_var(--cyan)]",
-                        )}
-                      >
-                        <span className="block text-xs font-extrabold">{d.label}</span>
-                        <span className="mt-0.5 block text-sm font-black text-cyan">
-                          {inr(priceFor(d.minutes))}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <Label>Players</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {playerOptions.map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        aria-pressed={players === p}
-                        onClick={() => onPlayers(p)}
-                        className={cn(
-                          "rounded-xl border border-border bg-surface/60 px-3.5 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300",
-                          "hover:-translate-y-0.5 hover:border-cyan/40",
-                          players === p &&
-                            "border-transparent shadow-[0_0_0_1px_var(--cyan)] text-cyan",
-                        )}
-                      >
-                        {p} {p === 1 ? "Player" : "Players"}
-                        <span className="ml-2 text-[0.65rem] font-bold text-muted-foreground">
-                          {inr(playerPrice(p))}/hr
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Select a console above to choose your time, duration and players.
+              Select a console above to choose your players, duration and time.
             </p>
           )}
         </div>
