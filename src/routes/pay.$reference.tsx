@@ -158,165 +158,6 @@ function PaymentPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Booking header */}
-            <section className="relative overflow-hidden rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
-              <div
-                className="absolute -right-16 -top-16 size-52 rounded-full bg-violet/15 blur-3xl"
-                aria-hidden="true"
-              />
-              <div className="relative flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-[0.62rem] font-semibold uppercase tracking-[0.42em] text-cyan">
-                    Booking ID
-                  </p>
-                  <p className="mt-2 text-2xl font-black tracking-widest">{booking.reference}</p>
-                </div>
-                <span
-                  className={cn(
-                    "rounded-full border px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-[0.2em]",
-                    STATUS_CLASS[status] ?? STATUS_CLASS["expired"],
-                  )}
-                >
-                  {STATUS_LABEL[status] ?? status}
-                </span>
-              </div>
-
-              <div className="relative mt-6 grid gap-4 rounded-3xl border border-border bg-background/40 p-5 sm:grid-cols-2">
-                <Info label="Branch" value={booking.branch_name} />
-                <Info label="Console" value={booking.station_name || "Passes only"} />
-                <Info
-                  label="Date"
-                  value={new Date(`${booking.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                  })}
-                />
-                <Info
-                  label="Time"
-                  value={
-                    booking.start_time && booking.end_time
-                      ? `${formatTime(booking.start_time)} – ${formatTime(booking.end_time)}`
-                      : "—"
-                  }
-                  {...(booking.reward_minutes
-                    ? { sub: `Includes ${booking.reward_minutes} min loyalty free time` }
-                    : {})}
-
-                />
-
-                <Info label="Players" value={`${booking.players} ${booking.players === 1 ? "player" : "players"}`} />
-                <Info label="Guest" value={booking.customer_name} sub={booking.customer_phone} />
-              </div>
-
-              {booking.items.length ? (
-                <ul className="relative mt-5 space-y-2 border-t border-border pt-5 text-sm">
-                  {booking.items.map((i, idx) => (
-                    <li key={idx} className="flex items-start justify-between gap-4">
-                      <span className="text-foreground/85">
-                        {i.quantity} × {i.label}
-                        {i.start_time && i.end_time ? (
-                          <span className="block text-xs text-muted-foreground">
-                            {formatTime(i.start_time)} – {formatTime(i.end_time)}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="font-semibold tabular-nums">{inr(i.line_total)}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-
-              {/* Full price breakdown */}
-              <dl className="relative mt-5 space-y-2 border-t border-border pt-5 text-sm">
-                <p className="text-[0.6rem] font-black uppercase tracking-[0.24em] text-muted-foreground">
-                  Price breakdown
-                </p>
-                {booking.session_amount > 0 ? (
-                  <BreakRow label="Gaming session" value={inr(booking.session_amount)} />
-                ) : null}
-                {booking.addons_amount > 0 ? (
-                  <BreakRow label="Experiences & passes" value={inr(booking.addons_amount)} />
-                ) : null}
-                {booking.food_amount > 0 ? (
-                  <BreakRow label="Food & drinks" value={inr(booking.food_amount)} />
-                ) : null}
-                <BreakRow
-                  label="Subtotal"
-                  value={inr(booking.session_amount + booking.addons_amount + booking.food_amount)}
-                  strong
-                />
-                {booking.gaming_discount_amount > 0 ? (
-                  <BreakRow
-                    label={`Gaming discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
-                    value={`− ${inr(booking.gaming_discount_amount)}`}
-                    tone="green"
-                  />
-                ) : null}
-                {booking.food_discount_amount > 0 ? (
-                  <BreakRow
-                    label={`Food discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
-                    value={`− ${inr(booking.food_discount_amount)}`}
-                    tone="green"
-                  />
-                ) : null}
-                {booking.bill_discount_amount > 0 ? (
-                  <BreakRow
-                    label={`Bill discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
-                    value={`− ${inr(booking.bill_discount_amount)}`}
-                    tone="green"
-                  />
-                ) : null}
-                {booking.student_discount_amount > 0 ? (
-                  <BreakRow
-                    label="Student discount (20% of gaming)"
-                    value={`− ${inr(booking.student_discount_amount)}`}
-                    tone="green"
-                  />
-                ) : null}
-                {booking.discount_amount > 0 &&
-                booking.gaming_discount_amount +
-                  booking.food_discount_amount +
-                  booking.bill_discount_amount +
-                  booking.student_discount_amount ===
-                  0 ? (
-                  <BreakRow
-                    label={`Discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
-                    value={`− ${inr(booking.discount_amount)}`}
-                    tone="green"
-                  />
-                ) : null}
-                {booking.tax_amount > 0 ? (
-                  <BreakRow label="Taxes & fees" value={inr(booking.tax_amount)} />
-                ) : null}
-                {booking.reward_minutes ? (
-                  <BreakRow
-                    label={`Loyalty free time (${booking.reward_minutes} min)`}
-                    value="Free"
-                    tone="green"
-                  />
-                ) : null}
-              </dl>
-
-              <div className="relative mt-5 flex items-end justify-between border-t border-border pt-5">
-                <span className="text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                  Amount payable
-                </span>
-                <span className="text-gradient text-3xl font-black">{inr(booking.total_amount)}</span>
-              </div>
-
-              {remaining !== null ? (
-                <div className="relative mt-5 flex w-fit items-center gap-2 rounded-full border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-xs font-bold text-orange-300">
-                  <Timer className="size-3.5" />
-                  {remaining > 0
-                    ? `Slot reserved · ${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(
-                        remaining % 60,
-                      ).padStart(2, "0")} left to pay`
-                    : "Reservation expired"}
-                </div>
-              ) : null}
-            </section>
-
             {status === "payment_pending" || status === "pending" ? (
               <StateCard
                 tone="yellow"
@@ -462,6 +303,165 @@ function PaymentPage() {
                     confirming.
                   </p>
                 </section>
+
+              {/* Booking header */}
+              <section className="relative overflow-hidden rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
+                <div
+                  className="absolute -right-16 -top-16 size-52 rounded-full bg-violet/15 blur-3xl"
+                  aria-hidden="true"
+                />
+                <div className="relative flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[0.62rem] font-semibold uppercase tracking-[0.42em] text-cyan">
+                      Booking ID
+                    </p>
+                    <p className="mt-2 text-2xl font-black tracking-widest">{booking.reference}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded-full border px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-[0.2em]",
+                      STATUS_CLASS[status] ?? STATUS_CLASS["expired"],
+                    )}
+                  >
+                    {STATUS_LABEL[status] ?? status}
+                  </span>
+                </div>
+
+                <div className="relative mt-6 grid gap-4 rounded-3xl border border-border bg-background/40 p-5 sm:grid-cols-2">
+                  <Info label="Branch" value={booking.branch_name} />
+                  <Info label="Console" value={booking.station_name || "Passes only"} />
+                  <Info
+                    label="Date"
+                    value={new Date(`${booking.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    })}
+                  />
+                  <Info
+                    label="Time"
+                    value={
+                      booking.start_time && booking.end_time
+                        ? `${formatTime(booking.start_time)} – ${formatTime(booking.end_time)}`
+                        : "—"
+                    }
+                    {...(booking.reward_minutes
+                      ? { sub: `Includes ${booking.reward_minutes} min loyalty free time` }
+                      : {})}
+
+                  />
+
+                  <Info label="Players" value={`${booking.players} ${booking.players === 1 ? "player" : "players"}`} />
+                  <Info label="Guest" value={booking.customer_name} sub={booking.customer_phone} />
+                </div>
+
+                {booking.items.length ? (
+                  <ul className="relative mt-5 space-y-2 border-t border-border pt-5 text-sm">
+                    {booking.items.map((i, idx) => (
+                      <li key={idx} className="flex items-start justify-between gap-4">
+                        <span className="text-foreground/85">
+                          {i.quantity} × {i.label}
+                          {i.start_time && i.end_time ? (
+                            <span className="block text-xs text-muted-foreground">
+                              {formatTime(i.start_time)} – {formatTime(i.end_time)}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="font-semibold tabular-nums">{inr(i.line_total)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+
+                {/* Full price breakdown */}
+                <dl className="relative mt-5 space-y-2 border-t border-border pt-5 text-sm">
+                  <p className="text-[0.6rem] font-black uppercase tracking-[0.24em] text-muted-foreground">
+                    Price breakdown
+                  </p>
+                  {booking.session_amount > 0 ? (
+                    <BreakRow label="Gaming session" value={inr(booking.session_amount)} />
+                  ) : null}
+                  {booking.addons_amount > 0 ? (
+                    <BreakRow label="Experiences & passes" value={inr(booking.addons_amount)} />
+                  ) : null}
+                  {booking.food_amount > 0 ? (
+                    <BreakRow label="Food & drinks" value={inr(booking.food_amount)} />
+                  ) : null}
+                  <BreakRow
+                    label="Subtotal"
+                    value={inr(booking.session_amount + booking.addons_amount + booking.food_amount)}
+                    strong
+                  />
+                  {booking.gaming_discount_amount > 0 ? (
+                    <BreakRow
+                      label={`Gaming discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                      value={`− ${inr(booking.gaming_discount_amount)}`}
+                      tone="green"
+                    />
+                  ) : null}
+                  {booking.food_discount_amount > 0 ? (
+                    <BreakRow
+                      label={`Food discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                      value={`− ${inr(booking.food_discount_amount)}`}
+                      tone="green"
+                    />
+                  ) : null}
+                  {booking.bill_discount_amount > 0 ? (
+                    <BreakRow
+                      label={`Bill discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                      value={`− ${inr(booking.bill_discount_amount)}`}
+                      tone="green"
+                    />
+                  ) : null}
+                  {booking.student_discount_amount > 0 ? (
+                    <BreakRow
+                      label="Student discount (20% of gaming)"
+                      value={`− ${inr(booking.student_discount_amount)}`}
+                      tone="green"
+                    />
+                  ) : null}
+                  {booking.discount_amount > 0 &&
+                  booking.gaming_discount_amount +
+                    booking.food_discount_amount +
+                    booking.bill_discount_amount +
+                    booking.student_discount_amount ===
+                    0 ? (
+                    <BreakRow
+                      label={`Discount${booking.coupon_code ? ` · ${booking.coupon_code}` : ""}`}
+                      value={`− ${inr(booking.discount_amount)}`}
+                      tone="green"
+                    />
+                  ) : null}
+                  {booking.tax_amount > 0 ? (
+                    <BreakRow label="Taxes & fees" value={inr(booking.tax_amount)} />
+                  ) : null}
+                  {booking.reward_minutes ? (
+                    <BreakRow
+                      label={`Loyalty free time (${booking.reward_minutes} min)`}
+                      value="Free"
+                      tone="green"
+                    />
+                  ) : null}
+                </dl>
+
+                <div className="relative mt-5 flex items-end justify-between border-t border-border pt-5">
+                  <span className="text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Amount payable
+                  </span>
+                  <span className="text-gradient text-3xl font-black">{inr(booking.total_amount)}</span>
+                </div>
+
+                {remaining !== null ? (
+                  <div className="relative mt-5 flex w-fit items-center gap-2 rounded-full border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-xs font-bold text-orange-300">
+                    <Timer className="size-3.5" />
+                    {remaining > 0
+                      ? `Slot reserved · ${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(
+                          remaining % 60,
+                        ).padStart(2, "0")} left to pay`
+                      : "Reservation expired"}
+                  </div>
+                ) : null}
+              </section>
               </>
             ) : null}
           </div>
