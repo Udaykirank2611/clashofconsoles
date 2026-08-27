@@ -262,7 +262,7 @@ export function BookingFlow() {
   const [branchId, setBranchId] = useState<string | null>(null);
   const [date, setDate] = useState(() => toDateKey(new Date()));
   const [stationId, setStationId] = useState<string | null>(null);
-  const [players, setPlayers] = useState(2);
+  const [players, setPlayers] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<string | null>(null);
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
 
@@ -604,7 +604,7 @@ export function BookingFlow() {
   const passConsoleOnly = appliedPass ? isConsoleOnlyPass(appliedPass.pass.passType) : false;
   const fullSessionAmount = isGroup
     ? groupAmount
-    : startTime && durationMinutes
+    : startTime && durationMinutes && players
       ? rateFor(rates, players, durationMinutes)
       : 0;
   const sessionAmount = passCoversSession ? 0 : fullSessionAmount;
@@ -718,8 +718,8 @@ export function BookingFlow() {
   /* A console is optional: the visitor may book only VR / snooker / theatre /
      lounge, or skip gaming entirely when they are buying a pass. Whatever is
      picked simply has to be complete. */
-  const consoleTouched = Boolean(stationId || startTime || durationMinutes);
-  const consoleReady = Boolean(station && startTime && durationMinutes);
+  const consoleTouched = Boolean(stationId || startTime || durationMinutes || players);
+  const consoleReady = Boolean(station && startTime && durationMinutes && players);
   const hasPasses = passLines.length > 0;
   /* Gaming is optional; whatever is picked simply has to be complete. */
   const groupReady = Boolean(isGroup && groupRate && groupStart && groupMembers >= 1);
@@ -1060,6 +1060,8 @@ export function BookingFlow() {
       if (consoleTouched && !consoleReady) {
         if (!station)
           return { selector: "#gaming-console", message: "Choose a console or experience first." };
+        if (!players)
+          return { selector: "#field-players", message: "Choose how many players." };
         if (!durationMinutes)
           return { selector: "#field-duration", message: "Choose how long you want to play." };
         return {
