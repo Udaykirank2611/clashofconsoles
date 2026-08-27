@@ -262,7 +262,7 @@ export function BookingFlow() {
   const [branchId, setBranchId] = useState<string | null>(null);
   const [date, setDate] = useState(() => toDateKey(new Date()));
   const [stationId, setStationId] = useState<string | null>(null);
-  const [players, setPlayers] = useState(2);
+  const [players, setPlayers] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<string | null>(null);
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
 
@@ -604,7 +604,7 @@ export function BookingFlow() {
   const passConsoleOnly = appliedPass ? isConsoleOnlyPass(appliedPass.pass.passType) : false;
   const fullSessionAmount = isGroup
     ? groupAmount
-    : startTime && durationMinutes
+    : startTime && durationMinutes && players
       ? rateFor(rates, players, durationMinutes)
       : 0;
   const sessionAmount = passCoversSession ? 0 : fullSessionAmount;
@@ -718,8 +718,8 @@ export function BookingFlow() {
   /* A console is optional: the visitor may book only VR / snooker / theatre /
      lounge, or skip gaming entirely when they are buying a pass. Whatever is
      picked simply has to be complete. */
-  const consoleTouched = Boolean(stationId || startTime || durationMinutes);
-  const consoleReady = Boolean(station && startTime && durationMinutes);
+  const consoleTouched = Boolean(stationId || startTime || durationMinutes || players);
+  const consoleReady = Boolean(station && startTime && durationMinutes && players);
   const hasPasses = passLines.length > 0;
   /* Gaming is optional; whatever is picked simply has to be complete. */
   const groupReady = Boolean(isGroup && groupRate && groupStart && groupMembers >= 1);
@@ -805,7 +805,7 @@ export function BookingFlow() {
         stationId: consoleReady ? station!.id : null,
         startTime: consoleReady ? startTime : null,
         durationMinutes: consoleReady ? durationMinutes : null,
-        players,
+        players: players ?? 1,
         extras: isGroup ? [] : extraHolds,
         passes,
         bookingType,
@@ -1060,6 +1060,8 @@ export function BookingFlow() {
       if (consoleTouched && !consoleReady) {
         if (!station)
           return { selector: "#gaming-console", message: "Choose a console or experience first." };
+        if (!players)
+          return { selector: "#field-players", message: "Choose how many players." };
         if (!durationMinutes)
           return { selector: "#field-duration", message: "Choose how long you want to play." };
         return {
@@ -1584,7 +1586,7 @@ export function BookingFlow() {
                 gamesFor={gamesFor}
                 slots={slots}
                 durations={durations}
-                priceFor={(m) => rateFor(rates, players, m)}
+                priceFor={(m) => rateFor(rates, players ?? 2, m)}
                 players={players}
                 playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
                 playerPrice={(p) => rateFor(rates, p, 60)}
@@ -1724,7 +1726,7 @@ export function BookingFlow() {
                   : (curDuration ?? 30);
                 const priceFor = (minutes: number) =>
                   isConsole
-                    ? rateFor(rates, players, minutes)
+                    ? rateFor(rates, players ?? 2, minutes)
                     : currentTier
                       ? Math.round(Number(currentTier.price)) +
                         extraHours * Math.round(Number(extraHourRate?.price ?? 0))
@@ -1756,7 +1758,7 @@ export function BookingFlow() {
                           {bookable.length
                             ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
                                 isConsole
-                                  ? `From ${inr(rateFor(rates, players, 60))}/hr`
+                                  ? `From ${inr(rateFor(rates, players ?? 2, 60))}/hr`
                                   : (() => {
                                       const list = baseTiersFor((active ?? g.stations[0])!.id);
                                       return list.length
@@ -1957,7 +1959,7 @@ export function BookingFlow() {
                                   {active.name} · {formatTime(curStart)} –{" "}
                                   {formatTime(addMinutes(curStart, isConsole ? curDuration : blockedMinutes))}
                                   {isConsole
-                                    ? ` · ${players} ${players === 1 ? "player" : "players"}`
+                                    ? ` · ${players ?? "—"} ${players === 1 ? "player" : "players"}`
                                     : ""}
                                 </span>
                                 <span className="text-xl font-black">{inr(priceFor(curDuration))}</span>
@@ -2236,7 +2238,7 @@ export function BookingFlow() {
                         }
                       />
 
-                      <Row label="Players" value={String(players)} />
+                      <Row label="Players" value={players ? String(players) : "—"} />
                     </>
                   )}
                   {(isGroup ? [] : selectedExtras).map((e) => (

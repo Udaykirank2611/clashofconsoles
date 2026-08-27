@@ -72,7 +72,7 @@ export function AddFoodDialog({
 
   return (
     <ModalPortal onClose={onClose}>
-      <div className="mx-auto flex max-h-[88dvh] w-full max-w-lg flex-col rounded-3xl border border-border bg-surface p-6 shadow-2xl">
+      <div className="mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col overflow-y-auto rounded-3xl border border-border bg-surface p-4 shadow-2xl sm:p-6">
         <h3 className="text-sm font-black uppercase tracking-[0.18em]">Add food</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           {booking.reference} · {booking.customer_name} · current total {money(booking.total_amount)}
@@ -99,7 +99,7 @@ export function AddFoodDialog({
               </select>
             </label>
 
-            <ul className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+            <ul className="mt-4 max-h-52 space-y-2 overflow-y-auto pr-1 sm:max-h-64">
               {items.map((m) => (
                 <li
                   key={m.id}
@@ -124,7 +124,7 @@ export function AddFoodDialog({
               <p className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                 Other item (not on the menu)
               </p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-[1.4fr_0.8fr_auto_auto]">
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-[1.4fr_0.8fr_auto_auto]">
                 <input
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
@@ -224,7 +224,7 @@ export function AddFoodDialog({
               ))}
             </div>
 
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="sticky bottom-0 -mx-4 mt-4 flex justify-end gap-2 border-t border-border/70 bg-surface px-4 pb-1 pt-3 sm:-mx-6 sm:px-6">
               <AdminButton onClick={onClose}>Cancel</AdminButton>
               <AdminButton variant="success" disabled={saving || (!picked.length && !customLines.length)} onClick={() => void submit()}>
                 {saving ? "Saving…" : `Paid · ${money(total)}`}

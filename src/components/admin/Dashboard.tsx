@@ -66,8 +66,7 @@ export function AdminDashboard() {
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const dead = new Set(["cancelled", "expired", "rejected", "declined", "no_show"]);
-    const todays = data.bookings.filter((b) => b.booking_date === today && !dead.has(b.status));
+    const todays = data.bookings.filter((b) => b.booking_date === today && b.status === "confirmed");
     const cockpit = data.stations.find((s) => s.is_addon || s.station_type === "driving_simulator");
     return {
       today: todays.length,
@@ -316,9 +315,8 @@ export function AdminDashboard() {
 
 function TodayList({ bookings }: { bookings: ReturnType<typeof useBranchData>["bookings"] }) {
   const today = new Date().toISOString().slice(0, 10);
-  const dead = new Set(["cancelled", "expired", "rejected", "declined", "no_show"]);
   const rows = bookings
-    .filter((b) => b.booking_date === today && !dead.has(b.status))
+    .filter((b) => b.booking_date === today && b.status === "confirmed")
     .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
   if (!rows.length) return <p className="py-8 text-center text-sm text-muted-foreground">Nothing booked today yet.</p>;
   return (
