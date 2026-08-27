@@ -249,8 +249,8 @@ function PaymentPage() {
                 </section>
 
                 {/* UTR form */}
-                <section className="rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
-                  <h2 className="text-[0.62rem] font-semibold uppercase tracking-[0.32em] text-cyan">
+                <section className="rounded-4xl border border-pink/45 bg-surface/70 p-6 shadow-[0_28px_80px_-40px_var(--pink)] backdrop-blur-2xl sm:p-8">
+                  <h2 className="inline-flex items-center rounded-full border border-pink/50 bg-pink/15 px-4 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.32em] text-pink drop-shadow-[0_0_12px_color-mix(in_oklab,var(--pink)_60%,transparent)]">
                     Confirm your payment
                   </h2>
                   <div className="mt-5 grid gap-4">
