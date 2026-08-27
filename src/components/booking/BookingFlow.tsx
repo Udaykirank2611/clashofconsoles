@@ -1034,10 +1034,13 @@ export function BookingFlow() {
       return;
     }
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.remove("coc-flash");
+    document
+      .querySelectorAll(".coc-flash, .coc-missing")
+      .forEach((n) => n.classList.remove("coc-flash", "coc-missing"));
     // Restart the animation on repeated taps.
     void (el as HTMLElement).offsetWidth;
-    el.classList.add("coc-flash");
+    el.classList.add("coc-flash", "coc-missing");
+    (el as HTMLElement).dataset["missing"] = message;
     const input = el.querySelector("input, textarea, select") as HTMLElement | null;
     input?.focus({ preventScroll: true });
     window.setTimeout(() => el.classList.remove("coc-flash"), 3200);
@@ -1054,13 +1057,16 @@ export function BookingFlow() {
         if (!groupStart) return { selector: "#gaming-party", message: "Choose a start time for your party booking." };
         return null;
       }
-      if (consoleTouched && !consoleReady)
+      if (consoleTouched && !consoleReady) {
+        if (!station)
+          return { selector: "#gaming-console", message: "Choose a console or experience first." };
+        if (!durationMinutes)
+          return { selector: "#field-duration", message: "Choose how long you want to play." };
         return {
-          selector: "#gaming-console",
-          message: !startTime
-            ? "Choose a start time for your console session."
-            : "Choose how long you want to play.",
+          selector: "#field-start-time",
+          message: "Choose a start time for your console session.",
         };
+      }
       if (!extrasReady)
         return {
           selector: "#gaming-extras",

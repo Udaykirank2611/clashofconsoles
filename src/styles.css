@@ -683,3 +683,28 @@
   border-radius: 1.25rem;
   animation: coc-required-flash 1.5s ease-in-out 2;
 }
+
+/* Persistent "what's missing" marker until the visitor fixes it. */
+.coc-missing {
+  position: relative;
+  border-radius: 1.25rem;
+  outline: 2px dashed color-mix(in oklab, var(--pink, #ff2d90) 70%, transparent);
+  outline-offset: 6px;
+}
+
+.coc-missing::before {
+  content: attr(data-missing);
+  position: absolute;
+  top: -1.4rem;
+  left: 0;
+  z-index: 20;
+  border-radius: 999px;
+  background: var(--pink, #ff2d90);
+  color: #fff;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 30px -12px color-mix(in oklab, var(--pink, #ff2d90) 90%, transparent);
+}

@@ -326,7 +326,7 @@ export function ConsoleSelect({
                     ))}
                   </div>
                 </div>
-                <div>
+                <div id="field-duration" className="scroll-mt-28 rounded-3xl">
                   <Label>Duration</Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {durations.map((d) => (
@@ -352,7 +352,7 @@ export function ConsoleSelect({
                 </div>
               </div>
 
-              <div>
+              <div id="field-start-time" className="scroll-mt-28 rounded-3xl">
                 <Label>
                   Start time
                   {extraMinutes ? (
