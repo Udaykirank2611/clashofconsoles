@@ -66,7 +66,8 @@ export function AdminDashboard() {
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const todays = data.bookings.filter((b) => b.booking_date === today && b.status !== "cancelled");
+    const dead = new Set(["cancelled", "expired", "rejected", "declined", "no_show"]);
+    const todays = data.bookings.filter((b) => b.booking_date === today && !dead.has(b.status));
     const cockpit = data.stations.find((s) => s.is_addon || s.station_type === "driving_simulator");
     return {
       today: todays.length,
