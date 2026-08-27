@@ -184,7 +184,7 @@ export function ConsoleSelect({
   slots: string[];
   durations: { minutes: number; label: string }[];
   priceFor: (minutes: number) => number;
-  players: number;
+  players: number | null;
   playerOptions: readonly number[];
   playerPrice: (p: number) => number;
   onPlayers: (p: number) => void;
@@ -250,7 +250,7 @@ export function ConsoleSelect({
           </p>
           <p className="truncate text-xs text-muted-foreground">
             {bookable.length
-              ? `${description ?? ""} From ${inr(playerPrice(players))}/hr`.trim()
+              ? `${description ?? ""} From ${inr(playerPrice(players ?? 2))}/hr`.trim()
               : "Currently unavailable"}
           </p>
         </div>
@@ -302,7 +302,7 @@ export function ConsoleSelect({
               className="scroll-mt-24 space-y-7 animate-[step-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]"
             >
               <div className="grid gap-6 sm:grid-cols-2">
-                <div>
+                <div id="field-players" className="scroll-mt-28 rounded-3xl">
                   <Label>Players</Label>
                   <div className="flex flex-wrap gap-2">
                     {playerOptions.map((p) => (
