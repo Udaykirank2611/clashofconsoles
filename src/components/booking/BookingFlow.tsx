@@ -805,7 +805,7 @@ export function BookingFlow() {
         stationId: consoleReady ? station!.id : null,
         startTime: consoleReady ? startTime : null,
         durationMinutes: consoleReady ? durationMinutes : null,
-        players,
+        players: players ?? 1,
         extras: isGroup ? [] : extraHolds,
         passes,
         bookingType,
@@ -1586,7 +1586,7 @@ export function BookingFlow() {
                 gamesFor={gamesFor}
                 slots={slots}
                 durations={durations}
-                priceFor={(m) => rateFor(rates, players, m)}
+                priceFor={(m) => rateFor(rates, players ?? 2, m)}
                 players={players}
                 playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
                 playerPrice={(p) => rateFor(rates, p, 60)}
@@ -1726,7 +1726,7 @@ export function BookingFlow() {
                   : (curDuration ?? 30);
                 const priceFor = (minutes: number) =>
                   isConsole
-                    ? rateFor(rates, players, minutes)
+                    ? rateFor(rates, players ?? 2, minutes)
                     : currentTier
                       ? Math.round(Number(currentTier.price)) +
                         extraHours * Math.round(Number(extraHourRate?.price ?? 0))
@@ -1758,7 +1758,7 @@ export function BookingFlow() {
                           {bookable.length
                             ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
                                 isConsole
-                                  ? `From ${inr(rateFor(rates, players, 60))}/hr`
+                                  ? `From ${inr(rateFor(rates, players ?? 2, 60))}/hr`
                                   : (() => {
                                       const list = baseTiersFor((active ?? g.stations[0])!.id);
                                       return list.length
@@ -1959,7 +1959,7 @@ export function BookingFlow() {
                                   {active.name} · {formatTime(curStart)} –{" "}
                                   {formatTime(addMinutes(curStart, isConsole ? curDuration : blockedMinutes))}
                                   {isConsole
-                                    ? ` · ${players} ${players === 1 ? "player" : "players"}`
+                                    ? ` · ${players ?? "—"} ${players === 1 ? "player" : "players"}`
                                     : ""}
                                 </span>
                                 <span className="text-xl font-black">{inr(priceFor(curDuration))}</span>
@@ -2238,7 +2238,7 @@ export function BookingFlow() {
                         }
                       />
 
-                      <Row label="Players" value={String(players)} />
+                      <Row label="Players" value={players ? String(players) : "—"} />
                     </>
                   )}
                   {(isGroup ? [] : selectedExtras).map((e) => (
