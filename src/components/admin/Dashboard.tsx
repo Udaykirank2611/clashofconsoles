@@ -316,8 +316,9 @@ export function AdminDashboard() {
 
 function TodayList({ bookings }: { bookings: ReturnType<typeof useBranchData>["bookings"] }) {
   const today = new Date().toISOString().slice(0, 10);
+  const dead = new Set(["cancelled", "expired", "rejected", "declined", "no_show"]);
   const rows = bookings
-    .filter((b) => b.booking_date === today && b.status !== "cancelled")
+    .filter((b) => b.booking_date === today && !dead.has(b.status))
     .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
   if (!rows.length) return <p className="py-8 text-center text-sm text-muted-foreground">Nothing booked today yet.</p>;
   return (
