@@ -896,9 +896,8 @@ export function BookingFlow() {
     const next: Partial<Record<keyof CustomerForm, string>> = {};
     if (form.fullName.trim().length < 2) next.fullName = "Please enter your name";
     if (!isValidPhone(form.phone)) next.phone = "Enter a valid 10-digit mobile number";
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) next.email = "Enter a valid email";
     setErrors(next);
-    const firstBad = (["fullName", "phone", "email"] as const).find((k) => next[k]);
+    const firstBad = (["fullName", "phone"] as const).find((k) => next[k]);
     if (firstBad) {
       // Let the error text render before scrolling to it.
       window.setTimeout(() => highlight(`#field-${firstBad}`, next[firstBad]!), 30);
@@ -1455,7 +1454,7 @@ export function BookingFlow() {
             <div className={cn(appliedPass && "hidden")}>
               <FieldLabel>Booking Type</FieldLabel>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
                 {([
                   {
                     id: "single" as const,
@@ -1486,17 +1485,19 @@ export function BookingFlow() {
                         setGroupStart(null);
                       }}
                       className={cn(
-                        "rounded-3xl border p-5 text-left backdrop-blur-xl transition-all duration-300",
+                        "rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-all duration-300 sm:rounded-3xl sm:p-5",
                         active
                           ? "border-transparent bg-surface/80 shadow-[0_0_0_1px_var(--cyan)]"
                           : "border-border bg-surface/50 hover:border-cyan/40",
                       )}
                     >
-                      <p className="text-base font-extrabold">
+                      <p className="text-sm font-extrabold sm:text-base">
                         <span className="mr-2">{opt.emoji}</span>
                         {opt.title}
                       </p>
-                      <p className="mt-1.5 text-xs text-muted-foreground">{opt.desc}</p>
+                      <p className="mt-1 line-clamp-2 text-[0.68rem] leading-snug text-muted-foreground sm:mt-1.5 sm:line-clamp-none sm:text-xs">
+                        {opt.desc}
+                      </p>
                     </button>
                   );
                 })}
@@ -2084,16 +2085,6 @@ export function BookingFlow() {
                     {...(errors.phone ? { error: errors.phone } : {})}
                     required
                     autoComplete="tel"
-                  />
-                </div>
-                <div id="field-email">
-                  <Field
-                    label="Email (optional)"
-                    value={form.email}
-                    onChange={(v) => setForm((f) => ({ ...f, email: v }))}
-                    type="email"
-                    {...(errors.email ? { error: errors.email } : {})}
-                    autoComplete="email"
                   />
                 </div>
 

@@ -100,11 +100,20 @@ function ConsoleCard({
         <div className="flex items-start justify-between gap-3">
           <span
             className={cn(
-              "grid size-12 shrink-0 place-items-center rounded-2xl border border-border bg-background/60 transition-colors duration-500",
+              "grid size-12 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-background/60 transition-colors duration-500",
               selected && "border-cyan/50 text-cyan",
             )}
           >
-            <Gamepad2 className="size-6" />
+            {station.image_url ? (
+              <img
+                src={station.image_url}
+                alt={station.name}
+                loading="lazy"
+                className="size-full object-cover"
+              />
+            ) : (
+              <Gamepad2 className="size-6" />
+            )}
           </span>
           <StatusBadge status={status} />
         </div>

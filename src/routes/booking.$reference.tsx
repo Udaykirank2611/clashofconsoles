@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -45,6 +46,10 @@ function BookingDetails() {
   const { new: isNew } = Route.useSearch();
   const navigate = useNavigate();
   const fetchBooking = useServerFn(getBooking);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ["booking", reference],
