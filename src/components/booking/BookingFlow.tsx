@@ -2086,16 +2086,6 @@ export function BookingFlow() {
                     autoComplete="tel"
                   />
                 </div>
-                <div id="field-email">
-                  <Field
-                    label="Email (optional)"
-                    value={form.email}
-                    onChange={(v) => setForm((f) => ({ ...f, email: v }))}
-                    type="email"
-                    {...(errors.email ? { error: errors.email } : {})}
-                    autoComplete="email"
-                  />
-                </div>
 
                 <Field
                   label="Special instructions (optional)"
