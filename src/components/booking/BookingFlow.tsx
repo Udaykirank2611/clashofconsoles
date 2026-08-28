@@ -938,7 +938,7 @@ export function BookingFlow() {
               ? { stationId: station!.id, startTime: startTime!, durationMinutes: durationMinutes! }
               : {}),
           date,
-          players,
+          players: players ?? 1,
           gameTitle: "",
           extras: isGroup
             ? []
