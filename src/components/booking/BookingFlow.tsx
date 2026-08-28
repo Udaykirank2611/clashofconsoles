@@ -896,9 +896,8 @@ export function BookingFlow() {
     const next: Partial<Record<keyof CustomerForm, string>> = {};
     if (form.fullName.trim().length < 2) next.fullName = "Please enter your name";
     if (!isValidPhone(form.phone)) next.phone = "Enter a valid 10-digit mobile number";
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) next.email = "Enter a valid email";
     setErrors(next);
-    const firstBad = (["fullName", "phone", "email"] as const).find((k) => next[k]);
+    const firstBad = (["fullName", "phone"] as const).find((k) => next[k]);
     if (firstBad) {
       // Let the error text render before scrolling to it.
       window.setTimeout(() => highlight(`#field-${firstBad}`, next[firstBad]!), 30);
