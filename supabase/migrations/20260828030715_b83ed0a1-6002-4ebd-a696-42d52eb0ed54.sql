@@ -1,0 +1,2 @@
+ALTER TABLE public.bookings DROP CONSTRAINT bookings_payment_mode_check;
+ALTER TABLE public.bookings ADD CONSTRAINT bookings_payment_mode_check CHECK (payment_mode IS NULL OR payment_mode = ANY (ARRAY['upi','cash','mixed']));
