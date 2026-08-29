@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Timer,
   Sparkles,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -1485,12 +1486,18 @@ export function BookingFlow() {
                         setGroupStart(null);
                       }}
                       className={cn(
-                        "rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-all duration-300 sm:rounded-3xl sm:p-5",
+                        "relative rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-all duration-300 sm:rounded-3xl sm:p-5",
                         active
                           ? "border-transparent bg-surface/80 shadow-[0_0_0_1px_var(--cyan)]"
                           : "border-border bg-surface/50 hover:border-cyan/40",
                       )}
                     >
+                      {opt.id === "group" ? (
+                        <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-400/15 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-[0.18em] text-amber-300 shadow-[0_0_18px_-4px_rgba(251,191,36,0.7)] sm:right-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[0.55rem]">
+                          <Star className="size-2.5 fill-amber-300 text-amber-300" aria-hidden="true" />
+                          Best value
+                        </span>
+                      ) : null}
                       <p className="text-sm font-extrabold sm:text-base">
                         <span className="mr-2">{opt.emoji}</span>
                         {opt.title}
