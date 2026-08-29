@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, ChevronDown, Gamepad2, LibraryBig } from "lucide-react";
+import { Check, ChevronDown, LibraryBig } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { inr } from "@/lib/booking/pricing";
 import type { Station, StationGame } from "@/lib/booking/types";
@@ -248,18 +248,31 @@ export function ConsoleSelect({
         }}
         className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
       >
-        <div className="min-w-0">
-          <p className="truncate text-sm font-extrabold">
-            {label}
-            <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
-              {consoles.length} available
-            </span>
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {bookable.length
-              ? `${description ?? ""} From ${inr(playerPrice(players ?? 2))}/hr`.trim()
-              : "Currently unavailable"}
-          </p>
+        <div className="flex min-w-0 items-center gap-3">
+          {(() => {
+            const img = consoles.find((s) => s.image_url)?.image_url;
+            return img ? (
+              <img
+                src={img}
+                alt=""
+                loading="lazy"
+                className="size-11 shrink-0 rounded-2xl border border-border object-cover"
+              />
+            ) : null;
+          })()}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-extrabold">
+              {label}
+              <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
+                {consoles.length} available
+              </span>
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {bookable.length
+                ? `${description ?? ""} From ${inr(playerPrice(players ?? 2))}/hr`.trim()
+                : "Currently unavailable"}
+            </p>
+          </div>
         </div>
         <button
           type="button"
