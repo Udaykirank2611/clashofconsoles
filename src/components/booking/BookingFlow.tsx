@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Timer,
   Sparkles,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -1133,7 +1134,7 @@ export function BookingFlow() {
   return (
     <div className="pb-40">
       <StepProgress step={step} />
-      {customer ? <LoyaltyStrip customer={customer} /> : null}
+      {customer && step !== 2 ? <LoyaltyStrip customer={customer} /> : null}
 
 
       {expiresAt ? (
@@ -1485,12 +1486,18 @@ export function BookingFlow() {
                         setGroupStart(null);
                       }}
                       className={cn(
-                        "rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-all duration-300 sm:rounded-3xl sm:p-5",
+                        "relative rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-all duration-300 sm:rounded-3xl sm:p-5",
                         active
                           ? "border-transparent bg-surface/80 shadow-[0_0_0_1px_var(--cyan)]"
                           : "border-border bg-surface/50 hover:border-cyan/40",
                       )}
                     >
+                      {opt.id === "group" ? (
+                        <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-400/15 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-[0.18em] text-amber-300 shadow-[0_0_18px_-4px_rgba(251,191,36,0.7)] sm:right-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[0.55rem]">
+                          <Star className="size-2.5 fill-amber-300 text-amber-300" aria-hidden="true" />
+                          Best value
+                        </span>
+                      ) : null}
                       <p className="text-sm font-extrabold sm:text-base">
                         <span className="mr-2">{opt.emoji}</span>
                         {opt.title}
@@ -1748,27 +1755,40 @@ export function BookingFlow() {
                       }}
                       className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-extrabold">
-                          {g.label}
-                          <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
-                            {g.stations.length} available
-                          </span>
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {bookable.length
-                            ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
-                                isConsole
-                                  ? `From ${inr(rateFor(rates, players ?? 2, 60))}/hr`
-                                  : (() => {
-                                      const list = baseTiersFor((active ?? g.stations[0])!.id);
-                                      return list.length
-                                        ? `From ${inr(Math.min(...list.map((r) => Number(r.price))))}`
-                                        : `${inr(Number((active ?? g.stations[0])!.hourly_price))}/hr`;
-                                    })()
-                              }`.trim()
-                            : "Currently unavailable"}
-                        </p>
+                      <div className="flex min-w-0 items-center gap-3">
+                        {(() => {
+                          const img = g.stations.find((s) => s.image_url)?.image_url;
+                          return img ? (
+                            <img
+                              src={img}
+                              alt=""
+                              loading="lazy"
+                              className="size-11 shrink-0 rounded-2xl border border-border object-cover"
+                            />
+                          ) : null;
+                        })()}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-extrabold">
+                            {g.label}
+                            <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
+                              {g.stations.length} available
+                            </span>
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {bookable.length
+                              ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
+                                  isConsole
+                                    ? `From ${inr(rateFor(rates, players ?? 2, 60))}/hr`
+                                    : (() => {
+                                        const list = baseTiersFor((active ?? g.stations[0])!.id);
+                                        return list.length
+                                          ? `From ${inr(Math.min(...list.map((r) => Number(r.price))))}`
+                                          : `${inr(Number((active ?? g.stations[0])!.hourly_price))}/hr`;
+                                      })()
+                                }`.trim()
+                              : "Currently unavailable"}
+                          </p>
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -2097,13 +2117,17 @@ export function BookingFlow() {
               </div>
 
               <div>
-                <FieldLabel>Coupon code</FieldLabel>
+                <FieldLabel>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-400/15 px-3 py-1 text-amber-300 shadow-[0_0_20px_-6px_rgba(251,191,36,0.8)]">
+                    🎟️ Coupon code
+                  </span>
+                </FieldLabel>
                 <div className="flex gap-2">
                   <input
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                     placeholder="Enter coupon"
-                    className="min-w-0 flex-1 rounded-xl border border-border bg-surface/60 px-3 py-2.5 text-sm outline-none transition-colors focus:border-cyan/50"
+                    className="min-w-0 flex-1 rounded-xl border-2 border-amber-300/70 bg-amber-400/10 px-3 py-2.5 text-sm font-bold tracking-[0.12em] text-amber-200 shadow-[0_0_28px_-8px_rgba(251,191,36,0.75)] outline-none transition-all placeholder:font-normal placeholder:tracking-normal placeholder:text-amber-200/40 focus:border-amber-300 focus:shadow-[0_0_36px_-6px_rgba(251,191,36,0.9)]"
                   />
                   <button
                     type="button"
