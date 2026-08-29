@@ -1133,7 +1133,7 @@ export function BookingFlow() {
   return (
     <div className="pb-40">
       <StepProgress step={step} />
-      {customer ? <LoyaltyStrip customer={customer} /> : null}
+      {customer && step !== 2 ? <LoyaltyStrip customer={customer} /> : null}
 
 
       {expiresAt ? (
