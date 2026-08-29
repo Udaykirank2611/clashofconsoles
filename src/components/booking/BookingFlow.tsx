@@ -2117,13 +2117,17 @@ export function BookingFlow() {
               </div>
 
               <div>
-                <FieldLabel>Coupon code</FieldLabel>
+                <FieldLabel>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-400/15 px-3 py-1 text-amber-300 shadow-[0_0_20px_-6px_rgba(251,191,36,0.8)]">
+                    🎟️ Coupon code
+                  </span>
+                </FieldLabel>
                 <div className="flex gap-2">
                   <input
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                     placeholder="Enter coupon"
-                    className="min-w-0 flex-1 rounded-xl border border-border bg-surface/60 px-3 py-2.5 text-sm outline-none transition-colors focus:border-cyan/50"
+                    className="min-w-0 flex-1 rounded-xl border-2 border-amber-300/70 bg-amber-400/10 px-3 py-2.5 text-sm font-bold tracking-[0.12em] text-amber-200 shadow-[0_0_28px_-8px_rgba(251,191,36,0.75)] outline-none transition-all placeholder:font-normal placeholder:tracking-normal placeholder:text-amber-200/40 focus:border-amber-300 focus:shadow-[0_0_36px_-6px_rgba(251,191,36,0.9)]"
                   />
                   <button
                     type="button"
