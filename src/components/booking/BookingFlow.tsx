@@ -1755,27 +1755,40 @@ export function BookingFlow() {
                       }}
                       className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-extrabold">
-                          {g.label}
-                          <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
-                            {g.stations.length} available
-                          </span>
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {bookable.length
-                            ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
-                                isConsole
-                                  ? `From ${inr(rateFor(rates, players ?? 2, 60))}/hr`
-                                  : (() => {
-                                      const list = baseTiersFor((active ?? g.stations[0])!.id);
-                                      return list.length
-                                        ? `From ${inr(Math.min(...list.map((r) => Number(r.price))))}`
-                                        : `${inr(Number((active ?? g.stations[0])!.hourly_price))}/hr`;
-                                    })()
-                              }`.trim()
-                            : "Currently unavailable"}
-                        </p>
+                      <div className="flex min-w-0 items-center gap-3">
+                        {(() => {
+                          const img = g.stations.find((s) => s.image_url)?.image_url;
+                          return img ? (
+                            <img
+                              src={img}
+                              alt=""
+                              loading="lazy"
+                              className="size-11 shrink-0 rounded-2xl border border-border object-cover"
+                            />
+                          ) : null;
+                        })()}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-extrabold">
+                            {g.label}
+                            <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
+                              {g.stations.length} available
+                            </span>
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {bookable.length
+                              ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
+                                  isConsole
+                                    ? `From ${inr(rateFor(rates, players ?? 2, 60))}/hr`
+                                    : (() => {
+                                        const list = baseTiersFor((active ?? g.stations[0])!.id);
+                                        return list.length
+                                          ? `From ${inr(Math.min(...list.map((r) => Number(r.price))))}`
+                                          : `${inr(Number((active ?? g.stations[0])!.hourly_price))}/hr`;
+                                      })()
+                                }`.trim()
+                              : "Currently unavailable"}
+                          </p>
+                        </div>
                       </div>
                       <button
                         type="button"
