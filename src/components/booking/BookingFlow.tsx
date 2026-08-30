@@ -1759,7 +1759,13 @@ export function BookingFlow() {
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         {(() => {
-                          const img = g.stations.find((s) => s.image_url)?.image_url;
+                          // Station image first; otherwise fall back to the first
+                          // game artwork the admin set on any station in this group.
+                          const img =
+                            g.stations.find((s) => s.image_url)?.image_url ??
+                            g.stations
+                              .flatMap((s) => gamesFor(s.id))
+                              .find((game) => game.image_url)?.image_url;
                           return img ? (
                             <img
                               src={img}
