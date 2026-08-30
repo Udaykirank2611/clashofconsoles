@@ -253,20 +253,20 @@ function PaymentPage() {
                 </section>
 
                 {/* UTR form */}
-                <section className="rounded-4xl border border-pink/45 bg-surface/70 p-6 shadow-[0_28px_80px_-40px_var(--pink)] backdrop-blur-2xl sm:p-8">
-                  <h2 className="inline-flex items-center rounded-full border border-pink/50 bg-pink/15 px-4 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.32em] text-pink drop-shadow-[0_0_12px_color-mix(in_oklab,var(--pink)_60%,transparent)]">
+                <section className="rounded-4xl border border-border bg-surface/70 p-6 backdrop-blur-2xl sm:p-8">
+                  <h2 className="text-[0.62rem] font-semibold uppercase tracking-[0.32em] text-cyan">
                     Confirm your payment
                   </h2>
                   <div className="mt-5 grid gap-4">
                     <label className="block">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-400/15 px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.22em] text-amber-300 shadow-[0_0_20px_-6px_rgba(251,191,36,0.8)]">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-pink/50 bg-pink/15 px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.22em] text-pink shadow-[0_0_20px_-6px_var(--pink)]">
                         🔢 Transaction / UTR number
                       </span>
                       <input
                         value={utr}
                         onChange={(e) => setUtr(e.target.value)}
                         placeholder="e.g. 412345678901"
-                        className="mt-2 w-full rounded-2xl border-2 border-amber-300/70 bg-amber-400/10 px-4 py-3 text-sm font-bold tracking-[0.12em] text-amber-200 shadow-[0_0_28px_-8px_rgba(251,191,36,0.75)] outline-none transition-all placeholder:font-normal placeholder:tracking-normal placeholder:text-amber-200/40 focus:border-amber-300 focus:shadow-[0_0_36px_-6px_rgba(251,191,36,0.9)]"
+                        className="mt-2 w-full rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none transition-colors focus:border-cyan/60"
                       />
                     </label>
                     <label className="block">

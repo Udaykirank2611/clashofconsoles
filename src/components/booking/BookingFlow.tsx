@@ -1227,11 +1227,6 @@ export function BookingFlow() {
         {/* ---------------- STEP 2 · GAMING (passes first) ---------------- */}
         {step === 1 ? (
           <section className="space-y-8">
-            <StepHead
-              title="Build your session"
-              hint="Start with a pass for the best value, or pick your day and any experience you like — gaming is optional."
-            />
-
             <PassRedeem
               applied={appliedPass}
               plannedMinutes={durationMinutes}
@@ -2012,14 +2007,7 @@ export function BookingFlow() {
 
             <FoodBanner caption="Food & drinks" />
             <div className="flex flex-wrap items-end justify-between gap-4">
-              <StepHead
-                title="Food & drinks"
-                hint={
-                  hasGaming
-                    ? "Optional — everything is served right at your station. You can skip this step."
-                    : "You haven't picked any gaming, so please add at least one item to continue."
-                }
-              />
+              <h2 className="text-2xl font-black sm:text-3xl">Food &amp; drinks</h2>
               {hasGaming ? (
                 <button
                   type="button"
