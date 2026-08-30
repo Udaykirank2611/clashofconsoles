@@ -1492,15 +1492,17 @@ export function BookingFlow() {
                           : "border-border bg-surface/50 hover:border-cyan/40",
                       )}
                     >
-                      {opt.id === "group" ? (
-                        <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-400/15 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-[0.18em] text-amber-300 shadow-[0_0_18px_-4px_rgba(251,191,36,0.7)] sm:right-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[0.55rem]">
-                          <Star className="size-2.5 fill-amber-300 text-amber-300" aria-hidden="true" />
-                          Best value
+                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-extrabold sm:text-base">
+                        <span>
+                          <span className="mr-2">{opt.emoji}</span>
+                          {opt.title}
                         </span>
-                      ) : null}
-                      <p className="text-sm font-extrabold sm:text-base">
-                        <span className="mr-2">{opt.emoji}</span>
-                        {opt.title}
+                        {opt.id === "group" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-400/15 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-[0.18em] text-amber-300 shadow-[0_0_18px_-4px_rgba(251,191,36,0.7)] sm:px-2.5 sm:py-1 sm:text-[0.55rem]">
+                            <Star className="size-2.5 fill-amber-300 text-amber-300" aria-hidden="true" />
+                            Best value
+                          </span>
+                        ) : null}
                       </p>
                       <p className="mt-1 line-clamp-2 text-[0.68rem] leading-snug text-muted-foreground sm:mt-1.5 sm:line-clamp-none sm:text-xs">
                         {opt.desc}
@@ -1757,7 +1759,13 @@ export function BookingFlow() {
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         {(() => {
-                          const img = g.stations.find((s) => s.image_url)?.image_url;
+                          // Station image first; otherwise fall back to the first
+                          // game artwork the admin set on any station in this group.
+                          const img =
+                            g.stations.find((s) => s.image_url)?.image_url ??
+                            g.stations
+                              .flatMap((s) => gamesFor(s.id))
+                              .find((game) => game.image_url)?.image_url;
                           return img ? (
                             <img
                               src={img}
