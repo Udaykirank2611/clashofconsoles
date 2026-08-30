@@ -63,6 +63,7 @@ import {
   upcomingDays,
 } from "@/lib/booking/pricing";
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
+import { useSiteContent } from "@/lib/site-content";
 import { ConsoleSelect, CardAction } from "./ConsoleSelect";
 import { GamesModal } from "./GamesModal";
 import type { CouponCategory } from "@/lib/booking/pricing";
@@ -338,6 +339,15 @@ export function BookingFlow() {
   );
   /** Is the console-gaming block switched on? Optional, like every experience. */
   const [consoleOn, setConsoleOn] = useState(false);
+  /** Home page "Our Gaming Experiences" artwork, keyed by station type. */
+  const { experiences: siteExperiences } = useSiteContent();
+  const experienceImageByType = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const exp of siteExperiences) {
+      if (exp.station_type && exp.image_url) map.set(exp.station_type, exp.image_url);
+    }
+    return map;
+  }, [siteExperiences]);
   const extraStations = useMemo(
     () => stations.filter((s) => s.station_type !== "console"),
     [stations],
@@ -1757,6 +1767,9 @@ export function BookingFlow() {
                           // Station image first; otherwise fall back to the first
                           // game artwork the admin set on any station in this group.
                           const img =
+                            g.stations
+                              .map((s) => experienceImageByType.get(s.station_type))
+                              .find(Boolean) ??
                             g.stations.find((s) => s.image_url)?.image_url ??
                             g.stations
                               .flatMap((s) => gamesFor(s.id))
