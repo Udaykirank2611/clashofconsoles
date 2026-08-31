@@ -32,6 +32,31 @@ import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 import { PassRedeem, type AppliedPass } from "./PassRedeem";
 import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
 
+/** Meat keywords used to flag a menu line as non-vegetarian. */
+const NON_VEG_RE =
+  /chicken|mutton|beef|fish|prawn|egg|kebab|tikka|tandoori|drumstick|wings|keema|meat|seekh/i;
+const isNonVegItem = (name: string, category?: string | null) =>
+  /non-?veg/i.test(category ?? "") || NON_VEG_RE.test(name);
+
+/** FSSAI-style veg / non-veg square mark. */
+function DietMark({ nonVeg }: { nonVeg?: boolean }) {
+  return (
+    <span
+      aria-label={nonVeg ? "Non-vegetarian" : "Vegetarian"}
+      title={nonVeg ? "Non-vegetarian" : "Vegetarian"}
+      className={cn(
+        "grid size-3.5 shrink-0 place-items-center rounded-[3px] border-[1.5px]",
+        nonVeg ? "border-rose-500" : "border-emerald-500",
+      )}
+    >
+      <span
+        className={cn("size-1.5 rounded-full", nonVeg ? "bg-rose-500" : "bg-emerald-500")}
+      />
+    </span>
+  );
+}
+
+
 
 import {
   REWARD_MIN_BOOKING_MINUTES,
