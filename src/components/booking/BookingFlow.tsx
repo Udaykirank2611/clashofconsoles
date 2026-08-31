@@ -32,6 +32,31 @@ import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 import { PassRedeem, type AppliedPass } from "./PassRedeem";
 import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
 
+/** Meat keywords used to flag a menu line as non-vegetarian. */
+const NON_VEG_RE =
+  /chicken|mutton|beef|fish|prawn|egg|kebab|tikka|tandoori|drumstick|wings|keema|meat|seekh/i;
+const isNonVegItem = (name: string, category?: string | null) =>
+  /non-?veg/i.test(category ?? "") || NON_VEG_RE.test(name);
+
+/** FSSAI-style veg / non-veg square mark. */
+function DietMark({ nonVeg }: { nonVeg?: boolean }) {
+  return (
+    <span
+      aria-label={nonVeg ? "Non-vegetarian" : "Vegetarian"}
+      title={nonVeg ? "Non-vegetarian" : "Vegetarian"}
+      className={cn(
+        "grid size-3.5 shrink-0 place-items-center rounded-[3px] border-[1.5px]",
+        nonVeg ? "border-rose-500" : "border-emerald-500",
+      )}
+    >
+      <span
+        className={cn("size-1.5 rounded-full", nonVeg ? "bg-rose-500" : "bg-emerald-500")}
+      />
+    </span>
+  );
+}
+
+
 
 import {
   REWARD_MIN_BOOKING_MINUTES,
@@ -1020,6 +1045,17 @@ export function BookingFlow() {
       return qty > 0 ? [...rest, { menuItemId: id, name, price, quantity: qty }] : rest;
     });
   const qtyOf = (id: string) => cart.find((l) => l.menuItemId === id)?.quantity ?? 0;
+
+  /* Food category filter on the food step. */
+  const foodCategories = useMemo(
+    () => Array.from(new Set(menu.map((m) => m.category))),
+    [menu],
+  );
+  const [foodCategory, setFoodCategory] = useState<string>("all");
+  const visibleMenu = useMemo(
+    () => (foodCategory === "all" ? menu : menu.filter((m) => m.category === foodCategory)),
+    [menu, foodCategory],
+  );
 
   /* Food becomes mandatory only when nothing gaming was picked. */
 
@@ -2044,9 +2080,29 @@ export function BookingFlow() {
               ) : null}
             </div>
 
+            {foodCategories.length ? (
+              <label className="block max-w-xs space-y-1.5">
+                <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Category
+                </span>
+                <select
+                  value={foodCategory}
+                  onChange={(e) => setFoodCategory(e.target.value)}
+                  className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2.5 text-sm font-semibold outline-none focus:border-primary/60"
+                >
+                  <option value="all">All items</option>
+                  {foodCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
             <div className="space-y-8">
               {Object.entries(
-                menu.reduce<Record<string, typeof menu>>((acc, m) => {
+                visibleMenu.reduce<Record<string, typeof menu>>((acc, m) => {
                   (acc[m.category] ??= []).push(m);
                   return acc;
                 }, {}),
@@ -2064,7 +2120,10 @@ export function BookingFlow() {
                             qty > 0 && "bg-cyan/5",
                           )}
                         >
-                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{m.name}</span>
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            {isNonVegItem(m.name, m.category) ? <DietMark nonVeg /> : null}
+                            <span className="min-w-0 truncate text-sm font-semibold">{m.name}</span>
+                          </span>
                           <span className="shrink-0 text-sm font-black text-cyan">
                             {inr(Number(m.price))}
                           </span>
