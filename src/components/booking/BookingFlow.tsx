@@ -2055,9 +2055,29 @@ export function BookingFlow() {
               ) : null}
             </div>
 
+            {foodCategories.length ? (
+              <label className="block max-w-xs space-y-1.5">
+                <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Category
+                </span>
+                <select
+                  value={foodCategory}
+                  onChange={(e) => setFoodCategory(e.target.value)}
+                  className="w-full rounded-2xl border border-border bg-surface/70 px-3 py-2.5 text-sm font-semibold outline-none focus:border-primary/60"
+                >
+                  <option value="all">All items</option>
+                  {foodCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
             <div className="space-y-8">
               {Object.entries(
-                menu.reduce<Record<string, typeof menu>>((acc, m) => {
+                visibleMenu.reduce<Record<string, typeof menu>>((acc, m) => {
                   (acc[m.category] ??= []).push(m);
                   return acc;
                 }, {}),
