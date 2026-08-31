@@ -1021,6 +1021,17 @@ export function BookingFlow() {
     });
   const qtyOf = (id: string) => cart.find((l) => l.menuItemId === id)?.quantity ?? 0;
 
+  /* Food category filter on the food step. */
+  const foodCategories = useMemo(
+    () => Array.from(new Set(menu.map((m) => m.category))),
+    [menu],
+  );
+  const [foodCategory, setFoodCategory] = useState<string>("all");
+  const visibleMenu = useMemo(
+    () => (foodCategory === "all" ? menu : menu.filter((m) => m.category === foodCategory)),
+    [menu, foodCategory],
+  );
+
   /* Food becomes mandatory only when nothing gaming was picked. */
 
   const canAdvance =
