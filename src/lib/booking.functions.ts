@@ -531,12 +531,16 @@ export const createBooking = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!rate) return { ok: false, message: "That group pass duration is no longer available." };
       groupRate = { ...rate, price: Math.round(Number(rate.price)) };
+      const { partyStations } = await import("@/lib/booking/party");
       const { data: all } = await db
         .from("gaming_stations")
-        .select("id, name")
+        .select("id, name, station_type, status")
         .eq("branch_id", data.branchId)
         .eq("status", "available");
-      groupStations = all ?? [];
+      groupStations = partyStations(branch.slug, (all ?? []) as any).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+      }));
       if (!groupStations.length)
         return { ok: false, message: "No gaming experiences are available at this branch right now." };
     }

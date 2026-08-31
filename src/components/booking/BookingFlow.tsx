@@ -63,6 +63,7 @@ import {
   upcomingDays,
 } from "@/lib/booking/pricing";
 import { PLAYER_OPTIONS, rateFor } from "@/lib/booking/config";
+import { partyStations } from "@/lib/booking/party";
 import { useSiteContent } from "@/lib/site-content";
 import { ConsoleSelect, CardAction } from "./ConsoleSelect";
 import { GamesModal } from "./GamesModal";
@@ -408,8 +409,12 @@ export function BookingFlow() {
         .sort((a, b) => a.sort_order - b.sort_order || a.duration_minutes - b.duration_minutes),
     [catalogue, branchId],
   );
-  /** Every experience a Group Pass takes over. */
-  const groupStations = useMemo(() => stations.filter((s) => s.status === "available"), [stations]);
+  /** Only the units a Party Booking takes over (2 consoles + VR + cockpit). */
+  const groupStations = useMemo(
+    () => partyStations(branch?.slug, stations),
+    [branch, stations],
+  );
+  const groupStationNames = useMemo(() => groupStations.map((s) => s.name), [groupStations]);
 
   /** Admin-managed price tiers per experience station. */
   const stationRates = useMemo(
@@ -1472,7 +1477,7 @@ export function BookingFlow() {
                     id: "group" as const,
                     title: "Party Booking",
                     emoji: "👥",
-                    desc: `Book the entire gaming café exclusively for your group — up to ${GROUP_PASS_MAX_MEMBERS} members.`,
+                    desc: `Reserve 2 consoles, VR Arena and Cockpit Racing for your group — up to ${GROUP_PASS_MAX_MEMBERS} members.`,
                   },
                 ]).map((opt) => {
                   const active = bookingType === opt.id;
@@ -1585,8 +1590,9 @@ export function BookingFlow() {
                 ) : null}
 
                 <p className="rounded-2xl border border-border bg-surface/50 px-4 py-3 text-xs text-muted-foreground">
-                  This booking reserves the entire gaming café exclusively for your group during the
-                  selected time.
+                  This booking reserves 2 consoles, the VR Arena and Cockpit Racing exclusively for
+                  your group during the selected time
+                  {groupStationNames.length ? ` (${groupStationNames.join(", ")})` : ""}.
                 </p>
               </div>
             ) : null}
@@ -1596,6 +1602,12 @@ export function BookingFlow() {
               <ConsoleSelect
 
                 label={consoles[0]!.group_label?.trim() || "Console Gaming"}
+                image={
+                  experienceImageByType.get("console") ??
+                  experienceImageByType.get("ps5") ??
+                  consoles.find((s) => s.image_url)?.image_url ??
+                  undefined
+                }
                 description={consoles[0]?.description ?? undefined}
                 consoles={consoles}
                 gamesFor={gamesFor}
@@ -2293,8 +2305,9 @@ export function BookingFlow() {
                 </dl>
                 {isGroup ? (
                   <p className="mt-4 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3 text-[0.68rem] text-cyan">
-                    This booking reserves the entire gaming café exclusively for your group during the
-                    selected time.
+                    This booking reserves 2 consoles, the VR Arena and Cockpit Racing exclusively for
+                    your group during the selected time
+                    {groupStationNames.length ? ` (${groupStationNames.join(", ")})` : ""}.
                   </p>
                 ) : null}
                 <div className="mt-5 border-t border-border pt-4">

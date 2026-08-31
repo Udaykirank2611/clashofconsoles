@@ -162,6 +162,7 @@ function ConsoleCard({
 export function ConsoleSelect({
   label,
   description,
+  image,
   consoles,
   gamesFor,
   slots,
@@ -186,6 +187,8 @@ export function ConsoleSelect({
 
   label: string;
   description?: string | undefined;
+  /** Group artwork (admin-managed home page experience image). */
+  image?: string | undefined;
   consoles: Station[];
   gamesFor: (stationId: string) => StationGame[];
   slots: string[];
@@ -250,7 +253,7 @@ export function ConsoleSelect({
       >
         <div className="flex min-w-0 items-center gap-3">
           {(() => {
-            const img = consoles.find((s) => s.image_url)?.image_url;
+            const img = image ?? consoles.find((s) => s.image_url)?.image_url;
             return img ? (
               <img
                 src={img}
