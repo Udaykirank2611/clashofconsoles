@@ -2095,7 +2095,10 @@ export function BookingFlow() {
                             qty > 0 && "bg-cyan/5",
                           )}
                         >
-                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{m.name}</span>
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            {isNonVegItem(m.name, m.category) ? <DietMark nonVeg /> : null}
+                            <span className="min-w-0 truncate text-sm font-semibold">{m.name}</span>
+                          </span>
                           <span className="shrink-0 text-sm font-black text-cyan">
                             {inr(Number(m.price))}
                           </span>
