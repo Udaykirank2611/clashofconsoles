@@ -1922,134 +1922,143 @@ export function BookingFlow() {
                           ) : null;
                         })()}
 
-                        <div>
-                          <FieldLabel>Available start times</FieldLabel>
-                          <SlotGrid
-                            slots={
-                              active.station_type === "vr" ||
-                              active.station_type === "driving_simulator"
-                                ? fineSlots
-                                : slots
-                            }
-                            value={curStart}
-                            isDisabled={(slot) => slotBlocked(active.id, slot, blockedMinutes)}
-                            onSelect={setStart}
-                          />
+                        <div
+                          id={`field-package-${active.id}`}
+                          data-missing={tiers.length ? "Choose a package" : "Choose a duration"}
+                          className={cn(
+                            "scroll-mt-28 rounded-3xl",
+                            !curDuration && "coc-missing coc-flash",
+                          )}
+                        >
+                          <FieldLabel>{tiers.length ? "Package" : "Duration"}</FieldLabel>
+                          {tiers.length ? (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {tiers.map((t) => (
+                                <button
+                                  key={t.id}
+                                  type="button"
+                                  onClick={() => setTier(t.id, t.duration_minutes)}
+                                  className={cn(
+                                    "rounded-2xl border border-border bg-surface/60 px-4 py-3 text-left transition-all duration-300",
+                                    "hover:-translate-y-0.5 hover:border-cyan/40 disabled:cursor-not-allowed disabled:opacity-40",
+                                    currentRateId === t.id &&
+                                      "border-transparent shadow-[0_0_0_1px_var(--cyan)]",
+                                  )}
+                                >
+                                  <span className="flex items-baseline justify-between gap-3">
+                                    <span className="text-sm font-bold">{t.label}</span>
+                                    <span className="text-base font-black text-cyan">
+                                      {inr(Number(t.price))}
+                                    </span>
+                                  </span>
+                                  <span className="mt-1 block text-[0.65rem] text-muted-foreground">
+                                    {t.note ? `${t.note} · ` : ""}
+                                    {t.duration_minutes} mins
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                              {durations.map((d) => (
+                                <DurationCard
+                                  key={d.minutes}
+                                  label={d.label}
+                                  price={priceFor(d.minutes)}
+                                  selected={curDuration === d.minutes}
+                                  onClick={() => setDur(d.minutes)}
+                                />
+                              ))}
+                            </div>
+                          )}
+
+                          {currentTier && extraHourRate ? (
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/50 px-4 py-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold">{extraHourRate.label}</p>
+                                <p className="text-[0.65rem] text-muted-foreground">
+                                  {inr(Number(extraHourRate.price))} per extra hour · your slot is held
+                                  for {Math.round(blockedMinutes / 60)}h
+                                  {blockedMinutes % 60 ? ` ${blockedMinutes % 60}m` : ""}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  aria-label="Remove one extra hour"
+                                  disabled={extraHours === 0}
+                                  onClick={() => setExtraHours(extraHours - 1)}
+                                  className="grid size-9 place-items-center rounded-full border border-border text-lg font-bold transition-colors hover:border-cyan/50 disabled:opacity-30"
+                                >
+                                  −
+                                </button>
+                                <span className="w-6 text-center text-sm font-black">{extraHours}</span>
+                                <button
+                                  type="button"
+                                  aria-label="Add one extra hour"
+                                  disabled={
+                                    !!curStart && slotBlocked(active.id, curStart, blockedMinutes + 60)
+                                  }
+                                  onClick={() => setExtraHours(extraHours + 1)}
+                                  className="grid size-9 place-items-center rounded-full border border-border text-lg font-bold transition-colors hover:border-cyan/50 disabled:opacity-30"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
 
-                        {curStart ? (
-                          <div className="animate-[step-in_0.5s_cubic-bezier(0.22,1,0.36,1)_both] space-y-7">
-                            <div>
-                              <FieldLabel>{tiers.length ? "Package" : "Duration"}</FieldLabel>
-                              {tiers.length ? (
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                  {tiers.map((t) => {
-                                    const blocked = slotBlocked(active.id, curStart, t.duration_minutes);
-                                    return (
-                                      <button
-                                        key={t.id}
-                                        type="button"
-                                        disabled={blocked}
-                                        onClick={() => setTier(t.id, t.duration_minutes)}
-                                        className={cn(
-                                          "rounded-2xl border border-border bg-surface/60 px-4 py-3 text-left transition-all duration-300",
-                                          "hover:-translate-y-0.5 hover:border-cyan/40 disabled:cursor-not-allowed disabled:opacity-40",
-                                          currentRateId === t.id &&
-                                            "border-transparent shadow-[0_0_0_1px_var(--cyan)]",
-                                        )}
-                                      >
-                                        <span className="flex items-baseline justify-between gap-3">
-                                          <span className="text-sm font-bold">{t.label}</span>
-                                          <span className="text-base font-black text-cyan">
-                                            {inr(Number(t.price))}
-                                          </span>
-                                        </span>
-                                        <span className="mt-1 block text-[0.65rem] text-muted-foreground">
-                                          {t.note ? `${t.note} · ` : ""}
-                                          {t.duration_minutes} mins
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                  {durations.map((d) => (
-                                    <DurationCard
-                                      key={d.minutes}
-                                      label={d.label}
-                                      price={priceFor(d.minutes)}
-                                      selected={curDuration === d.minutes}
-                                      disabled={slotBlocked(active.id, curStart, d.minutes)}
-                                      onClick={() => setDur(d.minutes)}
-                                    />
-                                  ))}
-                                </div>
-                              )}
-
-                              {currentTier && extraHourRate ? (
-                                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/50 px-4 py-3">
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-bold">{extraHourRate.label}</p>
-                                    <p className="text-[0.65rem] text-muted-foreground">
-                                      {inr(Number(extraHourRate.price))} per extra hour · your slot is held
-                                      for {Math.round(blockedMinutes / 60)}h
-                                      {blockedMinutes % 60 ? ` ${blockedMinutes % 60}m` : ""}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    <button
-                                      type="button"
-                                      aria-label="Remove one extra hour"
-                                      disabled={extraHours === 0}
-                                      onClick={() => setExtraHours(extraHours - 1)}
-                                      className="grid size-9 place-items-center rounded-full border border-border text-lg font-bold transition-colors hover:border-cyan/50 disabled:opacity-30"
-                                    >
-                                      −
-                                    </button>
-                                    <span className="w-6 text-center text-sm font-black">{extraHours}</span>
-                                    <button
-                                      type="button"
-                                      aria-label="Add one extra hour"
-                                      disabled={slotBlocked(active.id, curStart, blockedMinutes + 60)}
-                                      onClick={() => setExtraHours(extraHours + 1)}
-                                      className="grid size-9 place-items-center rounded-full border border-border text-lg font-bold transition-colors hover:border-cyan/50 disabled:opacity-30"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : null}
+                        {isConsole ? (
+                          <div>
+                            <FieldLabel>Players</FieldLabel>
+                            <div className="flex flex-wrap gap-2">
+                              {PLAYER_OPTIONS.map((p) => (
+                                <Chip key={p} selected={players === p} onClick={() => setPlayers(p)}>
+                                  {p} {p === 1 ? "Player" : "Players"}
+                                  <span className="ml-2 text-[0.65rem] font-bold text-muted-foreground">
+                                    {inr(rateFor(rates, p, 60))}/hr
+                                  </span>
+                                </Chip>
+                              ))}
                             </div>
+                          </div>
+                        ) : null}
 
-                            {isConsole ? (
-                              <div>
-                                <FieldLabel>Players</FieldLabel>
-                                <div className="flex flex-wrap gap-2">
-                                  {PLAYER_OPTIONS.map((p) => (
-                                    <Chip key={p} selected={players === p} onClick={() => setPlayers(p)}>
-                                      {p} {p === 1 ? "Player" : "Players"}
-                                      <span className="ml-2 text-[0.65rem] font-bold text-muted-foreground">
-                                        {inr(rateFor(rates, p, 60))}/hr
-                                      </span>
-                                    </Chip>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : null}
+                        {curDuration ? (
+                          <div
+                            id={`field-time-${active.id}`}
+                            data-missing="Choose a start time"
+                            className={cn(
+                              "scroll-mt-28 rounded-3xl animate-[step-in_0.5s_cubic-bezier(0.22,1,0.36,1)_both]",
+                              !curStart && "coc-missing coc-flash",
+                            )}
+                          >
+                            <FieldLabel>Available start times</FieldLabel>
+                            <SlotGrid
+                              slots={
+                                active.station_type === "vr" ||
+                                active.station_type === "driving_simulator"
+                                  ? fineSlots
+                                  : slots
+                              }
+                              value={curStart}
+                              isDisabled={(slot) => slotBlocked(active.id, slot, blockedMinutes)}
+                              onSelect={setStart}
+                            />
+                          </div>
+                        ) : null}
 
-                            {curDuration ? (
-                              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3 animate-[scale-in_0.3s_ease-out]">
-                                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan">
-                                  {active.name} · {formatTime(curStart)} –{" "}
-                                  {formatTime(addMinutes(curStart, isConsole ? curDuration : blockedMinutes))}
-                                  {isConsole
-                                    ? ` · ${players ?? "—"} ${players === 1 ? "player" : "players"}`
-                                    : ""}
-                                </span>
-                                <span className="text-xl font-black">{inr(priceFor(curDuration))}</span>
-                              </div>
-                            ) : null}
+                        {curDuration && curStart ? (
+                          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan/25 bg-cyan/5 px-4 py-3 animate-[scale-in_0.3s_ease-out]">
+                            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan">
+                              {active.name} · {formatTime(curStart)} –{" "}
+                              {formatTime(addMinutes(curStart, isConsole ? curDuration : blockedMinutes))}
+                              {isConsole
+                                ? ` · ${players ?? "—"} ${players === 1 ? "player" : "players"}`
+                                : ""}
+                            </span>
+                            <span className="text-xl font-black">{inr(priceFor(curDuration))}</span>
                           </div>
                         ) : null}
                       </div>
