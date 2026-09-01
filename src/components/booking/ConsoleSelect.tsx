@@ -325,7 +325,14 @@ export function ConsoleSelect({
               className="scroll-mt-24 space-y-7 animate-[step-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]"
             >
               <div className="grid gap-6 sm:grid-cols-2">
-                <div id="field-players" className="scroll-mt-28 rounded-3xl">
+                <div
+                  id="field-players"
+                  data-missing="Choose players"
+                  className={cn(
+                    "scroll-mt-28 rounded-3xl",
+                    players == null && "coc-missing coc-flash",
+                  )}
+                >
                   <Label>Players</Label>
                   <div className="flex flex-wrap gap-2">
                     {playerOptions.map((p) => (
@@ -349,7 +356,14 @@ export function ConsoleSelect({
                     ))}
                   </div>
                 </div>
-                <div id="field-duration" className="scroll-mt-28 rounded-3xl">
+                <div
+                  id="field-duration"
+                  data-missing="Choose duration"
+                  className={cn(
+                    "scroll-mt-28 rounded-3xl",
+                    durationMinutes == null && "coc-missing coc-flash",
+                  )}
+                >
                   <Label>Duration</Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {durations.map((d) => (
