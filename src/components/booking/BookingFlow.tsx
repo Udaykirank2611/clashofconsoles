@@ -1761,6 +1761,7 @@ export function BookingFlow() {
                       ...prev,
                       [active!.id]: {
                         ...prev[active!.id]!,
+                        startTime: null,
                         durationMinutes: minutes,
                         rateId: null,
                         extraHours: 0,
@@ -1776,12 +1777,12 @@ export function BookingFlow() {
                 const setTier = (rateId: string, minutes: number) =>
                   setExtras((prev) => ({
                     ...prev,
-                    [active!.id]: { ...prev[active!.id]!, rateId, durationMinutes: minutes, extraHours: 0 },
+                    [active!.id]: { ...prev[active!.id]!, startTime: null, rateId, durationMinutes: minutes, extraHours: 0 },
                   }));
                 const setExtraHours = (hours: number) =>
                   setExtras((prev) => ({
                     ...prev,
-                    [active!.id]: { ...prev[active!.id]!, extraHours: Math.max(0, hours) },
+                    [active!.id]: { ...prev[active!.id]!, startTime: null, extraHours: Math.max(0, hours) },
                   }));
                 /** Minutes this experience will actually block. */
                 const blockedMinutes = currentTier
