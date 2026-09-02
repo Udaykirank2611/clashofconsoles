@@ -8,6 +8,7 @@ import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Tra
 import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
+import { hoursLabel } from "@/lib/passes";
 import { approveBookingPayment, completeBookingWithSplit, extendBookingSession, quoteExtension } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
@@ -162,7 +163,12 @@ export function BookingsPanel({
     alternatives: { id: string; name: string; price: number }[];
   } | null>(null);
   /** Next extension step (length + rate-card price) for the open dialog. */
-  const [extendQuote, setExtendQuote] = useState<{ price: number; label: string; newTotal: number } | null>(null);
+  const [extendQuote, setExtendQuote] = useState<{
+    price: number;
+    label: string;
+    newTotal: number;
+    pass?: { code: string; before: number | null; after: number | null; enough: boolean };
+  } | null>(null);
   const extendSession = useServerFn(extendBookingSession);
   const getQuote = useServerFn(quoteExtension);
   const approvePayment = useServerFn(approveBookingPayment);
@@ -178,7 +184,7 @@ export function BookingsPanel({
       toast.error("This session is already at its maximum length.");
       return;
     }
-    setExtendQuote({ price: q.price, label: q.label, newTotal: q.newTotal });
+    setExtendQuote({ price: q.price, label: q.label, newTotal: q.newTotal, pass: q.pass });
     setExtendConfirm(b);
   };
 
