@@ -8,6 +8,7 @@ import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Tra
 import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
 import { updateBookingExtraHours } from "@/lib/admin.functions";
+import { hoursLabel } from "@/lib/passes";
 import { approveBookingPayment, completeBookingWithSplit, extendBookingSession, quoteExtension } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
@@ -162,7 +163,12 @@ export function BookingsPanel({
     alternatives: { id: string; name: string; price: number }[];
   } | null>(null);
   /** Next extension step (length + rate-card price) for the open dialog. */
-  const [extendQuote, setExtendQuote] = useState<{ price: number; label: string; newTotal: number } | null>(null);
+  const [extendQuote, setExtendQuote] = useState<{
+    price: number;
+    label: string;
+    newTotal: number;
+    pass?: { code: string; before: number | null; after: number | null; enough: boolean } | undefined;
+  } | null>(null);
   const extendSession = useServerFn(extendBookingSession);
   const getQuote = useServerFn(quoteExtension);
   const approvePayment = useServerFn(approveBookingPayment);
@@ -178,7 +184,7 @@ export function BookingsPanel({
       toast.error("This session is already at its maximum length.");
       return;
     }
-    setExtendQuote({ price: q.price, label: q.label, newTotal: q.newTotal });
+    setExtendQuote({ price: q.price, label: q.label, newTotal: q.newTotal, pass: q.pass });
     setExtendConfirm(b);
   };
 
@@ -751,24 +757,48 @@ export function BookingsPanel({
                 <span className="text-muted-foreground">Players</span>
                 <span className="font-bold">{extendConfirm.players ?? 1}</span>
               </p>
-              <p className="mt-1.5 flex items-center justify-between">
-                <span className="text-muted-foreground">Extra {extendQuote?.label ?? "time"} charge</span>
-                <span className="font-black">
-                  {extendQuote === null ? "Calculating…" : money(extendQuote.price)}
-                </span>
-              </p>
-              <p className="mt-1.5 flex items-center justify-between">
-                <span className="text-muted-foreground">New booking total</span>
-                <span className="font-black">
-                  {extendQuote === null ? "…" : money(extendQuote.newTotal)}
-                </span>
-              </p>
+              {extendQuote?.pass ? (
+                <>
+                  <p className="mt-1.5 flex items-center justify-between">
+                    <span className="text-muted-foreground">Pass {extendQuote.pass.code}</span>
+                    <span className="font-bold">Paid by pass</span>
+                  </p>
+                  <p className="mt-1.5 flex items-center justify-between">
+                    <span className="text-muted-foreground">Current balance</span>
+                    <span className="font-black">{hoursLabel(extendQuote.pass.before)}</span>
+                  </p>
+                  <p className="mt-1.5 flex items-center justify-between">
+                    <span className="text-muted-foreground">Balance after extend</span>
+                    <span className="font-black">{hoursLabel(extendQuote.pass.after)}</span>
+                  </p>
+                  {!extendQuote.pass.enough ? (
+                    <p className="mt-3 rounded-xl border border-rose-400/50 bg-rose-400/10 px-3 py-2 text-xs font-bold text-rose-500">
+                      Balance finished — please do a separate booking for the extra time.
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <p className="mt-1.5 flex items-center justify-between">
+                    <span className="text-muted-foreground">Extra {extendQuote?.label ?? "time"} charge</span>
+                    <span className="font-black">
+                      {extendQuote === null ? "Calculating…" : money(extendQuote.price)}
+                    </span>
+                  </p>
+                  <p className="mt-1.5 flex items-center justify-between">
+                    <span className="text-muted-foreground">New booking total</span>
+                    <span className="font-black">
+                      {extendQuote === null ? "…" : money(extendQuote.newTotal)}
+                    </span>
+                  </p>
+                </>
+              )}
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton onClick={() => setExtendConfirm(null)}>Cancel</AdminButton>
               <AdminButton
                 variant="primary"
-                disabled={busy === extendConfirm.id}
+                disabled={busy === extendConfirm.id || extendQuote?.pass?.enough === false}
                 onClick={() => {
                   const b = extendConfirm;
                   setExtendConfirm(null);

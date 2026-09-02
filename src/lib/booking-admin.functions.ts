@@ -508,7 +508,26 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       currentMinutes,
     );
     if (!option) return { ok: false, message: "This session is already at its maximum length." };
-    const price = option.price;
+
+    // Pass-funded bookings: the extra time comes out of the pass balance, not the bill.
+    const passId = (booking.pass_id as string | null) ?? null;
+    let passRow: { id: string; remaining_minutes: number | null } | null = null;
+    if (passId) {
+      const { data: p } = await supabaseAdmin
+        .from("membership_passes")
+        .select("id, remaining_minutes, status")
+        .eq("id", passId)
+        .maybeSingle();
+      if (p) {
+        if (p.remaining_minutes !== null && Number(p.remaining_minutes) < option.minutes)
+          return {
+            ok: false,
+            message: "Balance finished on this pass — please make a separate booking for the extra time.",
+          };
+        passRow = { id: p.id, remaining_minutes: p.remaining_minutes === null ? null : Number(p.remaining_minutes) };
+      }
+    }
+    const price = passRow ? 0 : option.price;
 
     const start = toMinutes(String(endTime));
     const end = start + option.minutes;
@@ -589,9 +608,28 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       if (error) return { ok: false, message: error.message };
     }
 
+    let passNote = "";
+    if (passRow) {
+      if (passRow.remaining_minutes !== null) {
+        const left = Math.max(0, passRow.remaining_minutes - option.minutes);
+        await supabaseAdmin
+          .from("membership_passes")
+          .update({ remaining_minutes: left, status: left <= 0 ? "used" : "active" })
+          .eq("id", passRow.id);
+        passNote = ` Pass balance ${Math.round((left / 60) * 10) / 10} h.`;
+      }
+      await supabaseAdmin
+        .from("bookings")
+        .update({ pass_minutes: Number(booking.pass_minutes ?? 0) + option.minutes })
+        .eq("id", data.bookingId);
+    }
+
     const { recomputeBookingTotals } = await import("@/lib/booking-admin.server");
     await recomputeBookingTotals(data.bookingId);
-    return { ok: true, message: `Extended to ${clock(end).slice(0, 5)} on ${station?.name ?? "the same console"}.` };
+    return {
+      ok: true,
+      message: `Extended to ${clock(end).slice(0, 5)} on ${station?.name ?? "the same console"}.${passNote}`,
+    };
   });
 
 /** Price preview for extending a session, using the branch rate card. */
@@ -604,11 +642,19 @@ export const quoteExtension = createServerFn({ method: "POST" })
     async ({
       data,
       context,
-    }): Promise<{ price: number; minutes: number; label: string; available: boolean; newTotal: number }> => {
+    }): Promise<{
+      price: number;
+      minutes: number;
+      label: string;
+      available: boolean;
+      newTotal: number;
+      /** Pass balance in minutes before/after the extension, when funded by a pass. */
+      pass?: { code: string; before: number | null; after: number | null; enough: boolean };
+    }> => {
       const none = { price: 0, minutes: 0, label: "", available: false, newTotal: 0 };
       const { data: booking } = await context.supabase
         .from("bookings")
-        .select("branch_id, players, station_id, start_time, end_time, total_amount")
+        .select("branch_id, players, station_id, start_time, end_time, total_amount, pass_id")
         .eq("id", data.bookingId)
         .maybeSingle();
       if (!booking) return none;
@@ -637,6 +683,33 @@ export const quoteExtension = createServerFn({ method: "POST" })
         current,
       );
       if (!option) return none;
+
+      const passId = (booking.pass_id as string | null) ?? null;
+      if (passId) {
+        const { data: p } = await supabaseAdmin
+          .from("membership_passes")
+          .select("code, remaining_minutes")
+          .eq("id", passId)
+          .maybeSingle();
+        if (p) {
+          const before = p.remaining_minutes === null ? null : Number(p.remaining_minutes);
+          const enough = before === null || before >= option.minutes;
+          return {
+            price: 0,
+            minutes: option.minutes,
+            label: option.label,
+            available: true,
+            newTotal: Number(booking.total_amount ?? 0),
+            pass: {
+              code: p.code,
+              before,
+              after: before === null ? null : Math.max(0, before - option.minutes),
+              enough,
+            },
+          };
+        }
+      }
+
       return {
         price: option.price,
         minutes: option.minutes,
