@@ -608,9 +608,28 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       if (error) return { ok: false, message: error.message };
     }
 
+    let passNote = "";
+    if (passRow) {
+      if (passRow.remaining_minutes !== null) {
+        const left = Math.max(0, passRow.remaining_minutes - option.minutes);
+        await supabaseAdmin
+          .from("membership_passes")
+          .update({ remaining_minutes: left, status: left <= 0 ? "used" : "active" })
+          .eq("id", passRow.id);
+        passNote = ` Pass balance ${Math.round((left / 60) * 10) / 10} h.`;
+      }
+      await supabaseAdmin
+        .from("bookings")
+        .update({ pass_minutes: Number(booking.pass_minutes ?? 0) + option.minutes })
+        .eq("id", data.bookingId);
+    }
+
     const { recomputeBookingTotals } = await import("@/lib/booking-admin.server");
     await recomputeBookingTotals(data.bookingId);
-    return { ok: true, message: `Extended to ${clock(end).slice(0, 5)} on ${station?.name ?? "the same console"}.` };
+    return {
+      ok: true,
+      message: `Extended to ${clock(end).slice(0, 5)} on ${station?.name ?? "the same console"}.${passNote}`,
+    };
   });
 
 /** Price preview for extending a session, using the branch rate card. */
