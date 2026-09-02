@@ -167,7 +167,7 @@ export function BookingsPanel({
     price: number;
     label: string;
     newTotal: number;
-    pass?: { code: string; before: number | null; after: number | null; enough: boolean };
+    pass?: { code: string; before: number | null; after: number | null; enough: boolean } | undefined;
   } | null>(null);
   const extendSession = useServerFn(extendBookingSession);
   const getQuote = useServerFn(quoteExtension);
