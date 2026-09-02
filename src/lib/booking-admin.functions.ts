@@ -642,11 +642,19 @@ export const quoteExtension = createServerFn({ method: "POST" })
     async ({
       data,
       context,
-    }): Promise<{ price: number; minutes: number; label: string; available: boolean; newTotal: number }> => {
+    }): Promise<{
+      price: number;
+      minutes: number;
+      label: string;
+      available: boolean;
+      newTotal: number;
+      /** Pass balance in minutes before/after the extension, when funded by a pass. */
+      pass?: { code: string; before: number | null; after: number | null; enough: boolean };
+    }> => {
       const none = { price: 0, minutes: 0, label: "", available: false, newTotal: 0 };
       const { data: booking } = await context.supabase
         .from("bookings")
-        .select("branch_id, players, station_id, start_time, end_time, total_amount")
+        .select("branch_id, players, station_id, start_time, end_time, total_amount, pass_id")
         .eq("id", data.bookingId)
         .maybeSingle();
       if (!booking) return none;
