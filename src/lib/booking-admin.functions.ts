@@ -683,6 +683,33 @@ export const quoteExtension = createServerFn({ method: "POST" })
         current,
       );
       if (!option) return none;
+
+      const passId = (booking.pass_id as string | null) ?? null;
+      if (passId) {
+        const { data: p } = await supabaseAdmin
+          .from("membership_passes")
+          .select("code, remaining_minutes")
+          .eq("id", passId)
+          .maybeSingle();
+        if (p) {
+          const before = p.remaining_minutes === null ? null : Number(p.remaining_minutes);
+          const enough = before === null || before >= option.minutes;
+          return {
+            price: 0,
+            minutes: option.minutes,
+            label: option.label,
+            available: true,
+            newTotal: Number(booking.total_amount ?? 0),
+            pass: {
+              code: p.code,
+              before,
+              after: before === null ? null : Math.max(0, before - option.minutes),
+              enough,
+            },
+          };
+        }
+      }
+
       return {
         price: option.price,
         minutes: option.minutes,
