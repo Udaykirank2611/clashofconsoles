@@ -508,7 +508,26 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       currentMinutes,
     );
     if (!option) return { ok: false, message: "This session is already at its maximum length." };
-    const price = option.price;
+
+    // Pass-funded bookings: the extra time comes out of the pass balance, not the bill.
+    const passId = (booking.pass_id as string | null) ?? null;
+    let passRow: { id: string; remaining_minutes: number | null } | null = null;
+    if (passId) {
+      const { data: p } = await supabaseAdmin
+        .from("membership_passes")
+        .select("id, remaining_minutes, status")
+        .eq("id", passId)
+        .maybeSingle();
+      if (p) {
+        if (p.remaining_minutes !== null && Number(p.remaining_minutes) < option.minutes)
+          return {
+            ok: false,
+            message: "Balance finished on this pass — please make a separate booking for the extra time.",
+          };
+        passRow = { id: p.id, remaining_minutes: p.remaining_minutes === null ? null : Number(p.remaining_minutes) };
+      }
+    }
+    const price = passRow ? 0 : option.price;
 
     const start = toMinutes(String(endTime));
     const end = start + option.minutes;
