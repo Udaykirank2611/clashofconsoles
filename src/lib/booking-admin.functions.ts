@@ -457,14 +457,20 @@ export const extendBookingSession = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<ExtendResult> => {
-    const { data: booking } = await context.supabase
+    const { data: allowedBooking } = await context.supabase
+      .from("bookings")
+      .select("id")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!allowedBooking) return { ok: false, message: "You cannot edit this booking." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: booking } = await supabaseAdmin
       .from("bookings")
       .select("*")
       .eq("id", data.bookingId)
       .maybeSingle();
-    if (!booking) return { ok: false, message: "You cannot edit this booking." };
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!booking) return { ok: false, message: "This booking no longer exists." };
 
     // The session window is either on the booking itself or on its add-on line.
     let baseStation = booking.station_id as string | null;
@@ -652,13 +658,19 @@ export const quoteExtension = createServerFn({ method: "POST" })
       pass?: { code: string; before: number | null; after: number | null; enough: boolean };
     }> => {
       const none = { price: 0, minutes: 0, label: "", available: false, newTotal: 0 };
-      const { data: booking } = await context.supabase
+      const { data: allowedBooking } = await context.supabase
+        .from("bookings")
+        .select("id")
+        .eq("id", data.bookingId)
+        .maybeSingle();
+      if (!allowedBooking) return none;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: booking } = await supabaseAdmin
         .from("bookings")
         .select("branch_id, players, station_id, start_time, end_time, total_amount, pass_id")
         .eq("id", data.bookingId)
         .maybeSingle();
       if (!booking) return none;
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: items } = await supabaseAdmin
         .from("booking_items")
         .select("station_id, start_time, end_time")
