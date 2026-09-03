@@ -1,4 +1,4 @@
-- [ ] Fix pass-funded extension detection and quote
-- [ ] Correct five specified transaction breakdowns without changing pass usage
-- [ ] Set Yashwanth pass balance to 14 hours
-- [ ] Verify code and database results
+- [x] Fix pass-funded extension detection and quote
+- [x] Correct five specified transaction breakdowns without changing pass usage
+- [x] Set Yashwanth pass balance to 14 hours
+- [x] Verify code and database results
