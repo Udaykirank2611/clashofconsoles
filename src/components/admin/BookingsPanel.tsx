@@ -427,7 +427,31 @@ export function BookingsPanel({
                         day: "numeric",
                         month: "short",
                       })}{" "}
-                      {` · ${bookingSummaryLine(b, stationName)}`}
+                      ·{" "}
+                      {(() => {
+                        const { start, end } = bookingWindow(b);
+                        const what =
+                          b.station_id && stationName !== "—"
+                            ? stationName
+                            : b.booking_items
+                                  .filter((i) => i.kind === "addon" && i.station_id)
+                                  .map((i) => i.label)
+                                  .join(", ") ||
+                              (b.booking_items.some((i) => i.kind === "food") ? "Food only" : "Passes only");
+                        const time =
+                          start && end ? `${formatTime(start)} – ${formatTime(end)} · ${durationLabel(start, end)}` : null;
+                        return (
+                          <>
+                            {time ? `${time} · ` : ""}
+                            {b.players}P · <span className="font-bold text-foreground">{what}</span>
+                            {b.game_title ? (
+                              <>
+                                {" "}· <span className="font-bold text-foreground">{b.game_title}</span>
+                              </>
+                            ) : null}
+                          </>
+                        );
+                      })()}
                     </p>
                   </div>
                   <div className="text-right">
