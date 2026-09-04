@@ -58,11 +58,24 @@ export interface TransactionTotals {
   totalGamingHours: number;
 }
 
+export interface DepositRow {
+  id: string;
+  branchId: string;
+  date: string;
+  name: string;
+  amount: number;
+  description: string;
+  time: string;
+  depositTo: "cash" | "bank";
+}
+
 export interface CashBankSummary {
   openingCash: number;
   openingBank: number;
   cashReceived: number;
   upiReceived: number;
+  depositsCash: number;
+  depositsBank: number;
   expensesCash: number;
   expensesBank: number;
   closingCash: number;
@@ -75,9 +88,11 @@ export interface TransactionsPayload {
   branchName: string;
   rows: TransactionRow[];
   expenses: ExpenseRow[];
+  deposits: DepositRow[];
   totals: TransactionTotals;
   cashBank: CashBankSummary;
   totalExpenses: number;
+  totalDeposits: number;
 }
 
 export type ReconciliationIssueKind =
@@ -117,6 +132,8 @@ export interface ReconciliationCash {
   openingBank: number;
   cashReceived: number;
   upiReceived: number;
+  depositsCash: number;
+  depositsBank: number;
   expensesCash: number;
   expensesBank: number;
   expectedClosingCash: number;

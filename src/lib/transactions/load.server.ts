@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { computeOpening } from "./opening.server";
 import type {
   CashBankSummary,
+  DepositRow,
   ExpenseRow,
   TransactionRow,
   TransactionTotals,
@@ -52,18 +54,20 @@ export async function loadTransactions(
     .order("paid_at", { ascending: true });
   if (input.branchId) ex = ex.eq("branch_id", input.branchId);
 
-  let ob = supabase
-    .from("daily_opening_balances")
+  let dp = supabase
+    .from("cash_deposits")
     .select("*")
-    .gte("balance_date", input.from)
-    .lte("balance_date", input.to);
-  if (input.branchId) ob = ob.eq("branch_id", input.branchId);
+    .gte("deposit_date", input.from)
+    .lte("deposit_date", input.to)
+    .order("paid_at", { ascending: true });
+  if (input.branchId) dp = dp.eq("branch_id", input.branchId);
 
-  const [bookingsRes, txRes, expensesRes, openingRes, customersRes] = await Promise.all([
+  const [bookingsRes, txRes, expensesRes, depositsRes, opening, customersRes] = await Promise.all([
     q,
     supabase.from("booking_transactions").select("*"),
     ex,
-    ob,
+    dp,
+    computeOpening(supabase, { branchId: input.branchId, from: input.from }),
     supabase.from("customers").select("phone, total_visits"),
   ]);
 
@@ -189,6 +193,17 @@ export async function loadTransactions(
     paidFrom: (e['paid_from'] as "cash" | "bank") ?? "cash",
   }));
 
+  const deposits: DepositRow[] = ((depositsRes.data ?? []) as Record<string, unknown>[]).map((d) => ({
+    id: String(d['id']),
+    branchId: String(d['branch_id']),
+    date: String(d['deposit_date']),
+    name: String(d['name']),
+    amount: num(d['amount']),
+    description: String(d['description'] ?? ""),
+    time: String(d['paid_at'] ?? "").slice(0, 5),
+    depositTo: (d['deposit_to'] as "cash" | "bank") ?? "cash",
+  }));
+
   const live = rows.filter((r) => r.status !== "cancelled" && r.status !== "refunded");
   const totals: TransactionTotals = {
     gamingRevenue: live.reduce((s, r) => s + r.gamingAmount, 0),
@@ -207,26 +222,23 @@ export async function loadTransactions(
 
 
 
-  const opening = ((openingRes.data ?? []) as Record<string, unknown>[]).reduce(
-    (acc: { cash: number; bank: number }, r) => ({
-      cash: acc.cash + num(r['opening_cash']),
-      bank: acc.bank + num(r['opening_bank']),
-    }),
-    { cash: 0, bank: 0 },
-  );
-
   const expensesCash = expenses.filter((e) => e.paidFrom === "cash").reduce((s, e) => s + e.amount, 0);
   const expensesBank = expenses.filter((e) => e.paidFrom === "bank").reduce((s, e) => s + e.amount, 0);
+
+  const depositsCash = deposits.filter((d) => d.depositTo === "cash").reduce((s, d) => s + d.amount, 0);
+  const depositsBank = deposits.filter((d) => d.depositTo === "bank").reduce((s, d) => s + d.amount, 0);
 
   const cashBank: CashBankSummary = {
     openingCash: opening.cash,
     openingBank: opening.bank,
     cashReceived: totals.cashCollection,
     upiReceived: totals.upiCollection,
+    depositsCash,
+    depositsBank,
     expensesCash,
     expensesBank,
-    closingCash: opening.cash + totals.cashCollection - expensesCash,
-    closingBank: opening.bank + totals.upiCollection - expensesBank,
+    closingCash: opening.cash + totals.cashCollection + depositsCash - expensesCash,
+    closingBank: opening.bank + totals.upiCollection + depositsBank - expensesBank,
   };
 
   return {
@@ -235,8 +247,10 @@ export async function loadTransactions(
     branchName: input.branchId ? (rows[0]?.branch ?? "Branch") : "All branches",
     rows,
     expenses,
+    deposits,
     totals,
     cashBank,
     totalExpenses: expensesCash + expensesBank,
+    totalDeposits: depositsCash + depositsBank,
   };
 }
