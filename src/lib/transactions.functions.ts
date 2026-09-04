@@ -140,29 +140,43 @@ export const deleteExpense = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Sets the opening cash and bank balance for one branch and day. */
-export const setOpeningBalance = createServerFn({ method: "POST" })
+/** Records money deposited into cash or bank. Opening balances carry forward automatically. */
+export const addDeposit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
         branchId: z.string().uuid(),
         date: z.string().regex(DATE),
-        openingCash: z.number().min(0),
-        openingBank: z.number().min(0),
+        name: z.string().min(1).max(80),
+        amount: z.number().min(0),
+        description: z.string().max(300).default(""),
+        time: z.string().regex(/^\d{2}:\d{2}$/),
+        depositTo: z.enum(["cash", "bank"]),
       })
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean; message?: string }> => {
-    const { error } = await context.supabase.from("daily_opening_balances").upsert(
-      {
-        branch_id: data.branchId,
-        balance_date: data.date,
-        opening_cash: data.openingCash,
-        opening_bank: data.openingBank,
-      },
-      { onConflict: "branch_id,balance_date" },
-    );
+    const { error } = await context.supabase.from("cash_deposits").insert({
+      branch_id: data.branchId,
+      deposit_date: data.date,
+      name: data.name,
+      amount: data.amount,
+      description: data.description,
+      paid_at: `${data.time}:00`,
+      deposit_to: data.depositTo,
+      created_by: context.userId,
+    });
+    if (error) return { ok: false, message: error.message };
+    return { ok: true };
+  });
+
+/** Removes a deposit entry. */
+export const deleteDeposit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message?: string }> => {
+    const { error } = await context.supabase.from("cash_deposits").delete().eq("id", data.id);
     if (error) return { ok: false, message: error.message };
     return { ok: true };
   });
