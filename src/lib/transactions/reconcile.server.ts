@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { computeOpening } from "./opening.server";
 import type { ReconciliationPayload, ReconciliationIssue } from "./types";
 
 type Client = SupabaseClient<Database>;
@@ -34,18 +35,19 @@ export async function loadReconciliation(
     .lte("expense_date", input.to);
   if (input.branchId) eq_ = eq_.eq("branch_id", input.branchId);
 
-  let oq = supabase
-    .from("daily_opening_balances")
-    .select("opening_cash, opening_bank")
-    .gte("balance_date", input.from)
-    .lte("balance_date", input.to);
-  if (input.branchId) oq = oq.eq("branch_id", input.branchId);
+  let dq = supabase
+    .from("cash_deposits")
+    .select("amount, deposit_to")
+    .gte("deposit_date", input.from)
+    .lte("deposit_date", input.to);
+  if (input.branchId) dq = dq.eq("branch_id", input.branchId);
 
-  const [bookingsRes, txRes, expensesRes, openingRes] = await Promise.all([
+  const [bookingsRes, txRes, expensesRes, depositsRes, opening] = await Promise.all([
     bq,
     supabase.from("booking_transactions").select("*"),
     eq_,
-    oq,
+    dq,
+    computeOpening(supabase, { branchId: input.branchId, from: input.from }),
   ]);
 
   const bookings = (bookingsRes.data ?? []) as unknown as (Record<string, unknown> & {
@@ -147,16 +149,16 @@ export async function loadReconciliation(
     .filter((e) => e.paid_from === "bank")
     .reduce((s, e) => s + num(e.amount), 0);
 
-  const opening = ((openingRes.data ?? []) as Record<string, unknown>[]).reduce(
-    (acc: { cash: number; bank: number }, r) => ({
-      cash: acc.cash + num(r['opening_cash']),
-      bank: acc.bank + num(r['opening_bank']),
-    }),
-    { cash: 0, bank: 0 },
-  );
+  const depositRows = (depositsRes.data ?? []) as { amount: number; deposit_to: string }[];
+  const depositsCash = depositRows
+    .filter((d) => d.deposit_to !== "bank")
+    .reduce((s, d) => s + num(d.amount), 0);
+  const depositsBank = depositRows
+    .filter((d) => d.deposit_to === "bank")
+    .reduce((s, d) => s + num(d.amount), 0);
 
-  const expectedClosingCash = round(opening.cash + ledgerCash - expensesCash);
-  const expectedClosingBank = round(opening.bank + ledgerUpi - expensesBank);
+  const expectedClosingCash = round(opening.cash + ledgerCash + depositsCash - expensesCash);
+  const expectedClosingBank = round(opening.bank + ledgerUpi + depositsBank - expensesBank);
 
   return {
     from: input.from,
@@ -178,6 +180,8 @@ export async function loadReconciliation(
       openingBank: round(opening.bank),
       cashReceived: round(ledgerCash),
       upiReceived: round(ledgerUpi),
+      depositsCash: round(depositsCash),
+      depositsBank: round(depositsBank),
       expensesCash: round(expensesCash),
       expensesBank: round(expensesBank),
       expectedClosingCash,
