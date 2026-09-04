@@ -7,7 +7,8 @@ import {
   deleteExpense,
   deleteTransaction,
   getTransactions,
-  setOpeningBalance,
+  addDeposit,
+  deleteDeposit,
   updateTransaction,
 } from "@/lib/transactions.functions";
 import type { TransactionRow, TransactionsPayload } from "@/lib/transactions/types";
@@ -66,7 +67,8 @@ export function TransactionsView({
   const removeTx = useServerFn(deleteTransaction);
   const createExpense = useServerFn(addExpense);
   const removeExpense = useServerFn(deleteExpense);
-  const saveOpening = useServerFn(setOpeningBalance);
+  const createDeposit = useServerFn(addDeposit);
+  const removeDeposit = useServerFn(deleteDeposit);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -318,22 +320,30 @@ export function TransactionsView({
             }}
           />
 
-          <CashBankPanel
+          <DepositsPanel
             payload={data}
             branchId={branchId === "all" ? "" : branchId}
             date={from}
-            onSave={async (openingCash, openingBank) => {
-              const res = await saveOpening({
-                data: { branchId, date: from, openingCash, openingBank },
-              });
+            onAdd={async (input) => {
+              const res = await createDeposit({ data: input });
               if (!res.ok) {
-                toast.error(res.message ?? "Could not save the opening balance.");
+                toast.error(res.message ?? "Could not save the deposit.");
                 return;
               }
-              toast.success("Opening balance saved.");
+              toast.success("Deposit added.");
+              void load();
+            }}
+            onDelete={async (id) => {
+              const res = await removeDeposit({ data: { id } });
+              if (!res.ok) {
+                toast.error(res.message ?? "Could not delete the deposit.");
+                return;
+              }
               void load();
             }}
           />
+
+          <CashBankPanel payload={data} />
         </>
       )}
 
@@ -509,25 +519,131 @@ function ExpensesPanel({
   );
 }
 
-function CashBankPanel({
+function DepositsPanel({
   payload,
   branchId,
   date,
-  onSave,
+  onAdd,
+  onDelete,
 }: {
   payload: TransactionsPayload;
   branchId: string;
   date: string;
-  onSave: (openingCash: number, openingBank: number) => Promise<unknown>;
+  onAdd: (input: {
+    branchId: string;
+    date: string;
+    name: string;
+    amount: number;
+    description: string;
+    time: string;
+    depositTo: "cash" | "bank";
+  }) => Promise<unknown>;
+  onDelete: (id: string) => Promise<unknown>;
 }) {
-  const c = payload.cashBank;
-  const [cash, setCash] = useState(String(c.openingCash));
-  const [bank, setBank] = useState(String(c.openingBank));
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [time, setTime] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [depositTo, setDepositTo] = useState<"cash" | "bank">("cash");
 
-  useEffect(() => {
-    setCash(String(c.openingCash));
-    setBank(String(c.openingBank));
-  }, [c.openingCash, c.openingBank]);
+  return (
+    <Panel title={`Deposits · ${inr(payload.totalDeposits)}`}>
+      {branchId ? (
+        <div className="mb-4 grid gap-2 sm:grid-cols-6">
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Deposit name" className={box} />
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Amount"
+            inputMode="numeric"
+            className={box}
+          />
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description"
+            className={cn(box, "sm:col-span-2")}
+          />
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={box} />
+          <div className="flex gap-2">
+            <select
+              value={depositTo}
+              onChange={(e) => setDepositTo(e.target.value as "cash" | "bank")}
+              className={box}
+            >
+              <option value="cash">Cash</option>
+              <option value="bank">Bank</option>
+            </select>
+            <AdminButton
+              variant="primary"
+              onClick={() => {
+                if (!name.trim()) {
+                  toast.error("Add a deposit name.");
+                  return;
+                }
+                void onAdd({
+                  branchId,
+                  date,
+                  name: name.trim(),
+                  amount: Number(amount) || 0,
+                  description,
+                  time,
+                  depositTo,
+                }).then(() => {
+                  setName("");
+                  setAmount("");
+                  setDescription("");
+                });
+              }}
+            >
+              <Plus className="size-3.5" />
+            </AdminButton>
+          </div>
+        </div>
+      ) : (
+        <p className="mb-3 text-xs text-muted-foreground">Select a single branch to add deposits.</p>
+      )}
+
+      {!payload.deposits.length ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">No deposits recorded.</p>
+      ) : (
+        <table className="w-full text-left text-xs">
+          <thead className="text-[0.55rem] uppercase tracking-[0.2em] text-muted-foreground">
+            <tr>
+              <th className="py-2">Date</th>
+              <th>Time</th>
+              <th>Deposit</th>
+              <th>Description</th>
+              <th>Added to</th>
+              <th className="text-right">Amount</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {payload.deposits.map((d) => (
+              <tr key={d.id} className="border-t border-border/60">
+                <td className="py-2">{d.date}</td>
+                <td>{d.time}</td>
+                <td className="font-semibold">{d.name}</td>
+                <td className="text-muted-foreground">{d.description}</td>
+                <td className="capitalize">{d.depositTo}</td>
+                <td className="text-right font-semibold">{inr(d.amount)}</td>
+                <td className="text-right">
+                  <AdminButton onClick={() => void onDelete(d.id)}>
+                    <Trash2 className="size-3.5" />
+                  </AdminButton>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Panel>
+  );
+}
+
+function CashBankPanel({ payload }: { payload: TransactionsPayload }) {
+  const c = payload.cashBank;
 
   return (
     <Panel title="Bank & cash summary">
@@ -536,24 +652,18 @@ function CashBankPanel({
         <StatCard label="Opening bank" value={inr(c.openingBank)} />
         <StatCard label="Cash received today" value={inr(c.cashReceived)} tone="good" />
         <StatCard label="UPI received today" value={inr(c.upiReceived)} tone="good" />
+        <StatCard label="Deposited to cash" value={inr(c.depositsCash)} tone="good" />
+        <StatCard label="Deposited to bank" value={inr(c.depositsBank)} tone="good" />
         <StatCard label="Expenses paid in cash" value={inr(c.expensesCash)} tone="warn" />
         <StatCard label="Expenses paid by bank" value={inr(c.expensesBank)} tone="warn" />
         <StatCard label="Closing cash balance" value={inr(c.closingCash)} />
         <StatCard label="Closing bank balance" value={inr(c.closingBank)} />
       </div>
-
-      {branchId ? (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
-            Opening balances for {date}
-          </span>
-          <input value={cash} onChange={(e) => setCash(e.target.value)} placeholder="Cash" className={field} />
-          <input value={bank} onChange={(e) => setBank(e.target.value)} placeholder="Bank" className={field} />
-          <AdminButton variant="primary" onClick={() => void onSave(Number(cash) || 0, Number(bank) || 0)}>
-            Save
-          </AdminButton>
-        </div>
-      ) : null}
+      <p className="mt-3 text-xs text-muted-foreground">
+        Opening balances carry forward automatically from the previous day&apos;s closing balance, so they
+        cannot be edited. Use Deposits to add money and Daily expenses to take money out — an entry dated
+        before today updates today&apos;s opening balance too.
+      </p>
     </Panel>
   );
 }
