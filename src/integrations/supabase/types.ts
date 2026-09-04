@@ -413,6 +413,56 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_deposits: {
+        Row: {
+          amount: number
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          deposit_date: string
+          deposit_to: string
+          description: string
+          id: string
+          name: string
+          paid_at: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          deposit_date: string
+          deposit_to?: string
+          description?: string
+          id?: string
+          name: string
+          paid_at?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          deposit_date?: string
+          deposit_to?: string
+          description?: string
+          id?: string
+          name?: string
+          paid_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_deposits_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_redemptions: {
         Row: {
           booking_id: string
