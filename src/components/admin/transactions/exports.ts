@@ -162,6 +162,17 @@ export async function exportTransactionsXlsx(p: TransactionsPayload) {
       { value: e.paidFrom === "cash" ? "Cash" : "Bank" },
       { value: e.description },
     ]),
+    [],
+    [{ value: "DEPOSITS", ...bold }],
+    ["Date", "Time", "Deposit", "Amount", "Deposited to", "Description"].map((h) => ({ value: h, ...bold })),
+    ...p.deposits.map((d) => [
+      { value: d.date },
+      { value: d.time },
+      { value: d.name },
+      { type: Number, value: d.amount },
+      { value: d.depositTo === "cash" ? "Cash" : "Bank" },
+      { value: d.description },
+    ]),
   ];
   await writeXlsxFile(rows as never, { fontFamily: "Arial", fontSize: 11 }).toFile(`${fileBase(p)}.xlsx`);
 }
