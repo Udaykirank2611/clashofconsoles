@@ -195,6 +195,18 @@ export function exportTransactionsPdf(p: TransactionsPayload) {
         .join("")}</tbody></table>`
     : `<p class="muted">No expenses recorded.</p>`;
 
+  const deposits = p.deposits.length
+    ? `<table class="grid"><thead><tr><th>Date</th><th>Time</th><th>Deposit</th><th>Amount</th><th>Deposited to</th><th>Description</th></tr></thead>
+<tbody>${p.deposits
+        .map(
+          (d) =>
+            `<tr><td>${d.date}</td><td>${d.time}</td><td>${d.name}</td><td>${inr(d.amount)}</td><td>${
+              d.depositTo === "cash" ? "Cash" : "Bank"
+            }</td><td>${d.description}</td></tr>`,
+        )
+        .join("")}</tbody></table>`
+    : `<p class="muted">No deposits recorded.</p>`;
+
   printReport({
     title: "Transaction Report",
     subtitle: `${p.branchName} · ${p.from}${p.from === p.to ? "" : ` to ${p.to}`}`,
