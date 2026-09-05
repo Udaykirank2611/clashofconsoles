@@ -215,6 +215,7 @@ export function exportTransactionsPdf(p: TransactionsPayload) {
       section("Transactions", table),
       section("Daily totals", pairsTable(summaryPairs(p))),
       section("Expenses", expenses),
+      section("Deposits", deposits),
     ].join(""),
   });
 }
