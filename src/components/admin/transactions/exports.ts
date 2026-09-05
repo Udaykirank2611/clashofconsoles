@@ -122,6 +122,14 @@ export function exportTransactionsCsv(p: TransactionsPayload) {
         .map(esc)
         .join(","),
     ),
+    "",
+    esc("DEPOSITS"),
+    ["Date", "Time", "Deposit", "Amount", "Deposited to", "Description"].map(esc).join(","),
+    ...p.deposits.map((d) =>
+      [d.date, d.time, d.name, d.amount, d.depositTo === "cash" ? "Cash" : "Bank", d.description]
+        .map(esc)
+        .join(","),
+    ),
   ];
   download(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" }), `${fileBase(p)}.csv`);
 }
