@@ -188,14 +188,14 @@ export function TransactionsView({
         <>
           <Panel title="Daily totals">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="🎮 Gaming revenue" value={inr(data.totals.gamingRevenue)} tone="good" />
-              <StatCard label="🍔 Food revenue" value={inr(data.totals.foodRevenue)} tone="good" />
-              <StatCard label="🏷️ Total discounts" value={inr(data.totals.totalDiscounts)} tone="warn" />
-              <StatCard label="💰 Total revenue" value={inr(data.totals.totalRevenue)} tone="good" />
-              <StatCard label="💵 Cash collection" value={inr(data.totals.cashCollection)} tone="good" />
-              <StatCard label="📱 UPI collection" value={inr(data.totals.upiCollection)} tone="good" />
-              <StatCard label="🧾 Total bookings" value={data.totals.totalBookings} />
-              <StatCard label="⏱️ Total gaming hours" value={`${data.totals.totalGamingHours} hrs`} />
+              <StatCard label="🎮 Gaming revenue" value={inr(data.totals.gamingRevenue)} tone="good" labelClassName="font-bold" />
+              <StatCard label="🍔 Food revenue" value={inr(data.totals.foodRevenue)} tone="good" labelClassName="font-bold" />
+              <StatCard label="🏷️ Total discounts" value={inr(data.totals.totalDiscounts)} tone="warn" labelClassName="font-bold" />
+              <StatCard label="💰 Total revenue" value={inr(data.totals.totalRevenue)} tone="good" labelClassName="font-bold" />
+              <StatCard label="💵 Cash collection" value={inr(data.totals.cashCollection)} tone="good" labelClassName="font-bold" />
+              <StatCard label="📱 UPI collection" value={inr(data.totals.upiCollection)} tone="good" labelClassName="font-bold" />
+              <StatCard label="🧾 Total bookings" value={data.totals.totalBookings} labelClassName="font-bold" />
+              <StatCard label="⏱️ Total gaming hours" value={`${data.totals.totalGamingHours} hrs`} labelClassName="font-bold" />
             </div>
           </Panel>
 
