@@ -35,11 +35,13 @@ export function StatCard({
   value,
   hint,
   tone = "default",
+  labelClassName,
 }: {
   label: string;
   value: string | number;
   hint?: string;
   tone?: "default" | "good" | "warn" | "bad";
+  labelClassName?: string;
 }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-border bg-surface/70 p-3.5 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-cyan/40 hover:shadow-[0_20px_50px_-40px_var(--primary)]">
@@ -53,7 +55,7 @@ export function StatCard({
           tone === "default" && "bg-linear-to-r from-transparent via-primary/70 to-transparent",
         )}
       />
-      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
+      <p className={cn("text-[0.55rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground", labelClassName)}>{label}</p>
       <p className="mt-1.5 text-xl font-black tracking-tight">{value}</p>
       {hint ? <p className="mt-0.5 text-[0.65rem] text-muted-foreground">{hint}</p> : null}
     </div>
