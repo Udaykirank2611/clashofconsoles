@@ -87,8 +87,11 @@ function summaryPairs(p: TransactionsPayload): [string, string][] {
     ["Total bookings", String(t.totalBookings)],
     ["Total gaming hours", `${t.totalGamingHours} hrs`],
     ["Total expenses", inr(p.totalExpenses)],
+    ["Total deposits", inr(p.totalDeposits)],
     ["Opening cash balance", inr(c.openingCash)],
     ["Opening bank balance", inr(c.openingBank)],
+    ["Deposits to cash", inr(c.depositsCash)],
+    ["Deposits to bank", inr(c.depositsBank)],
     ["Expenses paid in cash", inr(c.expensesCash)],
     ["Expenses paid by bank", inr(c.expensesBank)],
     ["Closing cash balance", inr(c.closingCash)],
@@ -116,6 +119,14 @@ export function exportTransactionsCsv(p: TransactionsPayload) {
     ["Date", "Time", "Expense", "Amount", "Paid from", "Description"].map(esc).join(","),
     ...p.expenses.map((e) =>
       [e.date, e.time, e.name, e.amount, e.paidFrom === "cash" ? "Cash" : "Bank", e.description]
+        .map(esc)
+        .join(","),
+    ),
+    "",
+    esc("DEPOSITS"),
+    ["Date", "Time", "Deposit", "Amount", "Deposited to", "Description"].map(esc).join(","),
+    ...p.deposits.map((d) =>
+      [d.date, d.time, d.name, d.amount, d.depositTo === "cash" ? "Cash" : "Bank", d.description]
         .map(esc)
         .join(","),
     ),
@@ -151,6 +162,17 @@ export async function exportTransactionsXlsx(p: TransactionsPayload) {
       { value: e.paidFrom === "cash" ? "Cash" : "Bank" },
       { value: e.description },
     ]),
+    [],
+    [{ value: "DEPOSITS", ...bold }],
+    ["Date", "Time", "Deposit", "Amount", "Deposited to", "Description"].map((h) => ({ value: h, ...bold })),
+    ...p.deposits.map((d) => [
+      { value: d.date },
+      { value: d.time },
+      { value: d.name },
+      { type: Number, value: d.amount },
+      { value: d.depositTo === "cash" ? "Cash" : "Bank" },
+      { value: d.description },
+    ]),
   ];
   await writeXlsxFile(rows as never, { fontFamily: "Arial", fontSize: 11 }).toFile(`${fileBase(p)}.xlsx`);
 }
@@ -173,6 +195,18 @@ export function exportTransactionsPdf(p: TransactionsPayload) {
         .join("")}</tbody></table>`
     : `<p class="muted">No expenses recorded.</p>`;
 
+  const deposits = p.deposits.length
+    ? `<table class="grid"><thead><tr><th>Date</th><th>Time</th><th>Deposit</th><th>Amount</th><th>Deposited to</th><th>Description</th></tr></thead>
+<tbody>${p.deposits
+        .map(
+          (d) =>
+            `<tr><td>${d.date}</td><td>${d.time}</td><td>${d.name}</td><td>${inr(d.amount)}</td><td>${
+              d.depositTo === "cash" ? "Cash" : "Bank"
+            }</td><td>${d.description}</td></tr>`,
+        )
+        .join("")}</tbody></table>`
+    : `<p class="muted">No deposits recorded.</p>`;
+
   printReport({
     title: "Transaction Report",
     subtitle: `${p.branchName} · ${p.from}${p.from === p.to ? "" : ` to ${p.to}`}`,
@@ -181,6 +215,7 @@ export function exportTransactionsPdf(p: TransactionsPayload) {
       section("Transactions", table),
       section("Daily totals", pairsTable(summaryPairs(p))),
       section("Expenses", expenses),
+      section("Deposits", deposits),
     ].join(""),
   });
 }
