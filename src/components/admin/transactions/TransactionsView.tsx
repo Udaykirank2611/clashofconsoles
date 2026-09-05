@@ -188,14 +188,14 @@ export function TransactionsView({
         <>
           <Panel title="Daily totals">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="🎮 Gaming revenue" value={inr(data.totals.gamingRevenue)} tone="good" />
-              <StatCard label="🍔 Food revenue" value={inr(data.totals.foodRevenue)} tone="good" />
-              <StatCard label="🏷️ Total discounts" value={inr(data.totals.totalDiscounts)} tone="warn" />
-              <StatCard label="💰 Total revenue" value={inr(data.totals.totalRevenue)} tone="good" />
-              <StatCard label="💵 Cash collection" value={inr(data.totals.cashCollection)} tone="good" />
-              <StatCard label="📱 UPI collection" value={inr(data.totals.upiCollection)} tone="good" />
-              <StatCard label="🧾 Total bookings" value={data.totals.totalBookings} />
-              <StatCard label="⏱️ Total gaming hours" value={`${data.totals.totalGamingHours} hrs`} />
+              <StatCard label="🎮 Gaming revenue" value={inr(data.totals.gamingRevenue)} tone="good" labelClassName="font-bold" />
+              <StatCard label="🍔 Food revenue" value={inr(data.totals.foodRevenue)} tone="good" labelClassName="font-bold" />
+              <StatCard label="🏷️ Total discounts" value={inr(data.totals.totalDiscounts)} tone="warn" labelClassName="font-bold" />
+              <StatCard label="💰 Total revenue" value={inr(data.totals.totalRevenue)} tone="good" labelClassName="font-bold" />
+              <StatCard label="💵 Cash collection" value={inr(data.totals.cashCollection)} tone="good" labelClassName="font-bold" />
+              <StatCard label="📱 UPI collection" value={inr(data.totals.upiCollection)} tone="good" labelClassName="font-bold" />
+              <StatCard label="🧾 Total bookings" value={data.totals.totalBookings} labelClassName="font-bold" />
+              <StatCard label="⏱️ Total gaming hours" value={`${data.totals.totalGamingHours} hrs`} labelClassName="font-bold" />
             </div>
           </Panel>
 
@@ -647,17 +647,17 @@ function CashBankPanel({ payload }: { payload: TransactionsPayload }) {
 
   return (
     <Panel title="Bank & cash summary">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Opening cash" value={inr(c.openingCash)} />
-        <StatCard label="Opening bank" value={inr(c.openingBank)} />
-        <StatCard label="Cash received today" value={inr(c.cashReceived)} tone="good" />
-        <StatCard label="UPI received today" value={inr(c.upiReceived)} tone="good" />
-        <StatCard label="Deposited to cash" value={inr(c.depositsCash)} tone="good" />
-        <StatCard label="Deposited to bank" value={inr(c.depositsBank)} tone="good" />
-        <StatCard label="Expenses paid in cash" value={inr(c.expensesCash)} tone="warn" />
-        <StatCard label="Expenses paid by bank" value={inr(c.expensesBank)} tone="warn" />
-        <StatCard label="Closing cash balance" value={inr(c.closingCash)} />
-        <StatCard label="Closing bank balance" value={inr(c.closingBank)} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Opening cash" value={inr(c.openingCash)} labelClassName="font-bold" />
+        <StatCard label="Opening bank" value={inr(c.openingBank)} labelClassName="font-bold" />
+        <StatCard label="Cash received today" value={inr(c.cashReceived)} tone="good" labelClassName="font-bold" />
+        <StatCard label="UPI received today" value={inr(c.upiReceived)} tone="good" labelClassName="font-bold" />
+        <StatCard label="Deposited to cash" value={inr(c.depositsCash)} tone="good" labelClassName="font-bold" />
+        <StatCard label="Deposited to bank" value={inr(c.depositsBank)} tone="good" labelClassName="font-bold" />
+        <StatCard label="Expenses paid in cash" value={inr(c.expensesCash)} tone="warn" labelClassName="font-bold" />
+        <StatCard label="Expenses paid by bank" value={inr(c.expensesBank)} tone="warn" labelClassName="font-bold" />
+        <StatCard label="Closing cash balance" value={inr(c.closingCash)} labelClassName="font-bold" />
+        <StatCard label="Closing bank balance" value={inr(c.closingBank)} labelClassName="font-bold" />
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Opening balances carry forward automatically from the previous day&apos;s closing balance, so they
