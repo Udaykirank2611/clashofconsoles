@@ -313,6 +313,28 @@ export function BookingFlow() {
     if (c) setInitialPassCode(c.trim().toUpperCase());
   }, []);
 
+  /* Once we know the guest's number, pre-fill their oldest usable pass. */
+  const passesForPhoneFn = useServerFn(passesForPhone);
+  const knownPhone = customer?.phone ?? "";
+  useEffect(() => {
+    if (!knownPhone || appliedPass) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await passesForPhoneFn({ data: { phone: knownPhone } });
+        if (!cancelled && res.codes.length > 0) {
+          setInitialPassCode((prev) => prev || (res.codes[0] as string));
+        }
+      } catch {
+        /* pass pre-fill is a convenience only */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [knownPhone, appliedPass, passesForPhoneFn]);
+
+
 
   const [groupMembers, setGroupMembers] = useState(4);
   const [groupRateId, setGroupRateId] = useState<string | null>(null);
