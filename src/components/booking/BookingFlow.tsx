@@ -31,6 +31,8 @@ import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 import { PassRedeem, type AppliedPass } from "./PassRedeem";
 import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
+import { passesForPhone } from "@/lib/passes.functions";
+
 
 /** Meat keywords used to flag a menu line as non-vegetarian. */
 const NON_VEG_RE =
