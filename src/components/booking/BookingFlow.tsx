@@ -31,6 +31,8 @@ import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 import { PassRedeem, type AppliedPass } from "./PassRedeem";
 import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
+import { passesForPhone } from "@/lib/passes.functions";
+
 
 /** Meat keywords used to flag a menu line as non-vegetarian. */
 const NON_VEG_RE =
@@ -312,6 +314,28 @@ export function BookingFlow() {
     const c = new URLSearchParams(window.location.search).get("pass");
     if (c) setInitialPassCode(c.trim().toUpperCase());
   }, []);
+
+  /* Once we know the guest's number, pre-fill their oldest usable pass. */
+  const passesForPhoneFn = useServerFn(passesForPhone);
+  const knownPhone = customer?.phone ?? "";
+  useEffect(() => {
+    if (!knownPhone || appliedPass) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await passesForPhoneFn({ data: { phone: knownPhone } });
+        if (!cancelled && res.codes.length > 0) {
+          setInitialPassCode((prev) => prev || (res.codes[0] as string));
+        }
+      } catch {
+        /* pass pre-fill is a convenience only */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [knownPhone, appliedPass, passesForPhoneFn]);
+
 
 
   const [groupMembers, setGroupMembers] = useState(4);

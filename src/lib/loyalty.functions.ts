@@ -84,15 +84,18 @@ export const lookupCustomer = createServerFn({ method: "POST" })
       .eq("phone", data.phone)
       .maybeSingle();
     if (!row) return { found: false, customer: null };
+    const visits = Number((row as { total_visits: number }).total_visits ?? 0);
+    /* A reward stays usable for two visits after the milestone that unlocked it. */
     const { data: reward } = await db
       .from("rewards")
       .select("minutes, expires_at_visit")
       .eq("phone", data.phone)
       .eq("status", "available")
+      .gte("expires_at_visit", visits + 1)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const visits = Number((row as { total_visits: number }).total_visits ?? 0);
+
     return {
       found: true,
       customer: shape(
