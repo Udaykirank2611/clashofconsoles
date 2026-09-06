@@ -118,3 +118,38 @@ export const listPasses = createServerFn({ method: "POST" })
       status: row.status as PassInfo["status"],
     }));
   });
+
+/**
+ * Every still-usable pass belonging to a phone number, oldest purchase first.
+ * Used to pre-fill the Pass ID box once the guest has entered their number.
+ */
+export const passesForPhone = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({ phone: z.string().trim().min(6).max(20) })
+      .transform((v) => ({ phone: v.phone.replace(/[^\d]/g, "").slice(-10) }))
+      .parse(i),
+  )
+  .handler(async ({ data }): Promise<{ codes: string[] }> => {
+    if (!/^[6-9]\d{9}$/.test(data.phone)) return { codes: [] };
+    const { adminClient } = await import("@/lib/booking/repository.server");
+    const db = await adminClient();
+    await db.rpc("expire_membership_passes");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: rows } = await db
+      .from("membership_passes")
+      .select("code, purchased_at, expires_on, status, remaining_minutes, remaining_uses")
+      .eq("phone", data.phone)
+      .eq("status", "active")
+      .gte("expires_on", today)
+      .order("purchased_at", { ascending: true })
+      .limit(20);
+
+    const usable = (rows ?? []).filter(
+      (r) =>
+        (r.remaining_minutes === null || Number(r.remaining_minutes) > 0) &&
+        (r.remaining_uses === null || Number(r.remaining_uses) > 0),
+    );
+    return { codes: usable.map((r) => r.code) };
+  });
