@@ -357,7 +357,7 @@ export function ConsoleSelect({
                         key={p}
                         type="button"
                         aria-pressed={players === p}
-                        onClick={() => onPlayers(p)}
+                        onClick={() => pickPlayers(p)}
                         className={cn(
                           "rounded-xl border border-border bg-surface/60 px-3.5 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300",
                           "hover:-translate-y-0.5 hover:border-cyan/40",
@@ -388,7 +388,7 @@ export function ConsoleSelect({
                         key={d.minutes}
                         type="button"
                         aria-pressed={durationMinutes === d.minutes}
-                        onClick={() => onDuration(d.minutes)}
+                        onClick={() => pickDuration(d.minutes)}
                         className={cn(
                           "rounded-2xl border border-border bg-surface/60 px-3 py-2.5 text-left backdrop-blur-xl transition-all duration-300",
                           "hover:-translate-y-0.5 hover:border-cyan/40",
