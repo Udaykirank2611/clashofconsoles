@@ -34,6 +34,15 @@ import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
 import { passesForPhone } from "@/lib/passes.functions";
 
 
+/** Smoothly bring the next choice into view after a selection. */
+const scrollToField = (id: string) => {
+  if (typeof document === "undefined") return;
+  window.setTimeout(
+    () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    160,
+  );
+};
+
 /** Meat keywords used to flag a menu line as non-vegetarian. */
 const NON_VEG_RE =
   /chicken|mutton|beef|fish|prawn|egg|kebab|tikka|tandoori|drumstick|wings|keema|meat|seekh/i;
@@ -1768,6 +1777,7 @@ export function BookingFlow() {
                       return next;
                     });
                   }
+                  scrollToField(`field-package-${id}`);
                 };
 
                 const setStart = (slot: string) => {
@@ -1791,6 +1801,7 @@ export function BookingFlow() {
                         extraHours: 0,
                       },
                     }));
+                  if (active) scrollToField(`field-time-${active.id}`);
                 };
                 /** Admin-managed price tiers for this experience (empty for consoles). */
                 const tiers = isConsole ? [] : baseTiersFor(active?.id);
@@ -1798,11 +1809,13 @@ export function BookingFlow() {
                 const currentRateId = sel?.rateId ?? null;
                 const currentTier = tiers.find((t) => t.id === currentRateId) ?? null;
                 const extraHours = sel?.extraHours ?? 0;
-                const setTier = (rateId: string, minutes: number) =>
+                const setTier = (rateId: string, minutes: number) => {
                   setExtras((prev) => ({
                     ...prev,
                     [active!.id]: { ...prev[active!.id]!, startTime: null, rateId, durationMinutes: minutes, extraHours: 0 },
                   }));
+                  if (active) scrollToField(`field-time-${active.id}`);
+                };
                 const setExtraHours = (hours: number) =>
                   setExtras((prev) => ({
                     ...prev,

@@ -317,11 +317,20 @@ export function AdminDashboard() {
 
 function TodayList({ bookings }: { bookings: ReturnType<typeof useBranchData>["bookings"] }) {
   const today = new Date().toISOString().slice(0, 10);
+  const itemOf = (b: (typeof bookings)[number]) =>
+    b.booking_items.find((i) => i.kind === "addon" && i.station_id && i.start_time);
+  const startOf = (b: (typeof bookings)[number]) => b.start_time ?? itemOf(b)?.start_time ?? null;
+  const stationOf = (b: (typeof bookings)[number]) =>
+    b.gaming_stations?.name ??
+    b.booking_items
+      .filter((i) => i.kind === "addon" && i.station_id)
+      .map((i) => i.label)
+      .join(", ");
   const rows = bookings
     .filter(
       (b) => b.booking_date === today && (b.status === "confirmed" || b.status === "completed"),
     )
-    .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
+    .sort((a, b) => (startOf(a) ?? "").localeCompare(startOf(b) ?? ""));
   if (!rows.length) return <p className="py-8 text-center text-sm text-muted-foreground">Nothing booked today yet.</p>;
   return (
     <ul className="space-y-2">
@@ -330,9 +339,11 @@ function TodayList({ bookings }: { bookings: ReturnType<typeof useBranchData>["b
           key={b.id}
           className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
         >
-          <span className="w-20 text-sm font-bold">{b.start_time ? formatTime(b.start_time) : "—"}</span>
+          <span className="w-20 text-sm font-bold">
+            {startOf(b) ? formatTime(startOf(b)!) : "—"}
+          </span>
           <span className="min-w-0 flex-1 truncate text-sm">
-            {b.customer_name} · {b.gaming_stations?.name ?? ""} · {b.players}P
+            {b.customer_name} · <span className="font-bold">{stationOf(b) || "—"}</span> · {b.players}P
           </span>
           <StatusPill status={b.status} />
           <span className="text-sm font-bold">{money(b.total_amount)}</span>
