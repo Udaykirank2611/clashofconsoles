@@ -121,7 +121,7 @@ function TodayBookings({ rows, stations }: { rows: AdminBooking[]; stations: Adm
   const filtered = rows
     .filter((b) => (status === "all" ? true : b.status === status))
     .filter((b) => (station === "all" ? true : b.station_id === station))
-    .sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
+    .sort((a, b) => startKey(a).localeCompare(startKey(b)));
 
   return (
     <Panel
@@ -151,8 +151,8 @@ function TodayBookings({ rows, stations }: { rows: AdminBooking[]; stations: Adm
           b.reference.replace("COC-", ""),
           b.customer_name,
           b.customer_phone,
-          b.gaming_stations?.name ?? "—",
-          b.start_time && b.end_time ? `${formatTime(b.start_time)} – ${formatTime(b.end_time)}` : "—",
+          <span key="st" className="font-bold">{stationLabel(b)}</span>,
+          timeLabel(b),
           String(b.players),
           money(Number(b.session_amount) + Number(b.addons_amount)),
           money(b.food_amount),
