@@ -125,8 +125,10 @@ export function Hero() {
             className="mt-3 flex flex-wrap items-center justify-center gap-3"
             style={{ animation: "coc-rise 1s .45s both" }}
           >
-            <MagneticButton href="/book">Book Now</MagneticButton>
-            <MagneticButton href="#experiences" variant="ghost">
+            <MagneticButton href="/book" className="w-full text-center sm:w-64">
+              Book Now
+            </MagneticButton>
+            <MagneticButton href="#experiences" variant="ghost" className="w-full text-center sm:w-64">
               Explore Experiences
             </MagneticButton>
           </div>

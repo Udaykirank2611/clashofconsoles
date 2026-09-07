@@ -34,6 +34,15 @@ import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
 import { passesForPhone } from "@/lib/passes.functions";
 
 
+/** Smoothly bring the next choice into view after a selection. */
+const scrollToField = (id: string) => {
+  if (typeof document === "undefined") return;
+  window.setTimeout(
+    () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    160,
+  );
+};
+
 /** Meat keywords used to flag a menu line as non-vegetarian. */
 const NON_VEG_RE =
   /chicken|mutton|beef|fish|prawn|egg|kebab|tikka|tandoori|drumstick|wings|keema|meat|seekh/i;
