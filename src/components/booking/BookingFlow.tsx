@@ -1801,6 +1801,7 @@ export function BookingFlow() {
                         extraHours: 0,
                       },
                     }));
+                  if (active) scrollToField(`field-time-${active.id}`);
                 };
                 /** Admin-managed price tiers for this experience (empty for consoles). */
                 const tiers = isConsole ? [] : baseTiersFor(active?.id);
