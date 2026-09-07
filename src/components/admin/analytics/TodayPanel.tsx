@@ -9,6 +9,29 @@ import { formatTime } from "@/lib/booking/pricing";
 
 const isFood = (b: AdminBooking) => Number(b.session_amount) + Number(b.addons_amount) <= 0 && Number(b.food_amount) > 0;
 
+/** Console bookings carry the station on the row; other experiences carry it on their items. */
+const stationLabel = (b: AdminBooking) => {
+  if (b.gaming_stations?.name) return b.gaming_stations.name;
+  const items = b.booking_items.filter((i) => i.kind === "addon" && i.station_id);
+  return items.map((i) => i.label).join(", ") || "—";
+};
+
+const timeLabel = (b: AdminBooking) => {
+  if (b.start_time && b.end_time) return `${formatTime(b.start_time)} – ${formatTime(b.end_time)}`;
+  const item = b.booking_items.find((i) => i.kind === "addon" && i.station_id && i.start_time);
+  if (item?.start_time)
+    return item.end_time
+      ? `${formatTime(item.start_time)} – ${formatTime(item.end_time)}`
+      : formatTime(item.start_time);
+  return "—";
+};
+
+/** Earliest known start, used to order today's rows. */
+const startKey = (b: AdminBooking) =>
+  b.start_time ??
+  b.booking_items.find((i) => i.kind === "addon" && i.station_id && i.start_time)?.start_time ??
+  "";
+
 /** Today's live operational status + today's bookings and food orders. */
 export function TodayPanel({
   branchId,
