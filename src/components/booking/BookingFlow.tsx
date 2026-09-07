@@ -1777,6 +1777,7 @@ export function BookingFlow() {
                       return next;
                     });
                   }
+                  scrollToField(`field-package-${id}`);
                 };
 
                 const setStart = (slot: string) => {
