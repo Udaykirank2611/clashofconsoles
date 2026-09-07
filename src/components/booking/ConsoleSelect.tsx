@@ -225,6 +225,23 @@ export function ConsoleSelect({
   };
 
   const nextRef = useRef<HTMLDivElement | null>(null);
+  /** Once both players and duration are picked, jump to the start times. */
+  const scrollToStart = () =>
+    window.setTimeout(
+      () =>
+        document
+          .getElementById("field-start-time")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      160,
+    );
+  const pickPlayers = (p: number) => {
+    onPlayers(p);
+    if (durationMinutes != null) scrollToStart();
+  };
+  const pickDuration = (m: number) => {
+    onDuration(m);
+    if (players != null) scrollToStart();
+  };
   const select = (id: string) => {
     const next = stationId === id ? null : id;
     onStation(next);
