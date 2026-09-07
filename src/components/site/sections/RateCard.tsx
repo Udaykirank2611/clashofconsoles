@@ -77,6 +77,20 @@ export function RateCard({
   return (
     <section id="rates" className="relative py-24 sm:py-32">
       <div className="mx-auto max-w-6xl px-6">
+        <Reveal>
+          <div className="mb-10 flex justify-center sm:mb-12">
+            <a
+              href="https://www.instagram.com/clashofconsoles/?hl=en"
+              target="_blank"
+              rel="noreferrer"
+              className="group inline-flex items-center gap-2 rounded-full border-2 border-pink bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_28%,transparent),color-mix(in_oklab,var(--primary)_22%,transparent))] px-6 py-3 text-center text-xs font-black uppercase tracking-[0.16em] text-foreground shadow-[0_18px_50px_-22px_var(--pink)] transition-all duration-300 hover:-translate-y-1 hover:border-pink hover:shadow-[0_22px_60px_-22px_var(--pink)] sm:gap-3 sm:px-8 sm:py-3.5 sm:text-sm"
+            >
+              <span className="inline-block size-2 animate-pulse rounded-full bg-pink shadow-[0_0_12px_var(--pink)]" />
+              Follow us on Instagram &amp; DM us to get free gaming!
+            </a>
+          </div>
+        </Reveal>
+
         <SectionHeading
           eyebrow="Rate Card"
           title={
@@ -86,19 +100,6 @@ export function RateCard({
           }
           lead="Every arena, every duration — no hidden charges, updated live by the team."
         />
-
-        <Reveal>
-          <div className="mt-6 flex justify-center">
-            <a
-              href="https://www.instagram.com/clashofconsoles/?hl=en"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-pink/50 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_22%,transparent),color-mix(in_oklab,var(--primary)_18%,transparent))] px-5 py-2.5 text-center text-[0.7rem] font-black uppercase tracking-[0.18em] text-foreground shadow-[0_18px_50px_-26px_var(--pink)] transition-transform duration-300 hover:-translate-y-0.5 sm:text-xs"
-            >
-              Follow us on Instagram &amp; DM us to get free gaming!
-            </a>
-          </div>
-        </Reveal>
 
         {branches.length > 1 && activeBranch ? (
           <Reveal>
