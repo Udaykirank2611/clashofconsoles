@@ -1247,6 +1247,8 @@ export function BookingFlow() {
       releasedRef.current = true;
       setExpiresAt(null);
       window.localStorage.removeItem(HOLD_KEY);
+      dirtyRef.current = false;
+      clearDraft();
       void navigate({ to: "/pay/$reference", params: { reference: res.reference } });
 
     } catch {
