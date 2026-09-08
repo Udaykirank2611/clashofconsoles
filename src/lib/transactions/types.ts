@@ -80,6 +80,10 @@ export interface CashBankSummary {
   expensesBank: number;
   closingCash: number;
   closingBank: number;
+  /** Average daily balance so far this month = (closing cash + closing bank) / day of month. */
+  avgBalance: number;
+  /** Average daily revenue so far this month = revenue this month / day of month. */
+  avgRevenue: number;
 }
 
 export interface TransactionsPayload {
