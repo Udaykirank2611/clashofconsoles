@@ -378,7 +378,7 @@ export function BookingFlow() {
   const branches = catalogue?.branches ?? [];
   const branch = branches.find((b) => b.id === branchId) ?? null;
 
-  const { data: busy = [], refetch: refetchAvailability } = useQuery({
+  const { data: busy = [], refetch: refetchAvailability, isFetching: availFetching } = useQuery({
     queryKey: ["booking-availability", branchId, date],
     enabled: Boolean(branchId),
     refetchInterval: 10_000,
