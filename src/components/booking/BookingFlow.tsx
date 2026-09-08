@@ -1381,6 +1381,56 @@ export function BookingFlow() {
 
 
 
+  if (draftPrompt) {
+    return (
+      <div className="mx-auto max-w-lg rounded-3xl border border-pink/40 bg-surface/70 p-7 backdrop-blur-2xl shadow-[0_30px_90px_-45px_var(--pink)] sm:p-9">
+        <span className="inline-flex items-center gap-2 rounded-full border border-pink/40 bg-pink/10 px-3.5 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-pink">
+          <Timer className="size-3.5" /> Saved booking
+        </span>
+        <h2 className="mt-5 text-2xl font-black leading-tight sm:text-3xl">
+          Continue your unfinished booking?
+        </h2>
+        <dl className="mt-6 space-y-3 rounded-2xl border border-border bg-background/40 p-4 text-sm">
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">Branch</dt>
+            <dd className="font-bold">
+              {draftPrompt.branchName ||
+                branches.find((b) => b.id === draftPrompt.branchId)?.name ||
+                "Not chosen yet"}
+            </dd>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">Where you stopped</dt>
+            <dd className="font-bold">{draftPrompt.stepLabel}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">Last saved</dt>
+            <dd className="font-bold">{timeAgo(draftPrompt.savedAt)}</dd>
+          </div>
+        </dl>
+        <div className="mt-6 space-y-3">
+          <button
+            type="button"
+            onClick={continueDraft}
+            className="flex w-full items-center justify-center gap-2 coc-cta px-6 py-3.5 text-sm font-black uppercase tracking-[0.16em] transition-transform duration-300 hover:-translate-y-0.5"
+          >
+            Continue booking
+          </button>
+          <button
+            type="button"
+            onClick={discardDraft}
+            className="w-full rounded-2xl border border-border bg-background/40 px-6 py-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:border-pink/40 hover:text-foreground"
+          >
+            Discard &amp; start new
+          </button>
+        </div>
+        <p className="mt-4 text-center text-[0.66rem] text-muted-foreground/80">
+          Nothing is reserved yet — we'll check your time slot is still free when you continue.
+        </p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="grid min-h-[50vh] place-items-center">
