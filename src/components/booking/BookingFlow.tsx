@@ -113,6 +113,14 @@ import {
   type Station,
   type StationGame,
 } from "@/lib/booking/types";
+import {
+  clearDraft,
+  draftIsMeaningful,
+  readDraft,
+  saveDraft,
+  timeAgo,
+  type BookingDraft,
+} from "@/lib/booking/draft";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
 
@@ -378,7 +386,7 @@ export function BookingFlow() {
   const branches = catalogue?.branches ?? [];
   const branch = branches.find((b) => b.id === branchId) ?? null;
 
-  const { data: busy = [], refetch: refetchAvailability } = useQuery({
+  const { data: busy = [], refetch: refetchAvailability, isFetching: availFetching } = useQuery({
     queryKey: ["booking-availability", branchId, date],
     enabled: Boolean(branchId),
     refetchInterval: 10_000,
@@ -669,6 +677,197 @@ export function BookingFlow() {
     setExpiresAt(p.expiresAt);
     toast.success("Reservation restored", { description: "Your slot is still held." });
   }, [branchId, date]);
+
+  /* ---------------- Auto-saved booking draft ----------------
+     Progress is mirrored to localStorage after every change. A draft never
+     reserves a slot — the slot is revalidated when the draft is resumed. */
+  const [draftPrompt, setDraftPrompt] = useState<BookingDraft | null>(null);
+  const draftReady = useRef(false);
+  const pendingDraft = useRef<BookingDraft | null>(null);
+  const [revalidateAt, setRevalidateAt] = useState(0);
+  const dirtyRef = useRef(false);
+
+  useEffect(() => {
+    const d = readDraft();
+    if (d && draftIsMeaningful(d)) {
+      setDraftPrompt(d);
+    } else {
+      clearDraft();
+      draftReady.current = true;
+    }
+  }, []);
+
+  const continueDraft = () => {
+    const d = draftPrompt;
+    if (!d) return;
+    setDraftPrompt(null);
+    setCustomer((d.customer as LoyaltyCustomer | null) ?? null);
+    setSkippedPhone(Boolean(d.skippedPhone));
+    setConsoleOn(Boolean(d.consoleOn));
+    setBookingType((d.bookingType as BookingType) ?? "single");
+    setCart(d.cart ?? []);
+    setCouponInput(d.couponInput ?? "");
+    setCoupon((d.coupon as CouponResult | null) ?? null);
+    setIsStudent(Boolean(d.isStudent));
+    setUseReward(Boolean(d.useReward));
+    setForm(d.form ?? { fullName: "", phone: "", email: "", instructions: "" });
+    setPasses(d.passes ?? {});
+    setPassesOn(Boolean(d.passesOn));
+    if (d.groupMembers) setGroupMembers(d.groupMembers);
+    pendingDraft.current = d;
+    setBranchId(d.branchId);
+    setDate(d.date);
+    setStep(d.step ?? 0);
+    draftReady.current = true;
+  };
+
+  const discardDraft = () => {
+    clearDraft();
+    setDraftPrompt(null);
+    draftReady.current = true;
+  };
+
+  /* Slot-shaped fields land only after the branch/date reset effect has run. */
+  useEffect(() => {
+    const p = pendingDraft.current;
+    if (!p || branchId !== p.branchId || date !== p.date) return;
+    pendingDraft.current = null;
+    setStationId(p.stationId);
+    setPlayers(p.players);
+    setStartTime(p.startTime);
+    setDurationMinutes(p.durationMinutes);
+    setExtras(p.extras ?? {});
+    setGroupRateId(p.groupRateId ?? null);
+    setGroupStart(p.groupStart ?? null);
+    void refetchAvailability();
+    setRevalidateAt(Date.now());
+  }, [branchId, date, refetchAvailability]);
+
+  /* Revalidate every restored time slot against live availability. */
+  useEffect(() => {
+    if (!revalidateAt || availFetching) return;
+    setRevalidateAt(0);
+    let lost = false;
+    if (stationId && startTime && durationMinutes && slotBlocked(stationId, startTime, durationMinutes)) {
+      setStartTime(null);
+      lost = true;
+    }
+    let changed = false;
+    const nextExtras: ExtraMap = { ...extras };
+    for (const [sid, e] of Object.entries(extras)) {
+      const mins = (e.durationMinutes ?? 0) + (e.extraHours ?? 0) * 60;
+      if (e.startTime && mins && slotBlocked(sid, e.startTime, mins)) {
+        nextExtras[sid] = { ...e, startTime: null };
+        changed = true;
+        lost = true;
+      }
+    }
+    if (changed) setExtras(nextExtras);
+    if (groupStart && groupRate && groupSlotBlocked(groupStart, groupRate.duration_minutes)) {
+      setGroupStart(null);
+      lost = true;
+    }
+    if (lost) {
+      toast.error("That time slot is no longer available", {
+        description: "Everything else you entered is saved — please pick another available start time.",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revalidateAt, availFetching]);
+
+  /* Silent auto-save after every meaningful change. */
+  useEffect(() => {
+    if (!draftReady.current || draftPrompt || submitting) return;
+    const draft: BookingDraft = {
+      version: 1,
+      savedAt: Date.now(),
+      step,
+      stepLabel: STEPS[step] ?? STEPS[0],
+      branchId,
+      branchName: branch?.name ?? "",
+      bookingType,
+      date,
+      stationId,
+      players,
+      startTime,
+      durationMinutes,
+      extras,
+      consoleOn,
+      passes,
+      passesOn,
+      groupMembers,
+      groupRateId,
+      groupStart,
+      cart,
+      couponInput,
+      coupon,
+      isStudent,
+      useReward,
+      skippedPhone,
+      customer,
+      form,
+    };
+    if (!draftIsMeaningful(draft)) return;
+    dirtyRef.current = true;
+    const t = window.setTimeout(() => saveDraft(draft), 350);
+    return () => window.clearTimeout(t);
+  }, [
+    draftPrompt,
+    submitting,
+    step,
+    branchId,
+    branch,
+    bookingType,
+    date,
+    stationId,
+    players,
+    startTime,
+    durationMinutes,
+    extras,
+    consoleOn,
+    passes,
+    passesOn,
+    groupMembers,
+    groupRateId,
+    groupStart,
+    cart,
+    couponInput,
+    coupon,
+    isStudent,
+    useReward,
+    skippedPhone,
+    customer,
+    form,
+  ]);
+
+  /* Confirm before leaving (refresh, close, or browser back). */
+  useEffect(() => {
+    const leaving = { yes: false };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!dirtyRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    const onPop = () => {
+      if (leaving.yes || !dirtyRef.current) return;
+      const ok = window.confirm(
+        "Are you sure you want to exit? Your booking progress is saved, so you can continue later.",
+      );
+      if (ok) {
+        leaving.yes = true;
+        window.history.back();
+      } else {
+        window.history.pushState({ cocBooking: true }, "");
+      }
+    };
+    window.history.pushState({ cocBooking: true }, "");
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("popstate", onPop);
+    };
+  }, []);
 
 
   const groupAmount = isGroup && groupStart && groupRate ? Math.round(Number(groupRate.price)) : 0;
@@ -1048,6 +1247,8 @@ export function BookingFlow() {
       releasedRef.current = true;
       setExpiresAt(null);
       window.localStorage.removeItem(HOLD_KEY);
+      dirtyRef.current = false;
+      clearDraft();
       void navigate({ to: "/pay/$reference", params: { reference: res.reference } });
 
     } catch {
@@ -1179,6 +1380,56 @@ export function BookingFlow() {
   };
 
 
+
+  if (draftPrompt) {
+    return (
+      <div className="mx-auto max-w-lg rounded-3xl border border-pink/40 bg-surface/70 p-7 backdrop-blur-2xl shadow-[0_30px_90px_-45px_var(--pink)] sm:p-9">
+        <span className="inline-flex items-center gap-2 rounded-full border border-pink/40 bg-pink/10 px-3.5 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-pink">
+          <Timer className="size-3.5" /> Saved booking
+        </span>
+        <h2 className="mt-5 text-2xl font-black leading-tight sm:text-3xl">
+          Continue your unfinished booking?
+        </h2>
+        <dl className="mt-6 space-y-3 rounded-2xl border border-border bg-background/40 p-4 text-sm">
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">Branch</dt>
+            <dd className="font-bold">
+              {draftPrompt.branchName ||
+                branches.find((b) => b.id === draftPrompt.branchId)?.name ||
+                "Not chosen yet"}
+            </dd>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">Where you stopped</dt>
+            <dd className="font-bold">{draftPrompt.stepLabel}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">Last saved</dt>
+            <dd className="font-bold">{timeAgo(draftPrompt.savedAt)}</dd>
+          </div>
+        </dl>
+        <div className="mt-6 space-y-3">
+          <button
+            type="button"
+            onClick={continueDraft}
+            className="flex w-full items-center justify-center gap-2 coc-cta px-6 py-3.5 text-sm font-black uppercase tracking-[0.16em] transition-transform duration-300 hover:-translate-y-0.5"
+          >
+            Continue booking
+          </button>
+          <button
+            type="button"
+            onClick={discardDraft}
+            className="w-full rounded-2xl border border-border bg-background/40 px-6 py-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:border-pink/40 hover:text-foreground"
+          >
+            Discard &amp; start new
+          </button>
+        </div>
+        <p className="mt-4 text-center text-[0.66rem] text-muted-foreground/80">
+          Nothing is reserved yet — we'll check your time slot is still free when you continue.
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
