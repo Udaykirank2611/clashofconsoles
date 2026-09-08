@@ -678,6 +678,197 @@ export function BookingFlow() {
     toast.success("Reservation restored", { description: "Your slot is still held." });
   }, [branchId, date]);
 
+  /* ---------------- Auto-saved booking draft ----------------
+     Progress is mirrored to localStorage after every change. A draft never
+     reserves a slot — the slot is revalidated when the draft is resumed. */
+  const [draftPrompt, setDraftPrompt] = useState<BookingDraft | null>(null);
+  const draftReady = useRef(false);
+  const pendingDraft = useRef<BookingDraft | null>(null);
+  const [revalidateAt, setRevalidateAt] = useState(0);
+  const dirtyRef = useRef(false);
+
+  useEffect(() => {
+    const d = readDraft();
+    if (d && draftIsMeaningful(d)) {
+      setDraftPrompt(d);
+    } else {
+      clearDraft();
+      draftReady.current = true;
+    }
+  }, []);
+
+  const continueDraft = () => {
+    const d = draftPrompt;
+    if (!d) return;
+    setDraftPrompt(null);
+    setCustomer((d.customer as LoyaltyCustomer | null) ?? null);
+    setSkippedPhone(Boolean(d.skippedPhone));
+    setConsoleOn(Boolean(d.consoleOn));
+    setBookingType((d.bookingType as BookingType) ?? "single");
+    setCart(d.cart ?? []);
+    setCouponInput(d.couponInput ?? "");
+    setCoupon((d.coupon as CouponResult | null) ?? null);
+    setIsStudent(Boolean(d.isStudent));
+    setUseReward(Boolean(d.useReward));
+    setForm(d.form ?? { fullName: "", phone: "", email: "", instructions: "" });
+    setPasses(d.passes ?? {});
+    setPassesOn(Boolean(d.passesOn));
+    if (d.groupMembers) setGroupMembers(d.groupMembers);
+    pendingDraft.current = d;
+    setBranchId(d.branchId);
+    setDate(d.date);
+    setStep(d.step ?? 0);
+    draftReady.current = true;
+  };
+
+  const discardDraft = () => {
+    clearDraft();
+    setDraftPrompt(null);
+    draftReady.current = true;
+  };
+
+  /* Slot-shaped fields land only after the branch/date reset effect has run. */
+  useEffect(() => {
+    const p = pendingDraft.current;
+    if (!p || branchId !== p.branchId || date !== p.date) return;
+    pendingDraft.current = null;
+    setStationId(p.stationId);
+    setPlayers(p.players);
+    setStartTime(p.startTime);
+    setDurationMinutes(p.durationMinutes);
+    setExtras(p.extras ?? {});
+    setGroupRateId(p.groupRateId ?? null);
+    setGroupStart(p.groupStart ?? null);
+    void refetchAvailability();
+    setRevalidateAt(Date.now());
+  }, [branchId, date, refetchAvailability]);
+
+  /* Revalidate every restored time slot against live availability. */
+  useEffect(() => {
+    if (!revalidateAt || availFetching) return;
+    setRevalidateAt(0);
+    let lost = false;
+    if (stationId && startTime && durationMinutes && slotBlocked(stationId, startTime, durationMinutes)) {
+      setStartTime(null);
+      lost = true;
+    }
+    let changed = false;
+    const nextExtras: ExtraMap = { ...extras };
+    for (const [sid, e] of Object.entries(extras)) {
+      const mins = (e.durationMinutes ?? 0) + (e.extraHours ?? 0) * 60;
+      if (e.startTime && mins && slotBlocked(sid, e.startTime, mins)) {
+        nextExtras[sid] = { ...e, startTime: null };
+        changed = true;
+        lost = true;
+      }
+    }
+    if (changed) setExtras(nextExtras);
+    if (groupStart && groupRate && groupSlotBlocked(groupStart, groupRate.duration_minutes)) {
+      setGroupStart(null);
+      lost = true;
+    }
+    if (lost) {
+      toast.error("That time slot is no longer available", {
+        description: "Everything else you entered is saved — please pick another available start time.",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revalidateAt, availFetching]);
+
+  /* Silent auto-save after every meaningful change. */
+  useEffect(() => {
+    if (!draftReady.current || draftPrompt || submitting) return;
+    const draft: BookingDraft = {
+      version: 1,
+      savedAt: Date.now(),
+      step,
+      stepLabel: STEPS[step] ?? STEPS[0],
+      branchId,
+      branchName: branch?.name ?? "",
+      bookingType,
+      date,
+      stationId,
+      players,
+      startTime,
+      durationMinutes,
+      extras,
+      consoleOn,
+      passes,
+      passesOn,
+      groupMembers,
+      groupRateId,
+      groupStart,
+      cart,
+      couponInput,
+      coupon,
+      isStudent,
+      useReward,
+      skippedPhone,
+      customer,
+      form,
+    };
+    if (!draftIsMeaningful(draft)) return;
+    dirtyRef.current = true;
+    const t = window.setTimeout(() => saveDraft(draft), 350);
+    return () => window.clearTimeout(t);
+  }, [
+    draftPrompt,
+    submitting,
+    step,
+    branchId,
+    branch,
+    bookingType,
+    date,
+    stationId,
+    players,
+    startTime,
+    durationMinutes,
+    extras,
+    consoleOn,
+    passes,
+    passesOn,
+    groupMembers,
+    groupRateId,
+    groupStart,
+    cart,
+    couponInput,
+    coupon,
+    isStudent,
+    useReward,
+    skippedPhone,
+    customer,
+    form,
+  ]);
+
+  /* Confirm before leaving (refresh, close, or browser back). */
+  useEffect(() => {
+    const leaving = { yes: false };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!dirtyRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    const onPop = () => {
+      if (leaving.yes || !dirtyRef.current) return;
+      const ok = window.confirm(
+        "Are you sure you want to exit? Your booking progress is saved, so you can continue later.",
+      );
+      if (ok) {
+        leaving.yes = true;
+        window.history.back();
+      } else {
+        window.history.pushState({ cocBooking: true }, "");
+      }
+    };
+    window.history.pushState({ cocBooking: true }, "");
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("popstate", onPop);
+    };
+  }, []);
+
 
   const groupAmount = isGroup && groupStart && groupRate ? Math.round(Number(groupRate.price)) : 0;
   /** A redeemed pass funds the console session, so it is never charged. */
