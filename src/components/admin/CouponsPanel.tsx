@@ -235,7 +235,11 @@ export function CouponsPanel({
           <p className="py-8 text-center text-sm text-muted-foreground">No coupons yet.</p>
         ) : (
           <div className="space-y-3">
-            {coupons.map((c) => (
+            {/* Active coupons sit on top; disabling one returns it to creation order. */}
+            {coupons
+              .slice()
+              .sort((a, b) => Number(Boolean(b.is_active)) - Number(Boolean(a.is_active)))
+              .map((c) => (
               <div
                 key={c.id}
                 className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"

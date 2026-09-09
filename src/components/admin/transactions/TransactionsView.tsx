@@ -658,6 +658,8 @@ function CashBankPanel({ payload }: { payload: TransactionsPayload }) {
         <StatCard label="Expenses paid by bank" value={inr(c.expensesBank)} tone="warn" labelClassName="font-bold" />
         <StatCard label="Closing cash balance" value={inr(c.closingCash)} labelClassName="font-bold" />
         <StatCard label="Closing bank balance" value={inr(c.closingBank)} labelClassName="font-bold" />
+        <StatCard label="Avg balance" value={inr(c.avgBalance)} labelClassName="font-bold" />
+        <StatCard label="Avg revenue" value={inr(c.avgRevenue)} labelClassName="font-bold" />
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Opening balances carry forward automatically from the previous day&apos;s closing balance, so they
