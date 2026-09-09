@@ -115,23 +115,41 @@ export function Hero() {
             style={{ animation: "coc-rise 1s .15s both" }}
           />
           <a
+            href="https://www.instagram.com/clashofconsoles/?hl=en"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 text-[0.62rem] font-medium tracking-wide text-muted-foreground transition-colors hover:text-pink sm:text-xs"
+            style={{ animation: "coc-rise 1s .25s both" }}
+          >
+            <span className="inline-block size-1.5 animate-pulse rounded-full bg-pink" />
+            Follow &amp; DM us on Instagram for free gaming
+          </a>
+          <a
             href="#rates"
-            className="press mt-9 inline-flex items-center gap-2 rounded-full border border-pink/50 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_20%,transparent),color-mix(in_oklab,var(--primary)_18%,transparent))] px-6 py-2.5 text-[0.68rem] font-black uppercase tracking-[0.28em] text-foreground shadow-[0_18px_50px_-26px_var(--pink)] transition-transform duration-300 hover:-translate-y-0.5"
+            className="press mt-4 inline-flex items-center gap-2 rounded-full border border-pink/50 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_20%,transparent),color-mix(in_oklab,var(--primary)_18%,transparent))] px-5 py-2 text-[0.62rem] font-black uppercase tracking-[0.24em] text-foreground shadow-[0_18px_50px_-26px_var(--pink)] transition-transform duration-300 hover:-translate-y-0.5 sm:px-6 sm:py-2.5 sm:text-[0.68rem]"
             style={{ animation: "coc-rise 1s .35s both" }}
           >
             Rate Card
           </a>
           <div
-            className="mt-3 flex flex-wrap items-center justify-center gap-3"
+            className="mt-3 flex w-full flex-wrap items-center justify-center gap-2.5 sm:gap-3"
             style={{ animation: "coc-rise 1s .45s both" }}
           >
-            <MagneticButton href="/book" className="w-full text-center sm:w-64">
+            <MagneticButton
+              href="/book"
+              className="w-40 px-4 py-2.5 text-xs sm:w-64 sm:px-7 sm:py-3.5 sm:text-sm"
+            >
               Book Now
             </MagneticButton>
-            <MagneticButton href="#experiences" variant="ghost" className="w-full text-center sm:w-64">
+            <MagneticButton
+              href="#experiences"
+              variant="ghost"
+              className="w-40 px-4 py-2.5 text-xs sm:w-64 sm:px-7 sm:py-3.5 sm:text-sm"
+            >
               Explore Experiences
             </MagneticButton>
           </div>
+
         </div>
       </div>
 
