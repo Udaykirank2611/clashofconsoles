@@ -261,14 +261,23 @@ export function BookingsPanel({
   };
 
   // Newest first everywhere: latest booking date, then latest created.
+  // On the "All" tab, sessions still awaiting completion float to the top; once
+  // marked completed they drop back into their normal chronological place.
   const rows = bookings
     .filter((b) => matchesFilter(b.status, filter))
     .slice()
-    .sort(
-      (a, b) =>
+    .sort((a, b) => {
+      if (filter === "all") {
+        const rank = (s: AdminBooking["status"]) => (s === "completed" ? 1 : 0);
+        const d = rank(a.status) - rank(b.status);
+        if (d !== 0) return d;
+      }
+      return (
         (b.booking_date ?? "").localeCompare(a.booking_date ?? "") ||
-        (b.created_at ?? "").localeCompare(a.created_at ?? ""),
-    );
+        (b.created_at ?? "").localeCompare(a.created_at ?? "")
+      );
+    });
+
 
   const copyConfirmation = async (b: AdminBooking, stationName: string) => {
     try {
