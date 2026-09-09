@@ -228,6 +228,26 @@ export async function loadTransactions(
   const depositsCash = deposits.filter((d) => d.depositTo === "cash").reduce((s, d) => s + d.amount, 0);
   const depositsBank = deposits.filter((d) => d.depositTo === "bank").reduce((s, d) => s + d.amount, 0);
 
+  // Month-to-date averages: divide by the day-of-month of the window's end date.
+  const monthStart = `${input.to.slice(0, 7)}-01`;
+  const dayOfMonth = Math.max(1, Number(input.to.slice(8, 10)) || 1);
+  let mq = supabase
+    .from("bookings")
+    .select("total_amount, status")
+    .gte("booking_date", monthStart)
+    .lte("booking_date", input.to)
+    .eq("status", "completed")
+    .limit(5000);
+  if (input.branchId) mq = mq.eq("branch_id", input.branchId);
+  const monthRes = await mq;
+  const monthRevenue = ((monthRes.data ?? []) as Record<string, unknown>[]).reduce(
+    (s, b) => s + num(b['total_amount']),
+    0,
+  );
+
+  const closingCash = opening.cash + totals.cashCollection + depositsCash - expensesCash;
+  const closingBank = opening.bank + totals.upiCollection + depositsBank - expensesBank;
+
   const cashBank: CashBankSummary = {
     openingCash: opening.cash,
     openingBank: opening.bank,
@@ -237,9 +257,12 @@ export async function loadTransactions(
     depositsBank,
     expensesCash,
     expensesBank,
-    closingCash: opening.cash + totals.cashCollection + depositsCash - expensesCash,
-    closingBank: opening.bank + totals.upiCollection + depositsBank - expensesBank,
+    closingCash,
+    closingBank,
+    avgBalance: Math.round((closingCash + closingBank) / dayOfMonth),
+    avgRevenue: Math.round(monthRevenue / dayOfMonth),
   };
+
 
   return {
     from: input.from,
