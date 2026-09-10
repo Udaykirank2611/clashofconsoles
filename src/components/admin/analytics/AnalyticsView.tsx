@@ -211,7 +211,8 @@ export function AnalyticsView({
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Panel title="Food analytics">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+
                 <StatCard label="Food revenue" value={money(data.food.revenue)} />
                 <StatCard label="Orders" value={data.food.orders} />
                 <StatCard label="Avg order" value={money(data.food.avgOrderValue)} />
