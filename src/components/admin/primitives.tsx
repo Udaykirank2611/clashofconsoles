@@ -15,14 +15,14 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-3xl border border-border bg-surface/60 p-5 backdrop-blur-2xl sm:p-6",
+        "min-w-0 rounded-3xl border border-border bg-surface/60 p-4 backdrop-blur-2xl sm:p-6",
         className,
       )}
     >
       {title ? (
-        <header className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-cyan">{title}</h2>
-          {action}
+        <header className="mb-5 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
+          <h2 className="min-w-0 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-cyan sm:tracking-[0.32em]">{title}</h2>
+          {action ? <div className="shrink-0">{action}</div> : null}
         </header>
       ) : null}
       {children}
@@ -44,7 +44,7 @@ export function StatCard({
   labelClassName?: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border bg-surface/70 p-3.5 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-cyan/40 hover:shadow-[0_20px_50px_-40px_var(--primary)]">
+    <div className="group relative min-w-0 overflow-hidden rounded-2xl border border-border bg-surface/70 p-3 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-cyan/40 hover:shadow-[0_20px_50px_-40px_var(--primary)] sm:p-3.5">
       <span
         aria-hidden="true"
         className={cn(
@@ -56,7 +56,7 @@ export function StatCard({
         )}
       />
       <p className={cn("text-[0.55rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground", labelClassName)}>{label}</p>
-      <p className="mt-1.5 break-words text-lg font-black tracking-tight sm:text-xl">{value}</p>
+      <p className="mt-1.5 break-words text-base font-black tracking-tight sm:text-xl">{value}</p>
       {hint ? <p className="mt-0.5 text-[0.65rem] text-muted-foreground">{hint}</p> : null}
     </div>
 

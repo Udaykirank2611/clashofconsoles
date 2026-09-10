@@ -210,8 +210,8 @@ export function AnalyticsView({
           </Panel>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Panel title="Food analytics">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Panel title="Food analytics" className="min-w-0 overflow-hidden">
+              <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3">
 
                 <StatCard label="Food revenue" value={money(data.food.revenue)} />
                 <StatCard label="Orders" value={data.food.orders} />
@@ -235,7 +235,7 @@ export function AnalyticsView({
               />
             </Panel>
 
-            <Panel title="Category performance">
+            <Panel title="Category performance" className="min-w-0 overflow-hidden">
               <Bars
                 rows={data.food.categories.map((c) => ({
                   label: c.category,
@@ -279,8 +279,8 @@ export function AnalyticsView({
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Panel title="Coupons">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Panel title="Coupons" className="min-w-0 overflow-hidden">
+              <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3">
                 <StatCard label="Coupons created" value={data.coupons.created} />
                 <StatCard label="Redeemed" value={data.coupons.redeemed} />
                 <StatCard label="Discount given" value={money(data.coupons.discount)} />
@@ -302,8 +302,8 @@ export function AnalyticsView({
               </div>
             </Panel>
 
-            <Panel title="Student discount & memberships">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Panel title="Student discount & memberships" className="min-w-0 overflow-hidden">
+              <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3">
                 <StatCard label="Student discounts" value={data.student.uses} />
                 <StatCard label="Student amount" value={money(data.student.amount)} />
                 <StatCard label="Gaming after discount" value={money(data.student.gamingRevenueAfter)} />
@@ -399,18 +399,18 @@ function Bars({
               }
             }}
             className={cn(
-              "grid grid-cols-[minmax(96px,34%)_1fr_auto] items-center gap-3 rounded-xl px-1 py-1",
+              "grid min-w-0 grid-cols-[minmax(0,38%)_minmax(48px,1fr)_auto] items-center gap-2 rounded-xl px-1 py-1 sm:grid-cols-[minmax(96px,34%)_1fr_auto] sm:gap-3",
               r.onClick && "cursor-pointer transition-colors hover:bg-muted/30",
             )}
           >
-          <span className="truncate text-xs text-muted-foreground">{r.label}</span>
+          <span className="min-w-0 break-words text-[0.7rem] leading-tight text-muted-foreground sm:truncate sm:text-xs">{r.label}</span>
           <span className="h-2.5 overflow-hidden rounded-full bg-muted/50">
             <span
               className="block h-full rounded-full bg-linear-to-r from-primary via-cyan to-violet"
               style={{ width: `${Math.max(3, (r.value / max) * 100)}%` }}
             />
           </span>
-            <span className="text-xs font-bold">{r.display}</span>
+            <span className="shrink-0 text-[0.7rem] font-bold sm:text-xs">{r.display}</span>
           </div>
         </li>
       ))}
