@@ -1672,7 +1672,7 @@ export function BookingFlow() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="truncate text-sm font-extrabold">{p.name}</p>
-                              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                              <p className="mt-0.5 line-clamp-2 text-xs font-bold text-foreground">
                                 {p.subtitle}
                               </p>
                             </div>
