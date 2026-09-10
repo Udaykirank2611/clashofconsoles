@@ -240,9 +240,9 @@ export function CouponsPanel({
               .slice()
               .sort((a, b) => Number(Boolean(b.is_active)) - Number(Boolean(a.is_active)))
               .map((c) => (
+              <div key={c.id} className="space-y-3">
               <div
-                key={c.id}
-                className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
