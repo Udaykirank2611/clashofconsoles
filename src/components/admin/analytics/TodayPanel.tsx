@@ -227,7 +227,7 @@ export function ScrollTable({
   if (!rows.length) return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
   return (
     <div className="-mx-2 overflow-x-auto px-2">
-      <table className="w-full min-w-[720px] border-collapse text-sm">
+      <table className="w-full min-w-[520px] border-collapse text-xs sm:min-w-[720px] sm:text-sm">
         <thead>
           <tr>
             {head.map((h) => (
