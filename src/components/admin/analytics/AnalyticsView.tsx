@@ -260,7 +260,7 @@ export function AnalyticsView({
             </Panel>
 
             <Panel title="Loyalty">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard label="Rewards earned" value={data.loyalty.earned} />
                 <StatCard label="Redeemed" value={data.loyalty.redeemed} tone="good" />
                 <StatCard label="Available" value={data.loyalty.available} tone="warn" />
