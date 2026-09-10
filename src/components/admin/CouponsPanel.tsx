@@ -240,9 +240,9 @@ export function CouponsPanel({
               .slice()
               .sort((a, b) => Number(Boolean(b.is_active)) - Number(Boolean(a.is_active)))
               .map((c) => (
+              <div key={c.id} className="space-y-3">
               <div
-                key={c.id}
-                className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export function CouponsPanel({
                     />
                   </div>
                 </div>
-                <label className="flex items-center gap-2">
+                <label className="flex flex-wrap items-center gap-2">
                   <select
                     value={(c.category ?? "entire_bill") as CouponCategory}
                     onChange={(e) => void update(c, { category: e.target.value as CouponCategory })}
@@ -395,24 +395,26 @@ export function CouponsPanel({
                     className="w-20 rounded-xl border border-border bg-surface/70 px-3 py-1.5 text-center text-sm outline-none focus:border-cyan/50"
                   />
                 </label>
-                <AdminButton onClick={() => void update(c, { is_active: !c.is_active })}>
-                  {c.is_active ? "Disable" : "Enable"}
-                </AdminButton>
-                <AdminButton onClick={() => setHistoryFor(historyFor?.id === c.id ? null : c)}>
-                  <History className="size-3.5" /> Usage
-                </AdminButton>
-                <AdminButton variant="danger" onClick={() => void remove(c)}>
-                  <Trash2 className="size-3.5" /> Delete
-                </AdminButton>
+                <div className="flex flex-wrap items-center gap-2">
+                  <AdminButton onClick={() => void update(c, { is_active: !c.is_active })}>
+                    {c.is_active ? "Disable" : "Enable"}
+                  </AdminButton>
+                  <AdminButton onClick={() => setHistoryFor(historyFor?.id === c.id ? null : c)}>
+                    <History className="size-3.5" /> Usage
+                  </AdminButton>
+                  <AdminButton variant="danger" onClick={() => void remove(c)}>
+                    <Trash2 className="size-3.5" /> Delete
+                  </AdminButton>
+                </div>
+              </div>
+              {historyFor?.id === c.id ? (
+                <RedemptionHistory coupon={c} onClose={() => setHistoryFor(null)} />
+              ) : null}
               </div>
             ))}
           </div>
         )}
       </Panel>
-
-      {historyFor ? (
-        <RedemptionHistory coupon={historyFor} onClose={() => setHistoryFor(null)} />
-      ) : null}
     </div>
   );
 }

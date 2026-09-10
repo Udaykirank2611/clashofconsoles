@@ -56,7 +56,7 @@ export function StatCard({
         )}
       />
       <p className={cn("text-[0.55rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground", labelClassName)}>{label}</p>
-      <p className="mt-1.5 text-xl font-black tracking-tight">{value}</p>
+      <p className="mt-1.5 break-words text-lg font-black tracking-tight sm:text-xl">{value}</p>
       {hint ? <p className="mt-0.5 text-[0.65rem] text-muted-foreground">{hint}</p> : null}
     </div>
 

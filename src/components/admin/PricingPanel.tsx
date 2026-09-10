@@ -97,15 +97,15 @@ export function PricingPanel({
           {menu.map((m) => (
             <label
               key={m.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
+              className="flex flex-col gap-2 rounded-2xl border border-border bg-surface/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
             >
-              <span className="min-w-0 truncate text-sm">
+              <span className="min-w-0 text-sm break-words">
                 {m.name}
                 <span className="ml-2 text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">
                   {m.category}
                 </span>
               </span>
-              <span className="flex items-center gap-2">
+              <span className="flex shrink-0 items-center gap-2">
                 <span className="text-xs text-muted-foreground">{money(m.price)}</span>
                 <input
                   value={food[m.id] ?? ""}
