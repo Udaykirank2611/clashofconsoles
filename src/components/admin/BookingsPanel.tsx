@@ -261,15 +261,16 @@ export function BookingsPanel({
   };
 
   // Newest first everywhere: latest booking date, then latest created.
-  // On the "All" tab, sessions still awaiting completion float to the top; once
-  // marked completed they drop back into their normal chronological place.
+  // On the "All" tab, only live sessions still awaiting completion float to the
+  // top; completed, cancelled and expired ones keep their chronological place.
   const rows = bookings
     .filter((b) => matchesFilter(b.status, filter))
     .slice()
     .sort((a, b) => {
       if (filter === "all") {
-        const rank = (s: AdminBooking["status"]) => (s === "completed" ? 1 : 0);
-        const d = rank(a.status) - rank(b.status);
+        const pending = (s: AdminBooking["status"]) =>
+          s === "awaiting_payment" || s === "payment_pending" || s === "pending" || s === "confirmed";
+        const d = Number(pending(b.status)) - Number(pending(a.status));
         if (d !== 0) return d;
       }
       return (
