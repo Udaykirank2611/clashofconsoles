@@ -484,7 +484,8 @@ function ExpensesPanel({
       {!payload.expenses.length ? (
         <p className="py-6 text-center text-sm text-muted-foreground">No expenses recorded.</p>
       ) : (
-        <table className="w-full text-left text-xs">
+        <div className="-mx-2 overflow-x-auto px-2">
+        <table className="w-full min-w-[640px] text-left text-xs whitespace-nowrap">
           <thead className="text-[0.55rem] uppercase tracking-[0.2em] text-muted-foreground">
             <tr>
               <th className="py-2">Date</th>
@@ -514,6 +515,7 @@ function ExpensesPanel({
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </Panel>
   );
@@ -607,7 +609,8 @@ function DepositsPanel({
       {!payload.deposits.length ? (
         <p className="py-6 text-center text-sm text-muted-foreground">No deposits recorded.</p>
       ) : (
-        <table className="w-full text-left text-xs">
+        <div className="-mx-2 overflow-x-auto px-2">
+        <table className="w-full min-w-[640px] text-left text-xs whitespace-nowrap">
           <thead className="text-[0.55rem] uppercase tracking-[0.2em] text-muted-foreground">
             <tr>
               <th className="py-2">Date</th>
@@ -637,6 +640,7 @@ function DepositsPanel({
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </Panel>
   );

@@ -1072,14 +1072,8 @@ export const createBooking = createServerFn({ method: "POST" })
       }
     }
 
-    if (couponId) {
-      const { data: c } = await db
-        .from("coupons")
-        .select("used_count")
-        .eq("id", couponId)
-        .maybeSingle();
-      await db.from("coupons").update({ used_count: (c?.used_count ?? 0) + 1 }).eq("id", couponId);
-    }
+    // used_count is incremented by the redemption trigger when the booking is
+    // completed — counting it here as well double-counted every coupon.
     await db
       .from("reservation_locks")
       .update({ released_at: new Date().toISOString() })
