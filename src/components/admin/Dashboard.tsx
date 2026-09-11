@@ -337,16 +337,18 @@ function TodayList({ bookings }: { bookings: ReturnType<typeof useBranchData>["b
       {rows.map((b) => (
         <li
           key={b.id}
-          className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
+          className="rounded-2xl border border-border bg-surface/50 px-4 py-3 sm:flex sm:flex-wrap sm:items-center sm:gap-3"
         >
-          <span className="w-20 text-sm font-bold">
+          <span className="text-sm font-bold sm:w-20">
             {startOf(b) ? formatTime(startOf(b)!) : "—"}
           </span>
-          <span className="min-w-0 flex-1 truncate text-sm">
+          <span className="mt-1 block break-words text-sm sm:mt-0 sm:min-w-0 sm:flex-1">
             {b.customer_name} · <span className="font-bold">{stationOf(b) || "—"}</span> · {b.players}P
           </span>
-          <StatusPill status={b.status} />
-          <span className="text-sm font-bold">{money(b.total_amount)}</span>
+          <div className="mt-2 flex items-center justify-between gap-3 sm:mt-0 sm:contents">
+            <StatusPill status={b.status} />
+            <span className="text-sm font-bold">{money(b.total_amount)}</span>
+          </div>
         </li>
       ))}
     </ul>
