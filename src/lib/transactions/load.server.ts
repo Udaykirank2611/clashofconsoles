@@ -51,6 +51,7 @@ export async function loadTransactions(
     .select("*")
     .gte("expense_date", input.from)
     .lte("expense_date", input.to)
+    .order("expense_date", { ascending: true })
     .order("paid_at", { ascending: true });
   if (input.branchId) ex = ex.eq("branch_id", input.branchId);
 
@@ -59,6 +60,7 @@ export async function loadTransactions(
     .select("*")
     .gte("deposit_date", input.from)
     .lte("deposit_date", input.to)
+    .order("deposit_date", { ascending: true })
     .order("paid_at", { ascending: true });
   if (input.branchId) dp = dp.eq("branch_id", input.branchId);
 
