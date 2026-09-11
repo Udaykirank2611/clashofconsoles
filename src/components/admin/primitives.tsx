@@ -20,9 +20,13 @@ export function Panel({
       )}
     >
       {title ? (
-        <header className="mb-5 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
+        <header className="mb-5 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <h2 className="min-w-0 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-cyan sm:tracking-[0.32em]">{title}</h2>
-          {action ? <div className="shrink-0">{action}</div> : null}
+          {action ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">
+              {action}
+            </div>
+          ) : null}
         </header>
       ) : null}
       {children}

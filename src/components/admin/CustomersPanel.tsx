@@ -58,7 +58,7 @@ export function CustomersPanel() {
           {rows.map((c) => (
             <div
               key={c.phone}
-              className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3"
+              className="flex flex-col gap-3 rounded-2xl border border-border bg-surface/50 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold">{c.name}</p>
