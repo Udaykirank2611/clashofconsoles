@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RANGE_LABELS, resolveRange, type RangePreset } from "@/lib/analytics/types";
 
 export const RANGE_ORDER: RangePreset[] = [
@@ -22,6 +22,7 @@ export function useAnalyticsScope(defaultBranchId: string | null) {
   const [preset, setPreset] = useState<RangePreset>("this_month");
   const [custom, setCustom] = useState(() => resolveRange("this_month"));
   const [branchId, setBranchId] = useState<string | null>(defaultBranchId);
+  useEffect(() => setBranchId(defaultBranchId), [defaultBranchId]);
   const range = useMemo(() => resolveRange(preset, custom), [preset, custom]);
   return { preset, setPreset, custom, setCustom, branchId, setBranchId, range };
 }

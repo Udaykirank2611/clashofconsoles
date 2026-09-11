@@ -29,6 +29,7 @@ export function ReconciliationView({
   defaultBranchId: string | null;
 }) {
   const [branchId, setBranchId] = useState(defaultBranchId ?? branches[0]?.id ?? "");
+  useEffect(() => setBranchId(defaultBranchId ?? branches[0]?.id ?? ""), [defaultBranchId, branches]);
   const [from, setFrom] = useState(() => iso(new Date()));
   const [to, setTo] = useState(() => iso(new Date()));
   const [kind, setKind] = useState<"all" | ReconciliationIssueKind>("all");
