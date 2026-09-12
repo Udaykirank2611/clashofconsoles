@@ -64,14 +64,23 @@ export async function loadTransactions(
     .order("paid_at", { ascending: true });
   if (input.branchId) dp = dp.eq("branch_id", input.branchId);
 
-  const [bookingsRes, txRes, expensesRes, depositsRes, opening, customersRes] = await Promise.all([
-    q,
-    supabase.from("booking_transactions").select("*"),
-    ex,
-    dp,
-    computeOpening(supabase, { branchId: input.branchId, from: input.from }),
-    supabase.from("customers").select("phone, total_visits"),
-  ]);
+  const [bookingsRes, txRes, expensesRes, depositsRes, opening, customersRes, redemptionsRes] =
+    await Promise.all([
+      q,
+      supabase.from("booking_transactions").select("*"),
+      ex,
+      dp,
+      computeOpening(supabase, { branchId: input.branchId, from: input.from }),
+      supabase.from("customers").select("phone, total_visits"),
+      supabase.from("coupon_redemptions").select("booking_id, coupon_code, discount_amount"),
+    ]);
+
+  const redemptionByBooking = new Map(
+    ((redemptionsRes.data ?? []) as Record<string, unknown>[]).map((r) => [
+      String(r['booking_id']),
+      r,
+    ]),
+  );
 
   const bookings = ((bookingsRes.data ?? []) as unknown[]) as unknown as (Record<string, unknown> & {
     branches: { name: string } | null;
