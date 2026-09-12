@@ -27,6 +27,11 @@ export function DailyClosingView({
   const [mode, setMode] = useState<Mode>("today");
   const [branchId, setBranchId] = useState(defaultBranchId ?? branches[0]?.id ?? "");
   const [date, setDate] = useState(() => iso(new Date()));
+
+  // Follow the admin console's main branch selector.
+  useEffect(() => {
+    if (defaultBranchId) setBranchId(defaultBranchId);
+  }, [defaultBranchId]);
   const [summary, setSummary] = useState<DailyClosingSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
@@ -263,6 +268,10 @@ function ClosingHistory({
   defaultBranchId: string;
 }) {
   const [branchId, setBranchId] = useState<string>(defaultBranchId);
+
+  useEffect(() => {
+    setBranchId(defaultBranchId);
+  }, [defaultBranchId]);
   const [period, setPeriod] = useState<Period>("month");
   const [day, setDay] = useState(() => iso(new Date()));
   const [rows, setRows] = useState<ClosingReportRow[]>([]);
