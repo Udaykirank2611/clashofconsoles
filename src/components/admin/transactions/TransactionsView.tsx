@@ -207,7 +207,7 @@ export function TransactionsView({
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[2100px] text-left text-[0.82rem]">
+                <table className="w-full min-w-[2400px] text-left text-[0.82rem]">
                   <thead className="text-[0.62rem] font-black uppercase tracking-[0.16em] text-foreground">
                     <tr className="border-b-2 border-pink/40 bg-surface-2/80">
                       {[
@@ -227,7 +227,9 @@ export function TransactionsView({
                         "Gaming",
                         "Food",
                         "Membership disc.",
+                        "Last-min disc.",
                         "Coupon disc.",
+                        "Coupon code",
                         "Student disc.",
                         "Total disc.",
                         "Final",
@@ -274,7 +276,9 @@ export function TransactionsView({
                         <td className="px-2">{inr(r.gamingAmount)}</td>
                         <td className="px-2">{inr(r.foodAmount)}</td>
                         <td className="px-2">{inr(r.membershipDiscount)}</td>
+                        <td className="px-2">{inr(r.lastMinuteDiscount)}</td>
                         <td className="px-2">{inr(r.couponDiscount)}</td>
+                        <td className="whitespace-nowrap px-2 font-semibold uppercase">{r.couponCode || "—"}</td>
                         <td className="px-2">{inr(r.studentDiscount)}</td>
                         <td className="px-2">{inr(r.totalDiscount)}</td>
                         <td className="px-2 font-black">{inr(r.finalAmount)}</td>

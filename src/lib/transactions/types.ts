@@ -21,7 +21,10 @@ export interface TransactionRow {
   gamingAmount: number;
   foodAmount: number;
   membershipDiscount: number;
+  /** Discount an admin applied manually at approval/completion time. */
+  lastMinuteDiscount: number;
   couponDiscount: number;
+  couponCode: string;
   studentDiscount: number;
   totalDiscount: number;
   finalAmount: number;

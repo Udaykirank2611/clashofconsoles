@@ -36,7 +36,7 @@ export async function loadTransactions(
   let q = supabase
     .from("bookings")
     .select(
-      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name, station_type))",
+      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, coupon_code, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name, station_type))",
     )
     .gte("booking_date", input.from)
     .lte("booking_date", input.to)
@@ -64,14 +64,23 @@ export async function loadTransactions(
     .order("paid_at", { ascending: true });
   if (input.branchId) dp = dp.eq("branch_id", input.branchId);
 
-  const [bookingsRes, txRes, expensesRes, depositsRes, opening, customersRes] = await Promise.all([
-    q,
-    supabase.from("booking_transactions").select("*"),
-    ex,
-    dp,
-    computeOpening(supabase, { branchId: input.branchId, from: input.from }),
-    supabase.from("customers").select("phone, total_visits"),
-  ]);
+  const [bookingsRes, txRes, expensesRes, depositsRes, opening, customersRes, redemptionsRes] =
+    await Promise.all([
+      q,
+      supabase.from("booking_transactions").select("*"),
+      ex,
+      dp,
+      computeOpening(supabase, { branchId: input.branchId, from: input.from }),
+      supabase.from("customers").select("phone, total_visits"),
+      supabase.from("coupon_redemptions").select("booking_id, coupon_code, discount_amount"),
+    ]);
+
+  const redemptionByBooking = new Map(
+    ((redemptionsRes.data ?? []) as Record<string, unknown>[]).map((r) => [
+      String(r['booking_id']),
+      r,
+    ]),
+  );
 
   const bookings = ((bookingsRes.data ?? []) as unknown[]) as unknown as (Record<string, unknown> & {
     branches: { name: string } | null;
@@ -102,12 +111,22 @@ export async function loadTransactions(
     const tx = txByBooking.get(String(b['id']));
     const gaming = num(b['session_amount']) + num(b['addons_amount']);
     const food = num(b['food_amount']);
-    const coupon =
+    // Coupon and admin (last-minute) discounts share the same booking columns, so
+    // the recorded redemption is the authoritative coupon share; the rest is manual.
+    const discounted =
       num(b['gaming_discount_amount']) + num(b['food_discount_amount']) + num(b['bill_discount_amount']);
+    const redemption = redemptionByBooking.get(String(b['id']));
+    const couponCode = String(b['coupon_code'] ?? redemption?.['coupon_code'] ?? "");
+    const coupon = redemption
+      ? Math.min(discounted, num(redemption['discount_amount']))
+      : couponCode || b['coupon_id']
+        ? discounted
+        : 0;
+    const lastMinute = Math.max(0, Math.round(discounted - coupon));
     const student = num(b['student_discount_amount']);
     const total = num(b['total_amount']);
     const membership = b['pass_id']
-      ? Math.max(0, Math.round(gaming + food - coupon - student - total))
+      ? Math.max(0, Math.round(gaming + food - discounted - student - total))
       : 0;
 
     // Experiences (cockpit, VR, theatre, lounge) are booked as add-on line items,
@@ -159,9 +178,11 @@ export async function loadTransactions(
       gamingAmount: gaming,
       foodAmount: food,
       membershipDiscount: membership,
+      lastMinuteDiscount: lastMinute,
       couponDiscount: coupon,
+      couponCode,
       studentDiscount: student,
-      totalDiscount: coupon + student + membership,
+      totalDiscount: coupon + lastMinute + student + membership,
       finalAmount: total,
       // Derived from the recorded split so the ledger is the single source of truth.
       paymentMode: (() => {
