@@ -36,7 +36,7 @@ export async function loadTransactions(
   let q = supabase
     .from("bookings")
     .select(
-      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name, station_type))",
+      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, coupon_code, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name, station_type))",
     )
     .gte("booking_date", input.from)
     .lte("booking_date", input.to)
