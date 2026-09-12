@@ -111,12 +111,22 @@ export async function loadTransactions(
     const tx = txByBooking.get(String(b['id']));
     const gaming = num(b['session_amount']) + num(b['addons_amount']);
     const food = num(b['food_amount']);
-    const coupon =
+    // Coupon and admin (last-minute) discounts share the same booking columns, so
+    // the recorded redemption is the authoritative coupon share; the rest is manual.
+    const discounted =
       num(b['gaming_discount_amount']) + num(b['food_discount_amount']) + num(b['bill_discount_amount']);
+    const redemption = redemptionByBooking.get(String(b['id']));
+    const couponCode = String(b['coupon_code'] ?? redemption?.['coupon_code'] ?? "");
+    const coupon = redemption
+      ? Math.min(discounted, num(redemption['discount_amount']))
+      : couponCode || b['coupon_id']
+        ? discounted
+        : 0;
+    const lastMinute = Math.max(0, Math.round(discounted - coupon));
     const student = num(b['student_discount_amount']);
     const total = num(b['total_amount']);
     const membership = b['pass_id']
-      ? Math.max(0, Math.round(gaming + food - coupon - student - total))
+      ? Math.max(0, Math.round(gaming + food - discounted - student - total))
       : 0;
 
     // Experiences (cockpit, VR, theatre, lounge) are booked as add-on line items,
