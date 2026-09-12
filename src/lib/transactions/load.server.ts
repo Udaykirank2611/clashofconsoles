@@ -182,7 +182,7 @@ export async function loadTransactions(
       couponDiscount: coupon,
       couponCode,
       studentDiscount: student,
-      totalDiscount: coupon + student + membership,
+      totalDiscount: coupon + lastMinute + student + membership,
       finalAmount: total,
       // Derived from the recorded split so the ledger is the single source of truth.
       paymentMode: (() => {
