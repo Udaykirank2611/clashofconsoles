@@ -7,7 +7,7 @@ import { formatTime } from "@/lib/booking/pricing";
 import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
 import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
-import { updateBookingExtraHours } from "@/lib/admin.functions";
+import { listCustomers, updateBookingExtraHours } from "@/lib/admin.functions";
 import { hoursLabel } from "@/lib/passes";
 import { approveBookingPayment, completeBookingWithSplit, extendBookingSession, quoteExtension } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
@@ -15,7 +15,6 @@ import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receip
 import { cn } from "@/lib/utils";
 import { renderTemplate, useMessageTemplates, type TemplateKey } from "@/lib/message-templates";
 import { useQuery } from "@tanstack/react-query";
-import { listCustomers } from "@/lib/admin.functions";
 
 const FILTERS = ["payment_pending", "awaiting_payment", "confirmed", "cancelled", "all"] as const;
 type Filter = (typeof FILTERS)[number];
