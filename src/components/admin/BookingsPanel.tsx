@@ -7,13 +7,14 @@ import { formatTime } from "@/lib/booking/pricing";
 import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
 import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
-import { updateBookingExtraHours } from "@/lib/admin.functions";
+import { listCustomers, updateBookingExtraHours } from "@/lib/admin.functions";
 import { hoursLabel } from "@/lib/passes";
 import { approveBookingPayment, completeBookingWithSplit, extendBookingSession, quoteExtension } from "@/lib/booking-admin.functions";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { bookingSummaryLine, bookingWindow, printBookingReceipt } from "./receipt";
 import { cn } from "@/lib/utils";
 import { renderTemplate, useMessageTemplates, type TemplateKey } from "@/lib/message-templates";
+import { useQuery } from "@tanstack/react-query";
 
 const FILTERS = ["payment_pending", "awaiting_payment", "confirmed", "cancelled", "all"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -174,7 +175,17 @@ export function BookingsPanel({
   const approvePayment = useServerFn(approveBookingPayment);
   const completeWithSplit = useServerFn(completeBookingWithSplit);
   const editHours = useServerFn(updateBookingExtraHours);
+  const getCustomers = useServerFn(listCustomers);
+  const { data: customers = [] } = useQuery({
+    queryKey: ["admin-customers"],
+    queryFn: () => getCustomers(),
+    staleTime: 30_000,
+  });
   const { template } = useMessageTemplates();
+
+  const visitsByPhone = new Map(
+    customers.map((customer) => [customer.phone.replace(/\D/g, "").slice(-10), customer.totalVisits] as const),
+  );
 
   /** Opens the extend dialog with the next allowed step for this service. */
   const openExtend = async (b: AdminBooking) => {
@@ -407,6 +418,15 @@ export function BookingsPanel({
             const cockpit = b.booking_items.filter((i) => i.kind === "addon");
             const food = b.booking_items.filter((i) => i.kind === "food");
             const stationName = b.gaming_stations?.name ?? stations.find((s) => s.id === b.station_id)?.name ?? "—";
+            const serviceName =
+              b.station_id && stationName !== "—"
+                ? stationName
+                : b.booking_items
+                    .filter((i) => i.kind === "addon" && i.station_id)
+                    .map((i) => i.label)
+                    .join(", ") ||
+                  (b.booking_items.some((i) => i.kind === "food") ? "Food only" : "Passes only");
+            const visitLevel = visitsByPhone.get(b.customer_phone.replace(/\D/g, "").slice(-10)) ?? 0;
             // Pass-only bookings have no gaming slot at all.
             const slot = bookingWindow(b);
             const hasSlot = Boolean(slot.start && slot.end);
@@ -424,9 +444,17 @@ export function BookingsPanel({
               >
                 <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-start gap-2">
                       <h3 className="truncate text-sm font-bold">{b.customer_name}</h3>
-                      <StatusPill status={b.status} />
+                      <span className="hidden rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-foreground sm:inline-flex">
+                        Level {visitLevel}
+                      </span>
+                      <span className="flex flex-col items-start gap-1.5">
+                        <StatusPill status={b.status} />
+                        <span className="inline-flex rounded-full border border-foreground/35 bg-surface px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
+                          {serviceName}
+                        </span>
+                      </span>
                       <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">
                         {b.reference}
                       </span>
@@ -440,20 +468,12 @@ export function BookingsPanel({
                       ·{" "}
                       {(() => {
                         const { start, end } = bookingWindow(b);
-                        const what =
-                          b.station_id && stationName !== "—"
-                            ? stationName
-                            : b.booking_items
-                                  .filter((i) => i.kind === "addon" && i.station_id)
-                                  .map((i) => i.label)
-                                  .join(", ") ||
-                              (b.booking_items.some((i) => i.kind === "food") ? "Food only" : "Passes only");
                         const time =
                           start && end ? `${formatTime(start)} – ${formatTime(end)} · ${durationLabel(start, end)}` : null;
                         return (
                           <>
                             {time ? `${time} · ` : ""}
-                            {b.players}P · <span className="font-bold text-foreground">{what}</span>
+                            {b.players}P · <span className="font-bold text-foreground">{serviceName}</span>
                             {b.game_title ? (
                               <>
                                 {" "}· <span className="font-bold text-foreground">{b.game_title}</span>
@@ -465,6 +485,9 @@ export function BookingsPanel({
                     </p>
                   </div>
                   <div className="text-right">
+                    <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-foreground sm:hidden">
+                      Level {visitLevel}
+                    </p>
                     <p className="text-lg font-black">{money(b.total_amount)}</p>
                     <a
                       href={`tel:${b.customer_phone}`}
