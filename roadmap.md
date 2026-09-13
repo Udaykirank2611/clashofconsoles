@@ -2,3 +2,6 @@
 - [x] Correct five specified transaction breakdowns without changing pass usage
 - [x] Set Yashwanth pass balance to 14 hours
 - [x] Verify code and database results
+- [x] Show customer visit levels on admin booking cards
+- [x] Move mobile admin sign-out to the top
+- [x] Show booked console or service in a white outlined pill below status

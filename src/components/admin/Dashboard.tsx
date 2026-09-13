@@ -109,14 +109,17 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+      <header className="relative flex flex-wrap items-center justify-between gap-4">
+        <div className="pr-24 sm:pr-0">
           <p className="text-[0.6rem] font-semibold uppercase tracking-[0.42em] text-cyan">Dashboard</p>
           <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">{branch.name} Branch</h1>
           <p className="mt-1 text-xs text-muted-foreground">
             {isOwner ? "Owner access" : "Branch manager"} · {session?.user.email}
           </p>
         </div>
+        <AdminButton className="absolute right-0 top-0 sm:hidden" onClick={() => void signOut()}>
+          <LogOut className="size-3.5" /> Sign out
+        </AdminButton>
         <div className="flex flex-wrap items-center gap-2">
           {branchId ? (
             <NotificationBell
@@ -140,7 +143,7 @@ export function AdminDashboard() {
               ))}
             </select>
           ) : null}
-          <AdminButton onClick={() => void signOut()}>
+          <AdminButton className="hidden sm:inline-flex" onClick={() => void signOut()}>
             <LogOut className="size-3.5" /> Sign out
           </AdminButton>
         </div>
