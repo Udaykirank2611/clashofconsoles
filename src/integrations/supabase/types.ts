@@ -1207,6 +1207,9 @@ export type Database = {
         Row: {
           branch_id: string
           code: string
+          combo_console_minutes: number | null
+          combo_sim_minutes: number | null
+          combo_vr_minutes: number | null
           created_at: string
           customer_name: string
           expires_on: string
@@ -1227,6 +1230,9 @@ export type Database = {
         Insert: {
           branch_id: string
           code: string
+          combo_console_minutes?: number | null
+          combo_sim_minutes?: number | null
+          combo_vr_minutes?: number | null
           created_at?: string
           customer_name: string
           expires_on: string
@@ -1247,6 +1253,9 @@ export type Database = {
         Update: {
           branch_id?: string
           code?: string
+          combo_console_minutes?: number | null
+          combo_sim_minutes?: number | null
+          combo_vr_minutes?: number | null
           created_at?: string
           customer_name?: string
           expires_on?: string
