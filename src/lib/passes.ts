@@ -2,6 +2,22 @@
 
 export type PassKind = "bronze" | "silver" | "gold" | "membership" | "combo" | "unlimited";
 
+/** The three games a Combo Pass covers, each with its own 1-hour balance. */
+export type ComboGame = "console" | "vr" | "driving_simulator";
+
+export const COMBO_GAMES: ComboGame[] = ["console", "vr", "driving_simulator"];
+
+export const COMBO_GAME_LABELS: Record<ComboGame, string> = {
+  console: "PS5 Console",
+  vr: "VR Arena",
+  driving_simulator: "Racing Cockpit",
+};
+
+/** A Combo Pass books exactly one hour of a game at a time. */
+export const COMBO_SESSION_MINUTES = 60;
+
+export type ComboBalances = Record<ComboGame, number>;
+
 export interface PassInfo {
   id: string;
   code: string;
@@ -17,8 +33,14 @@ export interface PassInfo {
   remainingMinutes: number | null;
   totalMinutes: number | null;
   remainingUses: number | null;
+  /** Per-game minutes left on a Combo Pass; null for every other pass type. */
+  combo: ComboBalances | null;
   status: "active" | "expired" | "used";
 }
+
+/** Games on a Combo Pass that still have time left. */
+export const comboGamesLeft = (b: ComboBalances | null): ComboGame[] =>
+  b ? COMBO_GAMES.filter((g) => (b[g] ?? 0) >= COMBO_SESSION_MINUTES) : [];
 
 export const PASS_TYPE_LABELS: Record<PassKind, string> = {
   bronze: "Bronze Membership",
