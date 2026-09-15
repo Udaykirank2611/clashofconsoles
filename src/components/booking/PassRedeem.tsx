@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { lookupPass, type PassLookup } from "@/lib/passes.functions";
 import {
+  COMBO_GAMES,
+  COMBO_GAME_LABELS,
   PASS_TYPE_LABELS,
   hoursLabel,
   passRuleNote,
