@@ -85,13 +85,17 @@ export const lookupPass = createServerFn({ method: "POST" })
       remainingMinutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
       totalMinutes: row.total_minutes === null ? null : Number(row.total_minutes),
       remainingUses: row.remaining_uses === null ? null : Number(row.remaining_uses),
+      combo: comboFromRow(row as never),
       status: row.status as PassInfo["status"],
     };
 
+    const comboGames = comboGamesLeft(pass.combo);
     const today = new Date().toISOString().slice(0, 10);
     let message = "";
     if (pass.status === "used") message = "This pass has already been fully used.";
     else if (pass.status === "expired" || pass.expiresOn < today) message = "This pass has expired.";
+    else if (passType === "combo" && !comboGames.length)
+      message = "All three games on this Combo Pass have been used.";
     else if (pass.remainingMinutes !== null && pass.remainingMinutes <= 0)
       message = "This pass has no remaining hours.";
     else if (pass.remainingUses !== null && pass.remainingUses <= 0)
@@ -105,12 +109,15 @@ export const lookupPass = createServerFn({ method: "POST" })
       rules: {
         consoleOnly: isConsoleOnlyPass(passType),
         maxMinutes:
-          passType === "unlimited"
-            ? UNLIMITED_MAX_MINUTES
-            : pass.remainingMinutes === null
-              ? null
-              : pass.remainingMinutes,
-        oneUseOnly: passType === "combo",
+          passType === "combo"
+            ? COMBO_SESSION_MINUTES
+            : passType === "unlimited"
+              ? UNLIMITED_MAX_MINUTES
+              : pass.remainingMinutes === null
+                ? null
+                : pass.remainingMinutes,
+        oneUseOnly: false,
+        comboGames: passType === "combo" ? comboGames : null,
       },
     };
   });
