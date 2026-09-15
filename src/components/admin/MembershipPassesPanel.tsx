@@ -3,7 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, Loader2, Search, Ticket } from "lucide-react";
 import { lookupPass, listPasses } from "@/lib/passes.functions";
-import { PASS_TYPE_LABELS, hoursLabel, passRuleNote, type PassInfo } from "@/lib/passes";
+import {
+  COMBO_GAMES,
+  COMBO_GAME_LABELS,
+  PASS_TYPE_LABELS,
+  hoursLabel,
+  passRuleNote,
+  type PassInfo,
+} from "@/lib/passes";
 import { Panel, AdminButton } from "./primitives";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +21,16 @@ const STATUS_TONE: Record<PassInfo["status"], string> = {
 };
 
 function remainingLabel(p: PassInfo) {
+  if (p.combo)
+    return COMBO_GAMES.map((g) => `${COMBO_GAME_LABELS[g]} ${hoursLabel(p.combo![g] ?? 0)}`).join(" · ");
   if (p.remainingMinutes !== null) return hoursLabel(p.remainingMinutes);
   if (p.remainingUses !== null) return `${p.remainingUses} use${p.remainingUses === 1 ? "" : "s"}`;
   return "Unlimited";
+}
+
+/** Per-game balance cell: combo passes show each game, others show a dash. */
+function comboCell(p: PassInfo, game: (typeof COMBO_GAMES)[number]) {
+  return p.combo ? hoursLabel(p.combo[game] ?? 0) : "—";
 }
 
 /**
@@ -153,16 +167,23 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
           <p className="py-10 text-center text-sm text-muted-foreground">No passes issued yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[52rem] text-left text-xs">
+            <table className="w-full min-w-[64rem] text-left text-xs">
               <thead className="text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
                 <tr>
-                  {["Pass ID", "Customer", "Type", "Purchased", "Expires", "Remaining", "Status"].map(
-                    (h) => (
-                      <th key={h} className="pb-2 pr-3 font-bold">
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Pass ID",
+                    "Customer",
+                    "Type",
+                    "Purchased",
+                    "Expires",
+                    "Remaining",
+                    ...COMBO_GAMES.map((g) => COMBO_GAME_LABELS[g]),
+                    "Status",
+                  ].map((h) => (
+                    <th key={h} className="pb-2 pr-3 font-bold">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -181,7 +202,20 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
                       {p.purchasedAt.slice(0, 10)}
                     </td>
                     <td className="py-3 pr-3 text-muted-foreground">{p.expiresOn}</td>
-                    <td className="py-3 pr-3 font-semibold">{remainingLabel(p)}</td>
+                    <td className="py-3 pr-3 font-semibold">
+                      {p.combo ? "Per game →" : remainingLabel(p)}
+                    </td>
+                    {COMBO_GAMES.map((g) => (
+                      <td
+                        key={g}
+                        className={cn(
+                          "py-3 pr-3 font-semibold",
+                          p.combo ? "" : "text-muted-foreground",
+                        )}
+                      >
+                        {comboCell(p, g)}
+                      </td>
+                    ))}
                     <td className="py-3 pr-3">
                       <span
                         className={cn(

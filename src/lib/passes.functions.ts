@@ -1,7 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isConsoleOnlyPass, UNLIMITED_MAX_MINUTES, type PassInfo, type PassKind } from "@/lib/passes";
+import {
+  COMBO_SESSION_MINUTES,
+  comboGamesLeft,
+  isConsoleOnlyPass,
+  UNLIMITED_MAX_MINUTES,
+  type ComboBalances,
+  type ComboGame,
+  type PassInfo,
+  type PassKind,
+} from "@/lib/passes";
 
 const codeSchema = z
   .string()
@@ -11,13 +20,34 @@ const codeSchema = z
   .max(24)
   .regex(/^[A-Z0-9-]+$/, "Enter a valid Pass ID");
 
+/** Combo balances from a database row; null for every other pass type. */
+export function comboFromRow(row: {
+  pass_type: string;
+  combo_console_minutes: number | null;
+  combo_vr_minutes: number | null;
+  combo_sim_minutes: number | null;
+}): ComboBalances | null {
+  if (row.pass_type !== "combo") return null;
+  return {
+    console: Number(row.combo_console_minutes ?? 0),
+    vr: Number(row.combo_vr_minutes ?? 0),
+    driving_simulator: Number(row.combo_sim_minutes ?? 0),
+  };
+}
+
 export interface PassLookup {
   found: boolean;
   valid: boolean;
   message: string;
   pass?: PassInfo;
   /** Booking rules the flow must enforce for this pass. */
-  rules?: { consoleOnly: boolean; maxMinutes: number | null; oneUseOnly: boolean };
+  rules?: {
+    consoleOnly: boolean;
+    maxMinutes: number | null;
+    oneUseOnly: boolean;
+    /** Combo Pass: only these games may be booked, one hour each. */
+    comboGames: ComboGame[] | null;
+  };
 }
 
 /**
@@ -55,13 +85,17 @@ export const lookupPass = createServerFn({ method: "POST" })
       remainingMinutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
       totalMinutes: row.total_minutes === null ? null : Number(row.total_minutes),
       remainingUses: row.remaining_uses === null ? null : Number(row.remaining_uses),
+      combo: comboFromRow(row as never),
       status: row.status as PassInfo["status"],
     };
 
+    const comboGames = comboGamesLeft(pass.combo);
     const today = new Date().toISOString().slice(0, 10);
     let message = "";
     if (pass.status === "used") message = "This pass has already been fully used.";
     else if (pass.status === "expired" || pass.expiresOn < today) message = "This pass has expired.";
+    else if (passType === "combo" && !comboGames.length)
+      message = "All three games on this Combo Pass have been used.";
     else if (pass.remainingMinutes !== null && pass.remainingMinutes <= 0)
       message = "This pass has no remaining hours.";
     else if (pass.remainingUses !== null && pass.remainingUses <= 0)
@@ -75,12 +109,15 @@ export const lookupPass = createServerFn({ method: "POST" })
       rules: {
         consoleOnly: isConsoleOnlyPass(passType),
         maxMinutes:
-          passType === "unlimited"
-            ? UNLIMITED_MAX_MINUTES
-            : pass.remainingMinutes === null
-              ? null
-              : pass.remainingMinutes,
-        oneUseOnly: passType === "combo",
+          passType === "combo"
+            ? COMBO_SESSION_MINUTES
+            : passType === "unlimited"
+              ? UNLIMITED_MAX_MINUTES
+              : pass.remainingMinutes === null
+                ? null
+                : pass.remainingMinutes,
+        oneUseOnly: false,
+        comboGames: passType === "combo" ? comboGames : null,
       },
     };
   });
@@ -115,6 +152,7 @@ export const listPasses = createServerFn({ method: "POST" })
       remainingMinutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
       totalMinutes: row.total_minutes === null ? null : Number(row.total_minutes),
       remainingUses: row.remaining_uses === null ? null : Number(row.remaining_uses),
+      combo: comboFromRow(row as never),
       status: row.status as PassInfo["status"],
     }));
   });
