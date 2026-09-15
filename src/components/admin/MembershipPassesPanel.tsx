@@ -3,7 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, Loader2, Search, Ticket } from "lucide-react";
 import { lookupPass, listPasses } from "@/lib/passes.functions";
-import { PASS_TYPE_LABELS, hoursLabel, passRuleNote, type PassInfo } from "@/lib/passes";
+import {
+  COMBO_GAMES,
+  COMBO_GAME_LABELS,
+  PASS_TYPE_LABELS,
+  hoursLabel,
+  passRuleNote,
+  type PassInfo,
+} from "@/lib/passes";
 import { Panel, AdminButton } from "./primitives";
 import { cn } from "@/lib/utils";
 
