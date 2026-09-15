@@ -167,16 +167,23 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
           <p className="py-10 text-center text-sm text-muted-foreground">No passes issued yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[52rem] text-left text-xs">
+            <table className="w-full min-w-[64rem] text-left text-xs">
               <thead className="text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
                 <tr>
-                  {["Pass ID", "Customer", "Type", "Purchased", "Expires", "Remaining", "Status"].map(
-                    (h) => (
-                      <th key={h} className="pb-2 pr-3 font-bold">
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Pass ID",
+                    "Customer",
+                    "Type",
+                    "Purchased",
+                    "Expires",
+                    "Remaining",
+                    ...COMBO_GAMES.map((g) => COMBO_GAME_LABELS[g]),
+                    "Status",
+                  ].map((h) => (
+                    <th key={h} className="pb-2 pr-3 font-bold">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -195,7 +202,20 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
                       {p.purchasedAt.slice(0, 10)}
                     </td>
                     <td className="py-3 pr-3 text-muted-foreground">{p.expiresOn}</td>
-                    <td className="py-3 pr-3 font-semibold">{remainingLabel(p)}</td>
+                    <td className="py-3 pr-3 font-semibold">
+                      {p.combo ? "Per game →" : remainingLabel(p)}
+                    </td>
+                    {COMBO_GAMES.map((g) => (
+                      <td
+                        key={g}
+                        className={cn(
+                          "py-3 pr-3 font-semibold",
+                          p.combo ? "" : "text-muted-foreground",
+                        )}
+                      >
+                        {comboCell(p, g)}
+                      </td>
+                    ))}
                     <td className="py-3 pr-3">
                       <span
                         className={cn(
