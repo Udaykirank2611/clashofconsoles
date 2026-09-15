@@ -14,9 +14,16 @@ const STATUS_TONE: Record<PassInfo["status"], string> = {
 };
 
 function remainingLabel(p: PassInfo) {
+  if (p.combo)
+    return COMBO_GAMES.map((g) => `${COMBO_GAME_LABELS[g]} ${hoursLabel(p.combo![g] ?? 0)}`).join(" · ");
   if (p.remainingMinutes !== null) return hoursLabel(p.remainingMinutes);
   if (p.remainingUses !== null) return `${p.remainingUses} use${p.remainingUses === 1 ? "" : "s"}`;
   return "Unlimited";
+}
+
+/** Per-game balance cell: combo passes show each game, others show a dash. */
+function comboCell(p: PassInfo, game: (typeof COMBO_GAMES)[number]) {
+  return p.combo ? hoursLabel(p.combo[game] ?? 0) : "—";
 }
 
 /**
