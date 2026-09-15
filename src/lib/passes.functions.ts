@@ -1,7 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isConsoleOnlyPass, UNLIMITED_MAX_MINUTES, type PassInfo, type PassKind } from "@/lib/passes";
+import {
+  COMBO_SESSION_MINUTES,
+  comboGamesLeft,
+  isConsoleOnlyPass,
+  UNLIMITED_MAX_MINUTES,
+  type ComboBalances,
+  type ComboGame,
+  type PassInfo,
+  type PassKind,
+} from "@/lib/passes";
 
 const codeSchema = z
   .string()
@@ -11,13 +20,34 @@ const codeSchema = z
   .max(24)
   .regex(/^[A-Z0-9-]+$/, "Enter a valid Pass ID");
 
+/** Combo balances from a database row; null for every other pass type. */
+export function comboFromRow(row: {
+  pass_type: string;
+  combo_console_minutes: number | null;
+  combo_vr_minutes: number | null;
+  combo_sim_minutes: number | null;
+}): ComboBalances | null {
+  if (row.pass_type !== "combo") return null;
+  return {
+    console: Number(row.combo_console_minutes ?? 0),
+    vr: Number(row.combo_vr_minutes ?? 0),
+    driving_simulator: Number(row.combo_sim_minutes ?? 0),
+  };
+}
+
 export interface PassLookup {
   found: boolean;
   valid: boolean;
   message: string;
   pass?: PassInfo;
   /** Booking rules the flow must enforce for this pass. */
-  rules?: { consoleOnly: boolean; maxMinutes: number | null; oneUseOnly: boolean };
+  rules?: {
+    consoleOnly: boolean;
+    maxMinutes: number | null;
+    oneUseOnly: boolean;
+    /** Combo Pass: only these games may be booked, one hour each. */
+    comboGames: ComboGame[] | null;
+  };
 }
 
 /**
