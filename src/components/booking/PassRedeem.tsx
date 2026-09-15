@@ -106,35 +106,44 @@ export function PassRedeem({
           </button>
         </div>
 
-        <dl className="mt-4 grid gap-2 sm:grid-cols-3">
-          <Stat label="Valid until" value={pass.expiresOn} />
-          <Stat
-            label="Balance before"
-            value={
-              pass.remainingMinutes === null
-                ? pass.remainingUses !== null
-                  ? `${pass.remainingUses} use${pass.remainingUses === 1 ? "" : "s"}`
-                  : "Unlimited"
-                : hoursLabel(pass.remainingMinutes)
-            }
-          />
-          <Stat
-            label="Balance after"
-            value={
-              after === null
-                ? pass.remainingUses !== null
-                  ? `${Math.max(0, pass.remainingUses - 1)} use${
-                      Math.max(0, pass.remainingUses - 1) === 1 ? "" : "s"
-                    }`
-                  : "Unlimited"
-                : hoursLabel(after)
-            }
-          />
-        </dl>
+        {pass.combo ? (
+          <dl className="mt-4 grid gap-2 sm:grid-cols-4">
+            <Stat label="Valid until" value={pass.expiresOn} />
+            {COMBO_GAMES.map((g) => (
+              <Stat key={g} label={COMBO_GAME_LABELS[g]} value={hoursLabel(pass.combo![g] ?? 0)} />
+            ))}
+          </dl>
+        ) : (
+          <dl className="mt-4 grid gap-2 sm:grid-cols-3">
+            <Stat label="Valid until" value={pass.expiresOn} />
+            <Stat
+              label="Balance before"
+              value={
+                pass.remainingMinutes === null
+                  ? pass.remainingUses !== null
+                    ? `${pass.remainingUses} use${pass.remainingUses === 1 ? "" : "s"}`
+                    : "Unlimited"
+                  : hoursLabel(pass.remainingMinutes)
+              }
+            />
+            <Stat
+              label="Balance after"
+              value={
+                after === null
+                  ? pass.remainingUses !== null
+                    ? `${Math.max(0, pass.remainingUses - 1)} use${
+                        Math.max(0, pass.remainingUses - 1) === 1 ? "" : "s"
+                      }`
+                    : "Unlimited"
+                  : hoursLabel(after)
+              }
+            />
+          </dl>
+        )}
 
         <p className="mt-4 rounded-2xl border border-border bg-surface/50 px-4 py-3 text-[0.7rem] text-muted-foreground">
           {passRuleNote(pass)}
-          {rules.maxMinutes
+          {rules.maxMinutes && !pass.combo
             ? ` Maximum ${hoursLabel(rules.maxMinutes)} for this booking.`
             : ""}
         </p>
