@@ -152,6 +152,7 @@ export const listPasses = createServerFn({ method: "POST" })
       remainingMinutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
       totalMinutes: row.total_minutes === null ? null : Number(row.total_minutes),
       remainingUses: row.remaining_uses === null ? null : Number(row.remaining_uses),
+      combo: comboFromRow(row as never),
       status: row.status as PassInfo["status"],
     }));
   });
