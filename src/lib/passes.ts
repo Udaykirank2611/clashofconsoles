@@ -59,7 +59,8 @@ export const isConsoleOnlyPass = (t: PassKind) =>
 export const UNLIMITED_MAX_MINUTES = 60;
 
 export function passRuleNote(p: PassInfo): string {
-  if (p.passType === "combo") return "Valid Today Only · one redemption";
+  if (p.passType === "combo")
+    return "Combo Pass · Valid Today Only · 1 hour each of PS5 Console, VR Arena and Racing Cockpit. Book them together or one by one, but not at the same time.";
   if (p.passType === "unlimited")
     return "Unlimited Pass · Valid for 30 Days · Maximum 1 Hour per booking. Unlimited bookings allowed during validity.";
   return "PS5 console play only · 1 player per booking. Booked hours are deducted from your pass.";
