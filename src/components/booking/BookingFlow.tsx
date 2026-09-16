@@ -875,6 +875,14 @@ export function BookingFlow() {
   const passCoversSession = Boolean(appliedPass) && !isGroup;
   /** Bronze / Silver / Gold memberships cover PS5 console play for one player only. */
   const passConsoleOnly = appliedPass ? isConsoleOnlyPass(appliedPass.pass.passType) : false;
+  /* Combo Pass: one hour each of PS5, VR and Racing Cockpit. Only games that
+     still have an hour left may be booked, for exactly one hour. */
+  const comboBalances = appliedPass?.pass.combo ?? null;
+  const comboGames = comboGamesLeft(comboBalances);
+  const comboAllows = (stationType: string | null | undefined) => {
+    const g = comboGameForStation(stationType);
+    return Boolean(g && comboGames.includes(g));
+  };
   const fullSessionAmount = isGroup
     ? groupAmount
     : startTime && durationMinutes && players
