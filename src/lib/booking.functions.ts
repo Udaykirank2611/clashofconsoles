@@ -794,21 +794,25 @@ export const createBooking = createServerFn({ method: "POST" })
       const hours = rate && extraRate ? (e.extraHours ?? 0) : 0;
       const extraHourPrice = extraRate ? Math.round(Number(extraRate.price)) : 0;
       const base = rate ? Math.round(Number(rate.price)) : Math.round(slotPrice(st, e.durationMinutes));
-      const price = base + hours * extraHourPrice;
+      /* A Combo Pass covers this hour, so the line is free and always 60 min. */
+      const covered = Boolean(pass?.combo);
+      const price = covered ? 0 : base + hours * extraHourPrice;
       // Duration is derived server-side so the blocked time always matches what was paid for.
-      const minutes = rate ? Number(rate.duration_minutes) + hours * 60 : e.durationMinutes;
+      const minutes = covered ? 60 : rate ? Number(rate.duration_minutes) + hours * 60 : e.durationMinutes;
       return {
         station_id: st.id,
-        label: rate
-          ? `${st.name} · ${rate.label}${hours ? ` + ${hours} extra hour${hours > 1 ? "s" : ""}` : ""}`
-          : st.name,
+        label: covered
+          ? `${st.name} · Combo Pass · 1 hour`
+          : rate
+            ? `${st.name} · ${rate.label}${hours ? ` + ${hours} extra hour${hours > 1 ? "s" : ""}` : ""}`
+            : st.name,
         unit_price: price,
         quantity: 1,
         line_total: price,
         start_time: e.startTime,
         end_time: addMinutes(e.startTime, minutes),
-        extra_hours: hours,
-        extra_hour_price: extraHourPrice,
+        extra_hours: covered ? 0 : hours,
+        extra_hour_price: covered ? 0 : extraHourPrice,
       };
     });
 
