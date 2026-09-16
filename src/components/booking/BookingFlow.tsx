@@ -1011,7 +1011,10 @@ export function BookingFlow() {
   const groupReady = Boolean(isGroup && groupRate && groupStart && groupMembers >= 1);
   const gamingComplete = isGroup
     ? groupReady
-    : (!consoleTouched || consoleReady) && extrasReady && (!appliedPass || consoleReady);
+    : (!consoleTouched || consoleReady) &&
+      extrasReady &&
+      (!appliedPass ||
+        (comboBalances ? consoleReady || selectedExtras.length > 0 : consoleReady));
 
   const hasGaming = isGroup ? groupReady : consoleReady || selectedExtras.length > 0 || hasPasses;
 
