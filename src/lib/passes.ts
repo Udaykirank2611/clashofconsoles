@@ -42,6 +42,19 @@ export interface PassInfo {
 export const comboGamesLeft = (b: ComboBalances | null): ComboGame[] =>
   b ? COMBO_GAMES.filter((g) => (b[g] ?? 0) >= COMBO_SESSION_MINUTES) : [];
 
+/** Maps a gaming station type onto the Combo Pass game it belongs to. */
+export const comboGameForStation = (stationType: string | null | undefined): ComboGame | null =>
+  stationType === "console" || stationType === "vr" || stationType === "driving_simulator"
+    ? stationType
+    : null;
+
+/** The database column holding a Combo Pass balance for a game. */
+export const COMBO_MINUTE_COLUMNS: Record<ComboGame, string> = {
+  console: "combo_console_minutes",
+  vr: "combo_vr_minutes",
+  driving_simulator: "combo_sim_minutes",
+};
+
 export const PASS_TYPE_LABELS: Record<PassKind, string> = {
   bronze: "Bronze Membership",
   silver: "Silver Membership",
