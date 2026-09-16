@@ -479,13 +479,16 @@ export const createBooking = createServerFn({ method: "POST" })
           remaining_minutes: number | null;
           remaining_uses: number | null;
           branch_id: string;
+          combo: { console: number; vr: number; driving_simulator: number } | null;
         }
       | null = null;
     if (data.passCode) {
       await db.rpc("expire_membership_passes");
       const { data: row } = await db
         .from("membership_passes")
-        .select("id, code, pass_type, plan_name, remaining_minutes, remaining_uses, branch_id, status, expires_on")
+        .select(
+          "id, code, pass_type, plan_name, remaining_minutes, remaining_uses, branch_id, status, expires_on, combo_console_minutes, combo_vr_minutes, combo_sim_minutes",
+        )
         .eq("code", data.passCode)
         .maybeSingle();
       if (!row) return { ok: false, message: "No pass found with that Pass ID." };
@@ -495,9 +498,19 @@ export const createBooking = createServerFn({ method: "POST" })
       const today = new Date().toISOString().slice(0, 10);
       if (row.status === "expired" || String(row.expires_on) < today)
         return { ok: false, message: "This pass has expired." };
+      const isCombo = row.pass_type === "combo";
+      const combo = isCombo
+        ? {
+            console: Number(row.combo_console_minutes ?? 0),
+            vr: Number(row.combo_vr_minutes ?? 0),
+            driving_simulator: Number(row.combo_sim_minutes ?? 0),
+          }
+        : null;
+      if (combo && combo.console + combo.vr + combo.driving_simulator <= 0)
+        return { ok: false, message: "All games on this Combo Pass have been used." };
       if (row.remaining_minutes !== null && Number(row.remaining_minutes) <= 0)
         return { ok: false, message: "This pass has no remaining hours." };
-      if (row.remaining_uses !== null && Number(row.remaining_uses) <= 0)
+      if (!isCombo && row.remaining_uses !== null && Number(row.remaining_uses) <= 0)
         return { ok: false, message: "This pass has no remaining uses." };
       pass = {
         id: row.id,
@@ -507,6 +520,7 @@ export const createBooking = createServerFn({ method: "POST" })
         remaining_minutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
         remaining_uses: row.remaining_uses === null ? null : Number(row.remaining_uses),
         branch_id: row.branch_id,
+        combo,
       };
       if (data.bookingType === "group")
         return { ok: false, message: "A membership pass cannot be used for a Party Booking." };
@@ -570,11 +584,66 @@ export const createBooking = createServerFn({ method: "POST" })
        never book more time than it has left. */
     if (pass) {
       const minutes = data.durationMinutes ?? 0;
-      if (!hasSlot) return { ok: false, message: "Pick a console, date and time to redeem your pass." };
       if (data.players !== 1)
         return { ok: false, message: "A pass covers a single player only — book 1 player." };
-      const { isConsoleOnlyPass, UNLIMITED_MAX_MINUTES } = await import("@/lib/passes");
-      if (isConsoleOnlyPass(pass.pass_type as never)) {
+      const {
+        isConsoleOnlyPass,
+        UNLIMITED_MAX_MINUTES,
+        COMBO_SESSION_MINUTES,
+        COMBO_GAME_LABELS,
+        comboGameForStation,
+      } = await import("@/lib/passes");
+
+      /* Combo Pass: one hour each of PS5, VR and Racing Cockpit. Only games
+         that still have balance may be booked, each for exactly one hour, and
+         the chosen hours may never overlap one another. */
+      if (pass.combo) {
+        const picks: { game: "console" | "vr" | "driving_simulator"; start: string; minutes: number }[] = [];
+        if (hasSlot) {
+          const g = comboGameForStation(station?.station_type);
+          if (!g) return { ok: false, message: "This Combo Pass cannot be used for that experience." };
+          if (minutes !== COMBO_SESSION_MINUTES)
+            return { ok: false, message: "A Combo Pass books exactly 1 hour per game." };
+          picks.push({ game: g, start: data.startTime!, minutes });
+        }
+        for (const e of extras) {
+          const st = stations?.find((s) => s.id === e.stationId);
+          const g = comboGameForStation(st?.station_type);
+          if (!g) return { ok: false, message: "This Combo Pass cannot be used for that experience." };
+          if ((e.extraHours ?? 0) > 0 || e.durationMinutes !== COMBO_SESSION_MINUTES)
+            return { ok: false, message: "A Combo Pass books exactly 1 hour per game." };
+          picks.push({ game: g, start: e.startTime, minutes: COMBO_SESSION_MINUTES });
+        }
+        if (!picks.length)
+          return { ok: false, message: "Pick a game, date and time to redeem your Combo Pass." };
+
+        const seen = new Set<string>();
+        for (const p of picks) {
+          if (seen.has(p.game))
+            return { ok: false, message: `You can book only 1 hour of ${COMBO_GAME_LABELS[p.game]} per pass.` };
+          seen.add(p.game);
+          if ((pass.combo[p.game] ?? 0) < COMBO_SESSION_MINUTES)
+            return {
+              ok: false,
+              message: `Your Combo Pass has no hours left for ${COMBO_GAME_LABELS[p.game]}.`,
+            };
+        }
+        const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+        for (let i = 0; i < picks.length; i++)
+          for (let j = i + 1; j < picks.length; j++) {
+            const a = picks[i]!;
+            const b = picks[j]!;
+            if (mins(a.start) < mins(b.start) + b.minutes && mins(b.start) < mins(a.start) + a.minutes)
+              return {
+                ok: false,
+                message: "Your Combo Pass games cannot be played at the same time — pick different hours.",
+              };
+          }
+      } else if (!hasSlot) {
+        return { ok: false, message: "Pick a console, date and time to redeem your pass." };
+      }
+
+      if (!pass.combo && isConsoleOnlyPass(pass.pass_type as never)) {
         if (station?.station_type !== "console")
           return { ok: false, message: "This membership can only be used for PS5 console sessions." };
         if (extras.length)
@@ -725,21 +794,25 @@ export const createBooking = createServerFn({ method: "POST" })
       const hours = rate && extraRate ? (e.extraHours ?? 0) : 0;
       const extraHourPrice = extraRate ? Math.round(Number(extraRate.price)) : 0;
       const base = rate ? Math.round(Number(rate.price)) : Math.round(slotPrice(st, e.durationMinutes));
-      const price = base + hours * extraHourPrice;
+      /* A Combo Pass covers this hour, so the line is free and always 60 min. */
+      const covered = Boolean(pass?.combo);
+      const price = covered ? 0 : base + hours * extraHourPrice;
       // Duration is derived server-side so the blocked time always matches what was paid for.
-      const minutes = rate ? Number(rate.duration_minutes) + hours * 60 : e.durationMinutes;
+      const minutes = covered ? 60 : rate ? Number(rate.duration_minutes) + hours * 60 : e.durationMinutes;
       return {
         station_id: st.id,
-        label: rate
-          ? `${st.name} · ${rate.label}${hours ? ` + ${hours} extra hour${hours > 1 ? "s" : ""}` : ""}`
-          : st.name,
+        label: covered
+          ? `${st.name} · Combo Pass · 1 hour`
+          : rate
+            ? `${st.name} · ${rate.label}${hours ? ` + ${hours} extra hour${hours > 1 ? "s" : ""}` : ""}`
+            : st.name,
         unit_price: price,
         quantity: 1,
         line_total: price,
         start_time: e.startTime,
         end_time: addMinutes(e.startTime, minutes),
-        extra_hours: hours,
-        extra_hour_price: extraHourPrice,
+        extra_hours: covered ? 0 : hours,
+        extra_hour_price: covered ? 0 : extraHourPrice,
       };
     });
 
@@ -961,7 +1034,11 @@ export const createBooking = createServerFn({ method: "POST" })
         tax_amount: tax,
         total_amount: total,
         pass_id: pass?.id ?? null,
-        pass_minutes: pass ? (data.durationMinutes ?? 0) : 0,
+        pass_minutes: pass
+          ? pass.combo
+            ? ((hasSlot ? 1 : 0) + extras.length) * 60
+            : (data.durationMinutes ?? 0)
+          : 0,
         status: pass && total <= 0 ? "confirmed" : "awaiting_payment",
         payment_expires_at: pass && total <= 0 ? null : paymentExpiresAt,
       })
@@ -1057,7 +1134,35 @@ export const createBooking = createServerFn({ method: "POST" })
     /* Deduct from the pass only once the slot is safely reserved. */
     if (pass) {
       const minutes = data.durationMinutes ?? 0;
-      if (pass.remaining_minutes !== null) {
+      if (pass.combo) {
+        const { comboGameForStation, COMBO_SESSION_MINUTES } = await import("@/lib/passes");
+        const used = new Set<string>();
+        if (hasSlot) {
+          const g = comboGameForStation(station?.station_type);
+          if (g) used.add(g);
+        }
+        for (const e of extras) {
+          const st = stations?.find((s) => s.id === e.stationId);
+          const g = comboGameForStation(st?.station_type);
+          if (g) used.add(g);
+        }
+        const left = {
+          console: pass.combo.console - (used.has("console") ? COMBO_SESSION_MINUTES : 0),
+          vr: pass.combo.vr - (used.has("vr") ? COMBO_SESSION_MINUTES : 0),
+          driving_simulator:
+            pass.combo.driving_simulator - (used.has("driving_simulator") ? COMBO_SESSION_MINUTES : 0),
+        };
+        const allGone = left.console <= 0 && left.vr <= 0 && left.driving_simulator <= 0;
+        await db
+          .from("membership_passes")
+          .update({
+            combo_console_minutes: Math.max(0, left.console),
+            combo_vr_minutes: Math.max(0, left.vr),
+            combo_sim_minutes: Math.max(0, left.driving_simulator),
+            status: allGone ? "used" : "active",
+          })
+          .eq("id", pass.id);
+      } else if (pass.remaining_minutes !== null) {
         const left = Math.max(0, pass.remaining_minutes - minutes);
         await db
           .from("membership_passes")

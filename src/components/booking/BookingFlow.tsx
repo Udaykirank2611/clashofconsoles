@@ -30,7 +30,12 @@ import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 import { PassRedeem, type AppliedPass } from "./PassRedeem";
-import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
+import {
+  PASS_TYPE_LABELS,
+  isConsoleOnlyPass,
+  comboGamesLeft,
+  comboGameForStation,
+} from "@/lib/passes";
 import { passesForPhone } from "@/lib/passes.functions";
 
 
@@ -875,6 +880,14 @@ export function BookingFlow() {
   const passCoversSession = Boolean(appliedPass) && !isGroup;
   /** Bronze / Silver / Gold memberships cover PS5 console play for one player only. */
   const passConsoleOnly = appliedPass ? isConsoleOnlyPass(appliedPass.pass.passType) : false;
+  /* Combo Pass: one hour each of PS5, VR and Racing Cockpit. Only games that
+     still have an hour left may be booked, for exactly one hour. */
+  const comboBalances = appliedPass?.pass.combo ?? null;
+  const comboGames = comboGamesLeft(comboBalances);
+  const comboAllows = (stationType: string | null | undefined) => {
+    const g = comboGameForStation(stationType);
+    return Boolean(g && comboGames.includes(g));
+  };
   const fullSessionAmount = isGroup
     ? groupAmount
     : startTime && durationMinutes && players
@@ -998,7 +1011,10 @@ export function BookingFlow() {
   const groupReady = Boolean(isGroup && groupRate && groupStart && groupMembers >= 1);
   const gamingComplete = isGroup
     ? groupReady
-    : (!consoleTouched || consoleReady) && extrasReady && (!appliedPass || consoleReady);
+    : (!consoleTouched || consoleReady) &&
+      extrasReady &&
+      (!appliedPass ||
+        (comboBalances ? consoleReady || selectedExtras.length > 0 : consoleReady));
 
   const hasGaming = isGroup ? groupReady : consoleReady || selectedExtras.length > 0 || hasPasses;
 
@@ -1359,8 +1375,13 @@ export function BookingFlow() {
           selector: "#gaming-extras",
           message: "Complete the experience you selected — pick a start time and duration.",
         };
-      if (appliedPass && !consoleReady)
-        return { selector: "#gaming-console", message: "Pick a console, start time and duration to redeem your pass." };
+      if (appliedPass && !consoleReady && !(comboBalances && selectedExtras.length))
+        return {
+          selector: comboBalances ? "#gaming-extras" : "#gaming-console",
+          message: comboBalances
+            ? "Pick a game, start time and day to redeem your Combo Pass."
+            : "Pick a console, start time and duration to redeem your pass.",
+        };
       return null;
     }
     if (step === 2)
