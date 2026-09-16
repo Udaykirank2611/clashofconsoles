@@ -30,7 +30,12 @@ import { Field, ImagePlaceholder, StatusTag } from "./ui";
 import { Chip, DurationCard, GameTile, SlotGrid } from "./parts";
 import { PhoneGate, LoyaltyStrip } from "./PhoneGate";
 import { PassRedeem, type AppliedPass } from "./PassRedeem";
-import { PASS_TYPE_LABELS, isConsoleOnlyPass } from "@/lib/passes";
+import {
+  PASS_TYPE_LABELS,
+  isConsoleOnlyPass,
+  comboGamesLeft,
+  comboGameForStation,
+} from "@/lib/passes";
 import { passesForPhone } from "@/lib/passes.functions";
 
 
