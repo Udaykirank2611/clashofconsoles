@@ -1130,7 +1130,35 @@ export const createBooking = createServerFn({ method: "POST" })
     /* Deduct from the pass only once the slot is safely reserved. */
     if (pass) {
       const minutes = data.durationMinutes ?? 0;
-      if (pass.remaining_minutes !== null) {
+      if (pass.combo) {
+        const { comboGameForStation, COMBO_SESSION_MINUTES } = await import("@/lib/passes");
+        const used = new Set<string>();
+        if (hasSlot) {
+          const g = comboGameForStation(station?.station_type);
+          if (g) used.add(g);
+        }
+        for (const e of extras) {
+          const st = stations?.find((s) => s.id === e.stationId);
+          const g = comboGameForStation(st?.station_type);
+          if (g) used.add(g);
+        }
+        const left = {
+          console: pass.combo.console - (used.has("console") ? COMBO_SESSION_MINUTES : 0),
+          vr: pass.combo.vr - (used.has("vr") ? COMBO_SESSION_MINUTES : 0),
+          driving_simulator:
+            pass.combo.driving_simulator - (used.has("driving_simulator") ? COMBO_SESSION_MINUTES : 0),
+        };
+        const allGone = left.console <= 0 && left.vr <= 0 && left.driving_simulator <= 0;
+        await db
+          .from("membership_passes")
+          .update({
+            combo_console_minutes: Math.max(0, left.console),
+            combo_vr_minutes: Math.max(0, left.vr),
+            combo_sim_minutes: Math.max(0, left.driving_simulator),
+            status: allGone ? "used" : "active",
+          })
+          .eq("id", pass.id);
+      } else if (pass.remaining_minutes !== null) {
         const left = Math.max(0, pass.remaining_minutes - minutes);
         await db
           .from("membership_passes")
