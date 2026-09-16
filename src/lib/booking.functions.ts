@@ -1034,7 +1034,11 @@ export const createBooking = createServerFn({ method: "POST" })
         tax_amount: tax,
         total_amount: total,
         pass_id: pass?.id ?? null,
-        pass_minutes: pass ? (data.durationMinutes ?? 0) : 0,
+        pass_minutes: pass
+          ? pass.combo
+            ? ((hasSlot ? 1 : 0) + extras.length) * 60
+            : (data.durationMinutes ?? 0)
+          : 0,
         status: pass && total <= 0 ? "confirmed" : "awaiting_payment",
         payment_expires_at: pass && total <= 0 ? null : paymentExpiresAt,
       })
