@@ -479,13 +479,16 @@ export const createBooking = createServerFn({ method: "POST" })
           remaining_minutes: number | null;
           remaining_uses: number | null;
           branch_id: string;
+          combo: { console: number; vr: number; driving_simulator: number } | null;
         }
       | null = null;
     if (data.passCode) {
       await db.rpc("expire_membership_passes");
       const { data: row } = await db
         .from("membership_passes")
-        .select("id, code, pass_type, plan_name, remaining_minutes, remaining_uses, branch_id, status, expires_on")
+        .select(
+          "id, code, pass_type, plan_name, remaining_minutes, remaining_uses, branch_id, status, expires_on, combo_console_minutes, combo_vr_minutes, combo_sim_minutes",
+        )
         .eq("code", data.passCode)
         .maybeSingle();
       if (!row) return { ok: false, message: "No pass found with that Pass ID." };
@@ -495,9 +498,19 @@ export const createBooking = createServerFn({ method: "POST" })
       const today = new Date().toISOString().slice(0, 10);
       if (row.status === "expired" || String(row.expires_on) < today)
         return { ok: false, message: "This pass has expired." };
+      const isCombo = row.pass_type === "combo";
+      const combo = isCombo
+        ? {
+            console: Number(row.combo_console_minutes ?? 0),
+            vr: Number(row.combo_vr_minutes ?? 0),
+            driving_simulator: Number(row.combo_sim_minutes ?? 0),
+          }
+        : null;
+      if (combo && combo.console + combo.vr + combo.driving_simulator <= 0)
+        return { ok: false, message: "All games on this Combo Pass have been used." };
       if (row.remaining_minutes !== null && Number(row.remaining_minutes) <= 0)
         return { ok: false, message: "This pass has no remaining hours." };
-      if (row.remaining_uses !== null && Number(row.remaining_uses) <= 0)
+      if (!isCombo && row.remaining_uses !== null && Number(row.remaining_uses) <= 0)
         return { ok: false, message: "This pass has no remaining uses." };
       pass = {
         id: row.id,
@@ -507,6 +520,7 @@ export const createBooking = createServerFn({ method: "POST" })
         remaining_minutes: row.remaining_minutes === null ? null : Number(row.remaining_minutes),
         remaining_uses: row.remaining_uses === null ? null : Number(row.remaining_uses),
         branch_id: row.branch_id,
+        combo,
       };
       if (data.bookingType === "group")
         return { ok: false, message: "A membership pass cannot be used for a Party Booking." };
