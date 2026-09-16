@@ -1375,8 +1375,13 @@ export function BookingFlow() {
           selector: "#gaming-extras",
           message: "Complete the experience you selected — pick a start time and duration.",
         };
-      if (appliedPass && !consoleReady)
-        return { selector: "#gaming-console", message: "Pick a console, start time and duration to redeem your pass." };
+      if (appliedPass && !consoleReady && !(comboBalances && selectedExtras.length))
+        return {
+          selector: comboBalances ? "#gaming-extras" : "#gaming-console",
+          message: comboBalances
+            ? "Pick a game, start time and day to redeem your Combo Pass."
+            : "Pick a console, start time and duration to redeem your pass.",
+        };
       return null;
     }
     if (step === 2)
