@@ -584,11 +584,66 @@ export const createBooking = createServerFn({ method: "POST" })
        never book more time than it has left. */
     if (pass) {
       const minutes = data.durationMinutes ?? 0;
-      if (!hasSlot) return { ok: false, message: "Pick a console, date and time to redeem your pass." };
       if (data.players !== 1)
         return { ok: false, message: "A pass covers a single player only — book 1 player." };
-      const { isConsoleOnlyPass, UNLIMITED_MAX_MINUTES } = await import("@/lib/passes");
-      if (isConsoleOnlyPass(pass.pass_type as never)) {
+      const {
+        isConsoleOnlyPass,
+        UNLIMITED_MAX_MINUTES,
+        COMBO_SESSION_MINUTES,
+        COMBO_GAME_LABELS,
+        comboGameForStation,
+      } = await import("@/lib/passes");
+
+      /* Combo Pass: one hour each of PS5, VR and Racing Cockpit. Only games
+         that still have balance may be booked, each for exactly one hour, and
+         the chosen hours may never overlap one another. */
+      if (pass.combo) {
+        const picks: { game: "console" | "vr" | "driving_simulator"; start: string; minutes: number }[] = [];
+        if (hasSlot) {
+          const g = comboGameForStation(station?.station_type);
+          if (!g) return { ok: false, message: "This Combo Pass cannot be used for that experience." };
+          if (minutes !== COMBO_SESSION_MINUTES)
+            return { ok: false, message: "A Combo Pass books exactly 1 hour per game." };
+          picks.push({ game: g, start: data.startTime!, minutes });
+        }
+        for (const e of extras) {
+          const st = stations?.find((s) => s.id === e.stationId);
+          const g = comboGameForStation(st?.station_type);
+          if (!g) return { ok: false, message: "This Combo Pass cannot be used for that experience." };
+          if ((e.extraHours ?? 0) > 0 || e.durationMinutes !== COMBO_SESSION_MINUTES)
+            return { ok: false, message: "A Combo Pass books exactly 1 hour per game." };
+          picks.push({ game: g, start: e.startTime, minutes: COMBO_SESSION_MINUTES });
+        }
+        if (!picks.length)
+          return { ok: false, message: "Pick a game, date and time to redeem your Combo Pass." };
+
+        const seen = new Set<string>();
+        for (const p of picks) {
+          if (seen.has(p.game))
+            return { ok: false, message: `You can book only 1 hour of ${COMBO_GAME_LABELS[p.game]} per pass.` };
+          seen.add(p.game);
+          if ((pass.combo[p.game] ?? 0) < COMBO_SESSION_MINUTES)
+            return {
+              ok: false,
+              message: `Your Combo Pass has no hours left for ${COMBO_GAME_LABELS[p.game]}.`,
+            };
+        }
+        const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+        for (let i = 0; i < picks.length; i++)
+          for (let j = i + 1; j < picks.length; j++) {
+            const a = picks[i]!;
+            const b = picks[j]!;
+            if (mins(a.start) < mins(b.start) + b.minutes && mins(b.start) < mins(a.start) + a.minutes)
+              return {
+                ok: false,
+                message: "Your Combo Pass games cannot be played at the same time — pick different hours.",
+              };
+          }
+      } else if (!hasSlot) {
+        return { ok: false, message: "Pick a console, date and time to redeem your pass." };
+      }
+
+      if (!pass.combo && isConsoleOnlyPass(pass.pass_type as never)) {
         if (station?.station_type !== "console")
           return { ok: false, message: "This membership can only be used for PS5 console sessions." };
         if (extras.length)
