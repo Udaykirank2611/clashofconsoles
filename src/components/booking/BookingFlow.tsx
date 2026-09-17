@@ -1965,7 +1965,11 @@ export function BookingFlow() {
                 consoles={consoles}
                 gamesFor={gamesFor}
                 slots={slots}
-                durations={durations}
+                durations={
+                  comboBalances
+                    ? durations.filter((option) => option.minutes === 60)
+                    : durations
+                }
                 priceFor={(m) => rateFor(rates, players ?? 2, m)}
                 players={players}
                 playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
