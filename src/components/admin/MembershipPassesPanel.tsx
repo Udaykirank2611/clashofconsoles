@@ -30,7 +30,9 @@ function remainingLabel(p: PassInfo) {
 
 /** Per-game balance cell: combo passes show each game, others show a dash. */
 function comboCell(p: PassInfo, game: (typeof COMBO_GAMES)[number]) {
-  return p.combo ? hoursLabel(p.combo[game] ?? 0) : "—";
+  if (p.combo) return hoursLabel(p.combo[game] ?? 0);
+  if (game === "console" && p.remainingMinutes !== null) return hoursLabel(p.remainingMinutes);
+  return "—";
 }
 
 /**

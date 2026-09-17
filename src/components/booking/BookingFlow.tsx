@@ -451,8 +451,18 @@ export function BookingFlow() {
         stations: [...list].sort((a, b) => a.sort_order - b.sort_order),
       });
     }
-    return groups;
-  }, [consoles, extraStations]);
+    if (!appliedPass?.pass.combo) return groups;
+    const allowed = comboGamesLeft(appliedPass.pass.combo);
+    return groups
+      .map((group) => ({
+        ...group,
+        stations: group.stations.filter((item) => {
+          const game = comboGameForStation(item.station_type);
+          return Boolean(game && allowed.includes(game));
+        }),
+      }))
+      .filter((group) => group.stations.length > 0);
+  }, [consoles, extraStations, appliedPass]);
   const passOptions = useMemo(
     () => (catalogue?.passes ?? []).filter((p) => p.branch_id === branchId),
     [catalogue, branchId],
@@ -919,6 +929,7 @@ export function BookingFlow() {
   );
   const extraAmountFor = (e: (typeof selectedExtras)[number]) => {
     if (!e.startTime || !e.durationMinutes) return 0;
+    if (comboBalances && comboAllows(e.station?.station_type)) return 0;
     const tier = stationRates.find((r) => r.id === e.rateId);
     const extraHourRate = extraHourRateFor(e.station!.id);
     const hours = tier && extraHourRate ? (e.extraHours ?? 0) : 0;
@@ -1595,7 +1606,8 @@ export function BookingFlow() {
                 setPasses({});
                 setPassesOn(false);
                 setBranchId(a.pass.branchId);
-                setConsoleOn(true);
+                setStationId(null);
+                setConsoleOn(Boolean(a.pass.combo ? comboGamesLeft(a.pass.combo).includes("console") : true));
                 setDurationMinutes(null);
                 setStartTime(null);
               }}
@@ -1605,7 +1617,7 @@ export function BookingFlow() {
               }}
             />
 
-            {appliedPass && !consoleReady ? (
+            {appliedPass && !consoleReady && !comboBalances ? (
               <p className="rounded-2xl border border-amber-400/30 bg-amber-400/5 px-4 py-3 text-xs font-semibold text-amber-300">
                 Pick your console, day and time below to redeem this pass.
               </p>
@@ -1938,7 +1950,7 @@ export function BookingFlow() {
               </div>
             ) : null}
 
-            {!isGroup && consoles.length ? (
+            {!isGroup && consoles.length && (!comboBalances || comboAllows("console")) ? (
               <div id="gaming-console">
               <ConsoleSelect
 
@@ -1953,7 +1965,11 @@ export function BookingFlow() {
                 consoles={consoles}
                 gamesFor={gamesFor}
                 slots={slots}
-                durations={durations}
+                durations={
+                  comboBalances
+                    ? durations.filter((option) => option.minutes === 60)
+                    : durations
+                }
                 priceFor={(m) => rateFor(rates, players ?? 2, m)}
                 players={players}
                 playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
@@ -2076,7 +2092,11 @@ export function BookingFlow() {
                   if (active) scrollToField(`field-time-${active.id}`);
                 };
                 /** Admin-managed price tiers for this experience (empty for consoles). */
-                const tiers = isConsole ? [] : baseTiersFor(active?.id);
+                const tiers = isConsole
+                  ? []
+                  : baseTiersFor(active?.id).filter(
+                      (tier) => !comboBalances || Number(tier.duration_minutes) === 60,
+                    );
                 const extraHourRate = isConsole ? null : extraHourRateFor(active?.id);
                 const currentRateId = sel?.rateId ?? null;
                 const currentTier = tiers.find((t) => t.id === currentRateId) ?? null;
@@ -2240,8 +2260,17 @@ export function BookingFlow() {
                             !curDuration && "coc-missing coc-flash",
                           )}
                         >
-                          <FieldLabel>{tiers.length ? "Package" : "Duration"}</FieldLabel>
-                          {tiers.length ? (
+                          <FieldLabel>{comboBalances ? "Combo session" : tiers.length ? "Package" : "Duration"}</FieldLabel>
+                          {comboBalances ? (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <DurationCard
+                                label="1 Hour · Combo Pass"
+                                price={0}
+                                selected={curDuration === 60}
+                                onClick={() => setDur(60)}
+                              />
+                            </div>
+                          ) : tiers.length ? (
                             <div className="grid gap-3 sm:grid-cols-2">
                               {tiers.map((t) => (
                                 <button
@@ -2282,7 +2311,7 @@ export function BookingFlow() {
                             </div>
                           )}
 
-                          {currentTier && extraHourRate ? (
+                          {currentTier && extraHourRate && !comboBalances ? (
                             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/50 px-4 py-3">
                               <div className="min-w-0">
                                 <p className="text-sm font-bold">{extraHourRate.label}</p>

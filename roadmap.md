@@ -5,3 +5,5 @@
 - [x] Show customer visit levels on admin booking cards
 - [x] Move mobile admin sign-out to the top
 - [x] Show booked console or service in a white outlined pill below status
+- [x] Finish Combo Pass booking restrictions, free pricing, and per-game balances
+- [x] Show PS5 balances for standard memberships in the admin pass table
