@@ -22,7 +22,7 @@ export function ComboOffer({ offer }: { offer: SiteOffer | null }) {
               Three Arenas. <span className="text-gradient">One Price.</span>
             </>
           }
-          lead={offer.subtitle}
+          lead="1 hour each of PS5 Console, VR Arena and Cockpit Racing — use all three today."
         />
 
         <div className="mt-16 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
