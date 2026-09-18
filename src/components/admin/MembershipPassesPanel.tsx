@@ -18,7 +18,7 @@ import {
   passRuleNote,
   type PassInfo,
 } from "@/lib/passes";
-import { Panel, AdminButton } from "./primitives";
+import { Panel, AdminButton, AdminInput, money } from "./primitives";
 import { cn } from "@/lib/utils";
 
 const STATUS_TONE: Record<PassInfo["status"], string> = {
