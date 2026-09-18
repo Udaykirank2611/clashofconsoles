@@ -62,6 +62,33 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
     { pass: PassInfo | null; valid: boolean; message: string } | null
   >(null);
 
+  const queryClient = useQueryClient();
+  const expiryFn = useServerFn(updatePassExpiry);
+  const [custom, setCustom] = useState(false);
+  const [editing, setEditing] = useState<{ id: string; date: string } | null>(null);
+  const [savingExpiry, setSavingExpiry] = useState(false);
+
+  const refreshPasses = () => queryClient.invalidateQueries({ queryKey: ["admin-passes"] });
+
+  const saveExpiry = async () => {
+    if (!editing) return;
+    setSavingExpiry(true);
+    try {
+      const res = await expiryFn({ data: { passId: editing.id, expiresOn: editing.date } });
+      if (!res.ok) {
+        toast.error(res.message ?? "Could not update the expiry date.");
+        return;
+      }
+      toast.success("Expiry date updated.");
+      setEditing(null);
+      await refreshPasses();
+    } catch {
+      toast.error("Network problem — please try again.");
+    } finally {
+      setSavingExpiry(false);
+    }
+  };
+
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
