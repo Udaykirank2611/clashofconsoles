@@ -185,16 +185,21 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
       <Panel
         title="All passes"
         action={
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search ID, name or phone"
-              aria-label="Search passes"
-              className="w-56 rounded-full border border-border bg-surface/60 py-2 pl-9 pr-3 text-xs outline-none focus:border-cyan/50"
-            />
-          </div>
+          <>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search ID, name or phone"
+                aria-label="Search passes"
+                className="w-56 rounded-full border border-border bg-surface/60 py-2 pl-9 pr-3 text-xs outline-none focus:border-cyan/50"
+              />
+            </div>
+            <AdminButton variant="primary" onClick={() => setCustom(true)}>
+              <Plus className="size-3.5" /> Custom pass
+            </AdminButton>
+          </>
         }
       >
         {isLoading ? (
