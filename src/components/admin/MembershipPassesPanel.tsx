@@ -242,7 +242,50 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
                     <td className="py-3 pr-3 text-muted-foreground">
                       {p.purchasedAt.slice(0, 10)}
                     </td>
-                    <td className="py-3 pr-3 text-muted-foreground">{p.expiresOn}</td>
+                    <td className="py-3 pr-3 text-muted-foreground">
+                      {editing?.id === p.id ? (
+                        <span className="flex items-center gap-1">
+                          <input
+                            type="date"
+                            value={editing.date}
+                            onChange={(e) => setEditing({ id: p.id, date: e.target.value })}
+                            aria-label="Expiry date"
+                            className="rounded-lg border border-border bg-surface/70 px-2 py-1 text-xs text-foreground outline-none focus:border-cyan/50"
+                          />
+                          <button
+                            type="button"
+                            aria-label="Save expiry"
+                            disabled={savingExpiry}
+                            onClick={() => void saveExpiry()}
+                            className="rounded-full border border-emerald-500/45 bg-emerald-400/25 p-1 text-emerald-950"
+                          >
+                            {savingExpiry ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <Check className="size-3" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Cancel"
+                            onClick={() => setEditing(null)}
+                            className="rounded-full border border-border p-1"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditing({ id: p.id, date: p.expiresOn })}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 hover:bg-surface hover:text-foreground"
+                          title="Edit expiry date"
+                        >
+                          {p.expiresOn}
+                          <CalendarClock className="size-3" />
+                        </button>
+                      )}
+                    </td>
                     <td className="py-3 pr-3 font-semibold">
                       {p.combo ? "Per game →" : remainingLabel(p)}
                     </td>
