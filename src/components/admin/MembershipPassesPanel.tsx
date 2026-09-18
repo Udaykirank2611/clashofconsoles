@@ -317,7 +317,148 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
           </div>
         )}
       </Panel>
+
+      {custom ? (
+        <CustomPassDialog
+          branchId={branchId}
+          onClose={() => setCustom(false)}
+          onCreated={() => {
+            setCustom(false);
+            void refreshPasses();
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+/** Counter sale of a bespoke pass: hours per game, validity and payment split. */
+function CustomPassDialog({
+  branchId,
+  onClose,
+  onCreated,
+}: {
+  branchId: string;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const createFn = useServerFn(createCustomPass);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [price, setPrice] = useState("");
+  const [players, setPlayers] = useState("1");
+  const [consoleHours, setConsoleHours] = useState("1");
+  const [vrHours, setVrHours] = useState("0");
+  const [simHours, setSimHours] = useState("0");
+  const [expiresOn, setExpiresOn] = useState(todayISO());
+  const [cash, setCash] = useState("");
+  const [upi, setUpi] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const amount = Math.max(0, Math.round(Number(price) || 0));
+  const paid = (Number(cash) || 0) + (Number(upi) || 0);
+
+  const submit = async () => {
+    if (paid !== amount) {
+      toast.error(`Cash + UPI must add up to ${money(amount)}.`);
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await createFn({
+        data: {
+          branchId,
+          name: name.trim(),
+          phone: phone.trim(),
+          price: amount,
+          players: Math.max(1, Math.round(Number(players) || 1)),
+          consoleHours: Number(consoleHours) || 0,
+          vrHours: Number(vrHours) || 0,
+          simHours: Number(simHours) || 0,
+          expiresOn,
+          cashAmount: Number(cash) || 0,
+          upiAmount: Number(upi) || 0,
+          upiProvider: null,
+          notes: "",
+        },
+      });
+      if (!res.ok) {
+        toast.error(res.message ?? "Could not create the pass.");
+        return;
+      }
+      toast.success(`Custom pass created · ${res.code}`);
+      onCreated();
+    } catch {
+      toast.error("Please check the details and try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <ModalPortal onClose={onClose}>
+      <div className="rounded-3xl border border-border bg-background p-6 shadow-2xl">
+        <header className="mb-5 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-black uppercase tracking-[0.2em] text-cyan">Custom pass</h2>
+          <button type="button" aria-label="Close" onClick={onClose}>
+            <X className="size-4" />
+          </button>
+        </header>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AdminInput label="Customer name" value={name} onChange={setName} />
+          <AdminInput label="Phone number" value={phone} onChange={setPhone} placeholder="10-digit mobile" />
+          <AdminInput label="Price (₹)" type="number" value={price} onChange={setPrice} />
+          <AdminInput label="Number of players" type="number" value={players} onChange={setPlayers} />
+          <AdminInput label="PS5 console hours" type="number" value={consoleHours} onChange={setConsoleHours} />
+          <AdminInput label="VR arena hours" type="number" value={vrHours} onChange={setVrHours} />
+          <AdminInput label="Racing cockpit hours" type="number" value={simHours} onChange={setSimHours} />
+          <AdminInput label="Expiry date" type="date" value={expiresOn} onChange={setExpiresOn} />
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-surface/60 p-4">
+            <AdminInput label="Paid by UPI (₹)" type="number" value={upi} onChange={setUpi} />
+            <AdminButton
+              className="mt-3"
+              onClick={() => {
+                setUpi(String(amount));
+                setCash("0");
+              }}
+            >
+              Full amount by UPI
+            </AdminButton>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface/60 p-4">
+            <AdminInput label="Paid by cash (₹)" type="number" value={cash} onChange={setCash} />
+            <AdminButton
+              className="mt-3"
+              onClick={() => {
+                setCash(String(amount));
+                setUpi("0");
+              }}
+            >
+              Full amount by cash
+            </AdminButton>
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          Pass total {money(amount)} · collected {money(paid)}. A Pass ID is generated on submit and
+          linked to this phone number, so the customer can book with it online.
+        </p>
+
+        <footer className="mt-5 flex justify-end gap-2">
+          <AdminButton onClick={onClose}>Cancel</AdminButton>
+          <AdminButton variant="primary" disabled={saving} onClick={() => void submit()}>
+            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Ticket className="size-3.5" />}{" "}
+            Create pass
+          </AdminButton>
+        </footer>
+      </div>
+    </ModalPortal>
   );
 }
 
