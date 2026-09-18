@@ -1,8 +1,15 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, Loader2, Search, Ticket } from "lucide-react";
-import { lookupPass, listPasses } from "@/lib/passes.functions";
+import { BadgeCheck, CalendarClock, Check, Loader2, Plus, Search, Ticket, X } from "lucide-react";
+import { toast } from "sonner";
+import {
+  lookupPass,
+  listPasses,
+  createCustomPass,
+  updatePassExpiry,
+} from "@/lib/passes.functions";
+import { ModalPortal } from "./ModalPortal";
 import {
   COMBO_GAMES,
   COMBO_GAME_LABELS,
@@ -11,7 +18,7 @@ import {
   passRuleNote,
   type PassInfo,
 } from "@/lib/passes";
-import { Panel, AdminButton } from "./primitives";
+import { Panel, AdminButton, AdminInput, money } from "./primitives";
 import { cn } from "@/lib/utils";
 
 const STATUS_TONE: Record<PassInfo["status"], string> = {
@@ -54,6 +61,33 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
   const [result, setResult] = useState<
     { pass: PassInfo | null; valid: boolean; message: string } | null
   >(null);
+
+  const queryClient = useQueryClient();
+  const expiryFn = useServerFn(updatePassExpiry);
+  const [custom, setCustom] = useState(false);
+  const [editing, setEditing] = useState<{ id: string; date: string } | null>(null);
+  const [savingExpiry, setSavingExpiry] = useState(false);
+
+  const refreshPasses = () => queryClient.invalidateQueries({ queryKey: ["admin-passes"] });
+
+  const saveExpiry = async () => {
+    if (!editing) return;
+    setSavingExpiry(true);
+    try {
+      const res = await expiryFn({ data: { passId: editing.id, expiresOn: editing.date } });
+      if (!res.ok) {
+        toast.error(res.message ?? "Could not update the expiry date.");
+        return;
+      }
+      toast.success("Expiry date updated.");
+      setEditing(null);
+      await refreshPasses();
+    } catch {
+      toast.error("Network problem — please try again.");
+    } finally {
+      setSavingExpiry(false);
+    }
+  };
 
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
@@ -151,16 +185,21 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
       <Panel
         title="All passes"
         action={
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search ID, name or phone"
-              aria-label="Search passes"
-              className="w-56 rounded-full border border-border bg-surface/60 py-2 pl-9 pr-3 text-xs outline-none focus:border-cyan/50"
-            />
-          </div>
+          <>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search ID, name or phone"
+                aria-label="Search passes"
+                className="w-56 rounded-full border border-border bg-surface/60 py-2 pl-9 pr-3 text-xs outline-none focus:border-cyan/50"
+              />
+            </div>
+            <AdminButton variant="primary" onClick={() => setCustom(true)}>
+              <Plus className="size-3.5" /> Custom pass
+            </AdminButton>
+          </>
         }
       >
         {isLoading ? (
@@ -203,7 +242,50 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
                     <td className="py-3 pr-3 text-muted-foreground">
                       {p.purchasedAt.slice(0, 10)}
                     </td>
-                    <td className="py-3 pr-3 text-muted-foreground">{p.expiresOn}</td>
+                    <td className="py-3 pr-3 text-muted-foreground">
+                      {editing?.id === p.id ? (
+                        <span className="flex items-center gap-1">
+                          <input
+                            type="date"
+                            value={editing.date}
+                            onChange={(e) => setEditing({ id: p.id, date: e.target.value })}
+                            aria-label="Expiry date"
+                            className="rounded-lg border border-border bg-surface/70 px-2 py-1 text-xs text-foreground outline-none focus:border-cyan/50"
+                          />
+                          <button
+                            type="button"
+                            aria-label="Save expiry"
+                            disabled={savingExpiry}
+                            onClick={() => void saveExpiry()}
+                            className="rounded-full border border-emerald-500/45 bg-emerald-400/25 p-1 text-emerald-950"
+                          >
+                            {savingExpiry ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <Check className="size-3" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Cancel"
+                            onClick={() => setEditing(null)}
+                            className="rounded-full border border-border p-1"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditing({ id: p.id, date: p.expiresOn })}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 hover:bg-surface hover:text-foreground"
+                          title="Edit expiry date"
+                        >
+                          {p.expiresOn}
+                          <CalendarClock className="size-3" />
+                        </button>
+                      )}
+                    </td>
                     <td className="py-3 pr-3 font-semibold">
                       {p.combo ? "Per game →" : remainingLabel(p)}
                     </td>
@@ -235,7 +317,148 @@ export function MembershipPassesPanel({ branchId }: { branchId: string }) {
           </div>
         )}
       </Panel>
+
+      {custom ? (
+        <CustomPassDialog
+          branchId={branchId}
+          onClose={() => setCustom(false)}
+          onCreated={() => {
+            setCustom(false);
+            void refreshPasses();
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+/** Counter sale of a bespoke pass: hours per game, validity and payment split. */
+function CustomPassDialog({
+  branchId,
+  onClose,
+  onCreated,
+}: {
+  branchId: string;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const createFn = useServerFn(createCustomPass);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [price, setPrice] = useState("");
+  const [players, setPlayers] = useState("1");
+  const [consoleHours, setConsoleHours] = useState("1");
+  const [vrHours, setVrHours] = useState("0");
+  const [simHours, setSimHours] = useState("0");
+  const [expiresOn, setExpiresOn] = useState(todayISO());
+  const [cash, setCash] = useState("");
+  const [upi, setUpi] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const amount = Math.max(0, Math.round(Number(price) || 0));
+  const paid = (Number(cash) || 0) + (Number(upi) || 0);
+
+  const submit = async () => {
+    if (paid !== amount) {
+      toast.error(`Cash + UPI must add up to ${money(amount)}.`);
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await createFn({
+        data: {
+          branchId,
+          name: name.trim(),
+          phone: phone.trim(),
+          price: amount,
+          players: Math.max(1, Math.round(Number(players) || 1)),
+          consoleHours: Number(consoleHours) || 0,
+          vrHours: Number(vrHours) || 0,
+          simHours: Number(simHours) || 0,
+          expiresOn,
+          cashAmount: Number(cash) || 0,
+          upiAmount: Number(upi) || 0,
+          upiProvider: null,
+          notes: "",
+        },
+      });
+      if (!res.ok) {
+        toast.error(res.message ?? "Could not create the pass.");
+        return;
+      }
+      toast.success(`Custom pass created · ${res.code}`);
+      onCreated();
+    } catch {
+      toast.error("Please check the details and try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <ModalPortal onClose={onClose}>
+      <div className="rounded-3xl border border-border bg-background p-6 shadow-2xl">
+        <header className="mb-5 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-black uppercase tracking-[0.2em] text-cyan">Custom pass</h2>
+          <button type="button" aria-label="Close" onClick={onClose}>
+            <X className="size-4" />
+          </button>
+        </header>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AdminInput label="Customer name" value={name} onChange={setName} />
+          <AdminInput label="Phone number" value={phone} onChange={setPhone} placeholder="10-digit mobile" />
+          <AdminInput label="Price (₹)" type="number" value={price} onChange={setPrice} />
+          <AdminInput label="Number of players" type="number" value={players} onChange={setPlayers} />
+          <AdminInput label="PS5 console hours" type="number" value={consoleHours} onChange={setConsoleHours} />
+          <AdminInput label="VR arena hours" type="number" value={vrHours} onChange={setVrHours} />
+          <AdminInput label="Racing cockpit hours" type="number" value={simHours} onChange={setSimHours} />
+          <AdminInput label="Expiry date" type="date" value={expiresOn} onChange={setExpiresOn} />
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-surface/60 p-4">
+            <AdminInput label="Paid by UPI (₹)" type="number" value={upi} onChange={setUpi} />
+            <AdminButton
+              className="mt-3"
+              onClick={() => {
+                setUpi(String(amount));
+                setCash("0");
+              }}
+            >
+              Full amount by UPI
+            </AdminButton>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface/60 p-4">
+            <AdminInput label="Paid by cash (₹)" type="number" value={cash} onChange={setCash} />
+            <AdminButton
+              className="mt-3"
+              onClick={() => {
+                setCash(String(amount));
+                setUpi("0");
+              }}
+            >
+              Full amount by cash
+            </AdminButton>
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          Pass total {money(amount)} · collected {money(paid)}. A Pass ID is generated on submit and
+          linked to this phone number, so the customer can book with it online.
+        </p>
+
+        <footer className="mt-5 flex justify-end gap-2">
+          <AdminButton onClick={onClose}>Cancel</AdminButton>
+          <AdminButton variant="primary" disabled={saving} onClick={() => void submit()}>
+            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Ticket className="size-3.5" />}{" "}
+            Create pass
+          </AdminButton>
+        </footer>
+      </div>
+    </ModalPortal>
   );
 }
 
