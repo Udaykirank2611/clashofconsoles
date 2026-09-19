@@ -53,6 +53,13 @@ const waNumber = (phone: string) => {
   return digits.length === 10 ? `91${digits}` : digits;
 };
 
+/** Customer-facing names used on the compact booking card. */
+const bookingGameLabel = (booking: AdminBooking, serviceName: string) => {
+  if (booking.booking_type === "group") return "Party Booking";
+  const label = booking.game_title?.trim() || serviceName;
+  return label.replace(/driving simulator/gi, "Cockpit Racing");
+};
+
 /** The auto-generated breakdown block injected into templates via {details}. */
 const bookingDetailsText = (b: AdminBooking, stationName: string) => {
   const experiences = b.booking_items.filter((i) => i.kind === "addon" && i.station_id);
@@ -427,6 +434,8 @@ export function BookingsPanel({
                     .join(", ") ||
                   (b.booking_items.some((i) => i.kind === "food") ? "Food only" : "Passes only");
             const visitLevel = visitsByPhone.get(b.customer_phone.replace(/\D/g, "").slice(-10)) ?? 0;
+            const displayedLevel = visitLevel + 1;
+            const gameLabel = bookingGameLabel(b, serviceName);
             // Pass-only bookings have no gaming slot at all.
             const slot = bookingWindow(b);
             const hasSlot = Boolean(slot.start && slot.end);
@@ -446,15 +455,7 @@ export function BookingsPanel({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-start gap-2">
                       <h3 className="truncate text-sm font-bold">{b.customer_name}</h3>
-                      <span className="hidden rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-foreground sm:inline-flex">
-                        Level {visitLevel}
-                      </span>
-                      <span className="flex flex-col items-start gap-1.5">
-                        <StatusPill status={b.status} />
-                        <span className="inline-flex rounded-full border border-foreground/35 bg-surface px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
-                          {serviceName}
-                        </span>
-                      </span>
+                      <StatusPill status={b.status} />
                       <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">
                         {b.reference}
                       </span>
@@ -473,21 +474,19 @@ export function BookingsPanel({
                         return (
                           <>
                             {time ? `${time} · ` : ""}
-                            {b.players}P · <span className="font-bold text-foreground">{serviceName}</span>
-                            {b.game_title ? (
-                              <>
-                                {" "}· <span className="font-bold text-foreground">{b.game_title}</span>
-                              </>
-                            ) : null}
+                            {b.players}P
                           </>
                         );
                       })()}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-foreground sm:hidden">
-                      Level {visitLevel}
-                    </p>
+                    <div className="mb-2 ml-auto w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
+                      <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}</p>
+                      <p className="mt-1 text-[0.65rem] font-black uppercase tracking-[0.16em]">
+                        Level {displayedLevel}
+                      </p>
+                    </div>
                     <p className="text-lg font-black">{money(b.total_amount)}</p>
                     <a
                       href={`tel:${b.customer_phone}`}

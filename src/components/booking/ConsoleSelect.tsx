@@ -281,16 +281,9 @@ export function ConsoleSelect({
             ) : null;
           })()}
           <div className="min-w-0">
-            <p className="truncate text-sm font-extrabold">
-              {label}
-              <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
-                {consoles.length} available
-              </span>
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {bookable.length
-                ? `${description ?? ""} From ${inr(playerPrice(players ?? 2))}/hr`.trim()
-                : "Currently unavailable"}
+            <p className="truncate text-sm font-extrabold">{label}</p>
+            <p className="mt-1 text-xs font-semibold text-cyan">
+              {bookable.length} available
             </p>
           </div>
         </div>
