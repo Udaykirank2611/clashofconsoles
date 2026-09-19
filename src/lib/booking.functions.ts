@@ -1342,6 +1342,7 @@ export const submitPaymentUtr = createServerFn({ method: "POST" })
         payment_utr: data.utr,
         payment_note: data.note || null,
         payment_submitted_at: new Date().toISOString(),
+        payment_expires_at: null,
         status: b.status === "confirmed" ? "confirmed" : "payment_pending",
       })
       .eq("id", b.id);

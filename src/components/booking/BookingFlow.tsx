@@ -1593,29 +1593,31 @@ export function BookingFlow() {
 
         {/* ---------------- STEP 2 · GAMING (passes first) ---------------- */}
         {step === 1 ? (
-          <section className="space-y-8">
-            <PassRedeem
-              applied={appliedPass}
-              plannedMinutes={durationMinutes}
-              {...(initialPassCode ? { initialCode: initialPassCode } : {})}
-              onApply={(a) => {
-                setAppliedPass(a);
-                setPlayers(1);
-                setExtras({});
-                setBookingType("single");
-                setPasses({});
-                setPassesOn(false);
-                setBranchId(a.pass.branchId);
-                setStationId(null);
-                setConsoleOn(Boolean(a.pass.combo ? comboGamesLeft(a.pass.combo).includes("console") : true));
-                setDurationMinutes(null);
-                setStartTime(null);
-              }}
-              onClear={() => {
-                setAppliedPass(null);
-                setDurationMinutes(null);
-              }}
-            />
+          <section className="flex flex-col gap-8">
+            <div className="order-last">
+              <PassRedeem
+                applied={appliedPass}
+                plannedMinutes={durationMinutes}
+                {...(initialPassCode ? { initialCode: initialPassCode } : {})}
+                onApply={(a) => {
+                  setAppliedPass(a);
+                  setPlayers(1);
+                  setExtras({});
+                  setBookingType("single");
+                  setPasses({});
+                  setPassesOn(false);
+                  setBranchId(a.pass.branchId);
+                  setStationId(null);
+                  setConsoleOn(Boolean(a.pass.combo ? comboGamesLeft(a.pass.combo).includes("console") : true));
+                  setDurationMinutes(null);
+                  setStartTime(null);
+                }}
+                onClear={() => {
+                  setAppliedPass(null);
+                  setDurationMinutes(null);
+                }}
+              />
+            </div>
 
             {appliedPass && !consoleReady && !comboBalances ? (
               <p className="rounded-2xl border border-amber-400/30 bg-amber-400/5 px-4 py-3 text-xs font-semibold text-amber-300">
@@ -1627,7 +1629,7 @@ export function BookingFlow() {
 
               <div
                 className={cn(
-                  "relative overflow-hidden rounded-[2rem] border border-violet/40 bg-linear-to-br from-violet/15 via-surface/70 to-cyan/10 p-5 shadow-[0_30px_90px_-45px_var(--violet)] backdrop-blur-xl transition-all duration-500 sm:p-6",
+                  "order-last relative overflow-hidden rounded-[2rem] border border-violet/40 bg-linear-to-br from-violet/15 via-surface/70 to-cyan/10 p-5 shadow-[0_30px_90px_-45px_var(--violet)] backdrop-blur-xl transition-all duration-500 sm:p-6",
                   passesOn && "border-transparent shadow-[0_0_0_2px_var(--violet),0_30px_90px_-45px_var(--violet)]",
                 )}
               >
@@ -2162,25 +2164,9 @@ export function BookingFlow() {
                           ) : null;
                         })()}
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-extrabold">
-                            {g.label}
-                            <span className="ml-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">
-                              {g.stations.length} available
-                            </span>
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {bookable.length
-                              ? `${active?.description ?? g.stations[0]?.description ?? ""} ${
-                                  isConsole
-                                    ? `From ${inr(rateFor(rates, players ?? 2, 60))}/hr`
-                                    : (() => {
-                                        const list = baseTiersFor((active ?? g.stations[0])!.id);
-                                        return list.length
-                                          ? `From ${inr(Math.min(...list.map((r) => Number(r.price))))}`
-                                          : `${inr(Number((active ?? g.stations[0])!.hourly_price))}/hr`;
-                                      })()
-                                }`.trim()
-                              : "Currently unavailable"}
+                          <p className="truncate text-sm font-extrabold">{g.label}</p>
+                          <p className="mt-1 text-xs font-semibold text-cyan">
+                            {bookable.length} available
                           </p>
                         </div>
                       </div>
@@ -2545,17 +2531,13 @@ export function BookingFlow() {
               </div>
 
               <div>
-                <FieldLabel>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-400/15 px-3 py-1 text-amber-300 shadow-[0_0_20px_-6px_rgba(251,191,36,0.8)]">
-                    🎟️ Coupon code
-                  </span>
-                </FieldLabel>
+                <FieldLabel>Coupon code</FieldLabel>
                 <div className="flex gap-2">
                   <input
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                     placeholder="Enter coupon"
-                    className="min-w-0 flex-1 rounded-xl border-2 border-amber-300/70 bg-amber-400/10 px-3 py-2.5 text-sm font-bold tracking-[0.12em] text-amber-200 shadow-[0_0_28px_-8px_rgba(251,191,36,0.75)] outline-none transition-all placeholder:font-normal placeholder:tracking-normal placeholder:text-amber-200/40 focus:border-amber-300 focus:shadow-[0_0_36px_-6px_rgba(251,191,36,0.9)]"
+                    className="min-w-0 flex-1 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm font-bold tracking-[0.12em] outline-none transition-colors placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground focus:border-cyan/60"
                   />
                   <button
                     type="button"

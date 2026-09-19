@@ -7,3 +7,8 @@
 - [x] Show booked console or service in a white outlined pill below status
 - [x] Finish Combo Pass booking restrictions, free pricing, and per-game balances
 - [x] Show PS5 balances for standard memberships in the admin pass table
+- [x] Combine the admin booking game and next level in one purple price-side badge
+- [x] Keep UTR-submitted bookings available for manual approval without payment expiry
+- [x] Simplify booking game headers to name plus availability
+- [x] Move pass redemption and pass purchases to the end of gaming selection
+- [x] Remove the coupon field highlight from the booking summary step
