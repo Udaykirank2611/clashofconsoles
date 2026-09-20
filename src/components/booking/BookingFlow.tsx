@@ -188,7 +188,7 @@ function DatePickerChip({
           }}
           disabled={(d) => {
             const key = toDateKey(d);
-            return key < minKey || key > maxKey;
+            return key < minKey || key > maxKey || blocked.includes(key);
           }}
           initialFocus
           className={cn("pointer-events-auto p-3")}
