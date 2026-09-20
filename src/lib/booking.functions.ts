@@ -35,6 +35,7 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
     stationRates: StationRate[];
     stationGames: StationGame[];
     passes: PassOption[];
+    holidays: { branch_id: string; holiday_date: string; reason: string }[];
   }> => {
     const { publicClient } = await import("@/lib/booking/repository.server");
     const db = publicClient();
@@ -62,6 +63,11 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
         db.from("membership_plans").select("*").eq("is_visible", true).order("sort_order"),
         db.from("site_offers").select("*").eq("is_visible", true),
       ]);
+
+    const { data: holidayRows } = await db
+      .from("branch_holidays")
+      .select("branch_id, holiday_date, reason")
+      .order("holiday_date");
 
     const passes: PassOption[] = [
       ...(plans.data ?? []).map((p) => ({
@@ -96,6 +102,11 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
       stationRates: (stationRates.data ?? []) as unknown as StationRate[],
       stationGames: (stationGames.data ?? []) as unknown as StationGame[],
       passes,
+      holidays: (holidayRows ?? []).map((h) => ({
+        branch_id: h.branch_id as string,
+        holiday_date: h.holiday_date as string,
+        reason: (h.reason as string) ?? "",
+      })),
     };
   },
 );
@@ -466,6 +477,21 @@ export const createBooking = createServerFn({ method: "POST" })
       .eq("id", data.branchId)
       .maybeSingle();
     if (!branch) return { ok: false, message: "Branch unavailable." };
+
+    // Branch holidays — no bookings can be made on these dates.
+    const { data: holiday } = await db
+      .from("branch_holidays")
+      .select("holiday_date, reason")
+      .eq("branch_id", data.branchId)
+      .eq("holiday_date", data.date)
+      .maybeSingle();
+    if (holiday)
+      return {
+        ok: false,
+        message: holiday.reason
+          ? `We are closed on this date (${holiday.reason}). Please pick another day.`
+          : "We are closed on this date. Please pick another day.",
+      };
 
     /* ---- Membership pass redemption ------------------------------------
        A pass funds the gaming portion of this booking. The slot is still

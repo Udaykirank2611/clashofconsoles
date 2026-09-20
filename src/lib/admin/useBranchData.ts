@@ -41,6 +41,7 @@ export interface AdminBooking {
   start_time: string;
   end_time: string;
   players: number;
+  booking_type?: string | null;
   reward_minutes?: number | null;
   game_title: string | null;
 

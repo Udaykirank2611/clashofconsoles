@@ -135,11 +135,14 @@ function DatePickerChip({
   onChange,
   min,
   max,
+  blocked = [],
 }: {
   value: string;
   onChange: (key: string) => void;
   min: Date;
   max: Date;
+  /** Branch holidays — these days cannot be booked. */
+  blocked?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const selected = new Date(`${value}T00:00:00`);
@@ -185,7 +188,7 @@ function DatePickerChip({
           }}
           disabled={(d) => {
             const key = toDateKey(d);
-            return key < minKey || key > maxKey;
+            return key < minKey || key > maxKey || blocked.includes(key);
           }}
           initialFocus
           className={cn("pointer-events-auto p-3")}
@@ -503,6 +506,16 @@ export function BookingFlow() {
     [catalogue, branchId],
   );
   /** Admin-managed game list per console. */
+  /** Dates this branch is closed — bookings are blocked on these days. */
+  const holidayDates = useMemo(
+    () =>
+      ((catalogue as { holidays?: { branch_id: string; holiday_date: string }[] } | undefined)
+        ?.holidays ?? [])
+        .filter((h) => h.branch_id === branchId)
+        .map((h) => h.holiday_date),
+    [catalogue, branchId],
+  );
+
   const stationGames = useMemo(
     () => (catalogue?.stationGames ?? []).filter((g) => g.branch_id === branchId),
     [catalogue, branchId],
