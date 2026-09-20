@@ -102,6 +102,11 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
       stationRates: (stationRates.data ?? []) as unknown as StationRate[],
       stationGames: (stationGames.data ?? []) as unknown as StationGame[],
       passes,
+      holidays: (holidayRows ?? []).map((h) => ({
+        branch_id: h.branch_id as string,
+        holiday_date: h.holiday_date as string,
+        reason: (h.reason as string) ?? "",
+      })),
     };
   },
 );
