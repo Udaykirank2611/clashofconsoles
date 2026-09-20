@@ -506,6 +506,16 @@ export function BookingFlow() {
     [catalogue, branchId],
   );
   /** Admin-managed game list per console. */
+  /** Dates this branch is closed — bookings are blocked on these days. */
+  const holidayDates = useMemo(
+    () =>
+      ((catalogue as { holidays?: { branch_id: string; holiday_date: string }[] } | undefined)
+        ?.holidays ?? [])
+        .filter((h) => h.branch_id === branchId)
+        .map((h) => h.holiday_date),
+    [catalogue, branchId],
+  );
+
   const stationGames = useMemo(
     () => (catalogue?.stationGames ?? []).filter((g) => g.branch_id === branchId),
     [catalogue, branchId],
