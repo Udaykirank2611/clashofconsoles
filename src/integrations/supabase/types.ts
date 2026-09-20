@@ -356,6 +356,41 @@ export type Database = {
           },
         ]
       }
+      branch_holidays: {
+        Row: {
+          branch_id: string
+          created_at: string
+          holiday_date: string
+          id: string
+          reason: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          holiday_date: string
+          id?: string
+          reason?: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          reason?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_holidays_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string
