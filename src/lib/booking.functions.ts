@@ -35,6 +35,7 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
     stationRates: StationRate[];
     stationGames: StationGame[];
     passes: PassOption[];
+    holidays: { branch_id: string; holiday_date: string; reason: string }[];
   }> => {
     const { publicClient } = await import("@/lib/booking/repository.server");
     const db = publicClient();
@@ -466,6 +467,21 @@ export const createBooking = createServerFn({ method: "POST" })
       .eq("id", data.branchId)
       .maybeSingle();
     if (!branch) return { ok: false, message: "Branch unavailable." };
+
+    // Branch holidays — no bookings can be made on these dates.
+    const { data: holiday } = await db
+      .from("branch_holidays")
+      .select("holiday_date, reason")
+      .eq("branch_id", data.branchId)
+      .eq("holiday_date", data.date)
+      .maybeSingle();
+    if (holiday)
+      return {
+        ok: false,
+        message: holiday.reason
+          ? `We are closed on this date (${holiday.reason}). Please pick another day.`
+          : "We are closed on this date. Please pick another day.",
+      };
 
     /* ---- Membership pass redemption ------------------------------------
        A pass funds the gaming portion of this booking. The slot is still
