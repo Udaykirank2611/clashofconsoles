@@ -135,11 +135,14 @@ function DatePickerChip({
   onChange,
   min,
   max,
+  blocked = [],
 }: {
   value: string;
   onChange: (key: string) => void;
   min: Date;
   max: Date;
+  /** Branch holidays — these days cannot be booked. */
+  blocked?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const selected = new Date(`${value}T00:00:00`);
