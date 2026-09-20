@@ -64,6 +64,11 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
         db.from("site_offers").select("*").eq("is_visible", true),
       ]);
 
+    const { data: holidayRows } = await db
+      .from("branch_holidays")
+      .select("branch_id, holiday_date, reason")
+      .order("holiday_date");
+
     const passes: PassOption[] = [
       ...(plans.data ?? []).map((p) => ({
         id: `membership:${p.id}`,
