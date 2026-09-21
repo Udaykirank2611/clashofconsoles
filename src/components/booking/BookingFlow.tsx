@@ -1594,7 +1594,7 @@ export function BookingFlow() {
                       }}
                       className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-full border border-cyan/40 px-4 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-cyan transition-colors hover:bg-cyan/10"
                     >
-                      <Navigation className="size-3.5" /> Get directions
+                      <Navigation className="size-3.5" /> DIRECTIONS
                     </span>
                   </button>
                 );
