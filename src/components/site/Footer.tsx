@@ -104,10 +104,10 @@ export function Footer() {
         <p className="mt-2">
           Developed by{" "}
           <a
-            href="mailto:udaykirank2611@gmail.com"
+            href="mailto:shubhakaryamofficial@gmail.com"
             className="transition-colors hover:text-cyan"
           >
-            udaykirank2611@gmail.com
+            shubhakaryamofficial@gmail.com
           </a>
         </p>
       </div>
