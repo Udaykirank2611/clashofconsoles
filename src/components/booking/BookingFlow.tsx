@@ -1824,6 +1824,7 @@ export function BookingFlow() {
                   onChange={setDate}
                   min={days[0]!}
                   max={days[days.length - 1]!}
+                  blocked={holidayDates}
                 />
               </div>
             </div>
