@@ -5,7 +5,7 @@ import { AdminButton, AdminInput, Panel, Pill } from "./primitives";
 import type { AdminMenuItem } from "@/lib/admin/useBranchData";
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
 
-const CATEGORIES = ["Snacks", "Non-Veg", "Lassi", "Fresh Juices", "Milkshakes", "Mocktails"];
+const CATEGORIES = ["Veg", "Non-Veg", "Lassi", "Fresh Juices", "Milkshakes", "Mocktails"];
 
 /** Menu for the signed-in branch only. Text and price only — no images anywhere. */
 export function MenuPanel({

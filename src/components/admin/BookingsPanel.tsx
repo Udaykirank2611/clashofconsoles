@@ -57,7 +57,10 @@ const waNumber = (phone: string) => {
 const bookingGameLabel = (booking: AdminBooking, serviceName: string) => {
   if (booking.booking_type === "group") return "Party Booking";
   const label = booking.game_title?.trim() || serviceName;
-  return label.replace(/driving simulator/gi, "Cockpit Racing");
+  return label
+    .replace(/driving simulator/gi, "Cockpit Racing")
+    .replace(/\s*[·|-]\s*\d+\s*(minutes?|mins?|hours?|hrs?)\b/gi, "")
+    .trim();
 };
 
 /** The auto-generated breakdown block injected into templates via {details}. */

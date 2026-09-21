@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, AdminInput, Panel } from "./primitives";
+import { HolidaysPanel } from "./HolidaysPanel";
 
 interface BranchSettings {
   name: string;
@@ -98,6 +99,7 @@ export function SettingsPanel({ branchId }: { branchId: string }) {
   }
 
   return (
+    <div className="space-y-6">
     <Panel
       title="Branch settings"
       action={
@@ -142,5 +144,7 @@ export function SettingsPanel({ branchId }: { branchId: string }) {
         ) : null}
       </div>
     </Panel>
+    <HolidaysPanel branchId={branchId} />
+    </div>
   );
 }

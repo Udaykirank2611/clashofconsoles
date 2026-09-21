@@ -2463,18 +2463,20 @@ export function BookingFlow() {
                         <li
                           key={m.id}
                           className={cn(
-                            "flex items-center gap-3 px-4 py-3 transition-colors duration-300",
+                            "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-4 py-3 transition-colors duration-300 sm:flex sm:items-center",
                             qty > 0 && "bg-cyan/5",
                           )}
                         >
-                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                          <span className="flex min-w-0 flex-1 items-start gap-2">
                             {isNonVegItem(m.name, m.category) ? <DietMark nonVeg /> : null}
-                            <span className="min-w-0 truncate text-sm font-semibold">{m.name}</span>
+                            <span className="min-w-0 break-words text-sm font-semibold leading-snug">
+                              {m.name}
+                            </span>
                           </span>
                           <span className="shrink-0 text-sm font-black text-cyan">
                             {inr(Number(m.price))}
                           </span>
-                          <div className="flex shrink-0 items-center gap-2">
+                          <div className="col-span-2 flex shrink-0 items-center justify-end gap-2 sm:col-span-1">
                             <button
                               type="button"
                               aria-label={`Remove one ${m.name}`}
