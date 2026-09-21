@@ -22,7 +22,7 @@ export const categoryCover = (slug: string, imageUrl?: string | null) =>
 
 /** Maps a homepage category card to the menu categories it represents. */
 export const MENU_CATEGORY_FOR_SLUG: Record<string, string> = {
-  snacks: "Snacks",
+  snacks: "Veg",
   "non-veg": "Non-Veg",
   milkshakes: "Milkshakes",
   mocktails: "Mocktails",
