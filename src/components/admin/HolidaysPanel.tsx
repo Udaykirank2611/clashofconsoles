@@ -7,7 +7,7 @@ import { AdminButton, AdminInput, Panel } from "./primitives";
 interface Holiday {
   id: string;
   holiday_date: string;
-  reason: string | null;
+  reason: string;
 }
 
 const prettyDate = (d: string) =>
@@ -50,7 +50,7 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
     setBusy(true);
     const { error } = await supabase
       .from("branch_holidays")
-      .insert({ branch_id: branchId, holiday_date: date, reason: reason.trim() || null });
+      .insert({ branch_id: branchId, holiday_date: date, reason: reason.trim() });
     setBusy(false);
     if (error) {
       toast.error(
@@ -67,7 +67,7 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
   const saveReason = async (id: string, value: string) => {
     const { error } = await supabase
       .from("branch_holidays")
-      .update({ reason: value.trim() || null })
+      .update({ reason: value.trim() })
       .eq("id", id);
     if (error) toast.error("Could not update that holiday.");
   };
@@ -115,7 +115,7 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
             >
               <p className="text-sm font-bold">{prettyDate(h.holiday_date)}</p>
               <input
-                defaultValue={h.reason ?? ""}
+                defaultValue={h.reason}
                 placeholder="Reason"
                 onBlur={(e) => void saveReason(h.id, e.target.value)}
                 className="col-span-2 w-full rounded-lg border border-border bg-transparent px-3 py-1.5 text-sm outline-none focus:border-cyan/50 sm:col-span-1"
