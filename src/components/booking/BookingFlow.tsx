@@ -605,9 +605,15 @@ export function BookingFlow() {
     (targetId: string, slot: string, minutes: number) => {
       if (isToday && timeToMinutes(slot) + SLOT_GRACE_MINUTES <= nowMinutes) return true;
       if (timeToMinutes(slot) + minutes > closeMinutes) return true;
+      if (
+        closedWindow &&
+        timeToMinutes(slot) < closedWindow.end &&
+        timeToMinutes(slot) + Math.max(minutes, 1) > closedWindow.start
+      )
+        return true;
       return isRangeBusy(busy, targetId, slot, minutes);
     },
-    [busy, closeMinutes, isToday, nowMinutes],
+    [busy, closeMinutes, closedWindow, isToday, nowMinutes],
   );
 
 
