@@ -72,7 +72,7 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
 
     const { data: holidayRows } = await db
       .from("branch_holidays")
-      .select("branch_id, holiday_date, reason")
+      .select("branch_id, holiday_date, reason, start_time, end_time")
       .order("holiday_date");
 
     const passes: PassOption[] = [
