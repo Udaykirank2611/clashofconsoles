@@ -478,20 +478,31 @@ export const createBooking = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!branch) return { ok: false, message: "Branch unavailable." };
 
-    // Branch holidays — no bookings can be made on these dates.
+    // Branch holidays — closed all day, or only between the given hours.
     const { data: holiday } = await db
       .from("branch_holidays")
-      .select("holiday_date, reason")
+      .select("holiday_date, reason, start_time, end_time")
       .eq("branch_id", data.branchId)
       .eq("holiday_date", data.date)
       .maybeSingle();
-    if (holiday)
+    const holidayRow = holiday as
+      | { reason: string | null; start_time: string | null; end_time: string | null }
+      | null;
+    const holidayWindow =
+      holidayRow?.start_time && holidayRow?.end_time
+        ? {
+            start: Number(holidayRow.start_time.slice(0, 2)) * 60 + Number(holidayRow.start_time.slice(3, 5)),
+            end: Number(holidayRow.end_time.slice(0, 2)) * 60 + Number(holidayRow.end_time.slice(3, 5)),
+          }
+        : null;
+    if (holidayRow && !holidayWindow)
       return {
         ok: false,
-        message: holiday.reason
-          ? `We are closed on this date (${holiday.reason}). Please pick another day.`
+        message: holidayRow.reason
+          ? `We are closed on this date (${holidayRow.reason}). Please pick another day.`
           : "We are closed on this date. Please pick another day.",
       };
+
 
     /* ---- Membership pass redemption ------------------------------------
        A pass funds the gaming portion of this booking. The slot is still
