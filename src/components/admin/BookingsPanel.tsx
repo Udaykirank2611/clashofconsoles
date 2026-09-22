@@ -519,7 +519,7 @@ export function BookingsPanel({
                   </div>
 
 
-                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto lg:ml-auto lg:w-auto lg:flex-1 lg:justify-end">
                     {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
                       <>
                         <AdminButton
