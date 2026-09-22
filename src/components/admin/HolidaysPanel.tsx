@@ -8,6 +8,8 @@ interface Holiday {
   id: string;
   holiday_date: string;
   reason: string;
+  start_time: string | null;
+  end_time: string | null;
 }
 
 const prettyDate = (d: string) =>
@@ -18,21 +20,30 @@ const prettyDate = (d: string) =>
     year: "numeric",
   });
 
-/** Branch-specific holidays — bookings are blocked on these dates. */
+const prettyTime = (t: string) => {
+  const h = Number(t.slice(0, 2));
+  const m = t.slice(3, 5);
+  return `${String(h % 12 === 0 ? 12 : h % 12).padStart(2, "0")}:${m} ${h < 12 ? "AM" : "PM"}`;
+};
+
+/** Branch-specific closures — whole-day holidays or a closed time window. */
 export function HolidaysPanel({ branchId }: { branchId: string }) {
   const [rows, setRows] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
+  const [wholeDay, setWholeDay] = useState(true);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
       .from("branch_holidays")
-      .select("id, holiday_date, reason")
+      .select("id, holiday_date, reason, start_time, end_time")
       .eq("branch_id", branchId)
       .order("holiday_date", { ascending: true });
-    setRows((data as Holiday[]) ?? []);
+    setRows((data as unknown as Holiday[]) ?? []);
     setLoading(false);
   };
 
@@ -47,10 +58,18 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
       toast.error("Pick a date first.");
       return;
     }
+    if (!wholeDay && (!from || !to || from >= to)) {
+      toast.error("Set a closing window that ends after it starts.");
+      return;
+    }
     setBusy(true);
-    const { error } = await supabase
-      .from("branch_holidays")
-      .insert({ branch_id: branchId, holiday_date: date, reason: reason.trim() });
+    const { error } = await supabase.from("branch_holidays").insert({
+      branch_id: branchId,
+      holiday_date: date,
+      reason: reason.trim(),
+      start_time: wholeDay ? null : `${from}:00`,
+      end_time: wholeDay ? null : `${to}:00`,
+    } as never);
     setBusy(false);
     if (error) {
       toast.error(
@@ -60,7 +79,14 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
     }
     setDate("");
     setReason("");
-    toast.success("Holiday added — bookings are blocked on that day.");
+    setFrom("");
+    setTo("");
+    setWholeDay(true);
+    toast.success(
+      wholeDay
+        ? "Holiday added — bookings are blocked all day."
+        : "Closure added — only those hours are blocked.",
+    );
     void load();
   };
 
@@ -70,6 +96,25 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
       .update({ reason: value.trim() })
       .eq("id", id);
     if (error) toast.error("Could not update that holiday.");
+  };
+
+  const saveTimes = async (row: Holiday, start: string, end: string) => {
+    if (start && end && start >= end) {
+      toast.error("Closing window must end after it starts.");
+      return;
+    }
+    const { error } = await supabase
+      .from("branch_holidays")
+      .update({
+        start_time: start && end ? `${start}:00` : null,
+        end_time: start && end ? `${end}:00` : null,
+      } as never)
+      .eq("id", row.id);
+    if (error) {
+      toast.error("Could not update those hours.");
+      return;
+    }
+    void load();
   };
 
   const remove = async (id: string) => {
@@ -85,8 +130,8 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
   return (
     <Panel title="Holidays (bookings blocked)">
       <p className="mb-5 text-xs text-muted-foreground">
-        Dates listed here are closed for this branch. Customers cannot pick them on the booking
-        calendar.
+        Dates listed here are closed for this branch. Leave the hours empty to close the whole day,
+        or set a window to block only those hours.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)_auto] sm:items-end">
@@ -102,6 +147,24 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
         </AdminButton>
       </div>
 
+      <div className="mt-3 grid gap-3 sm:grid-cols-[180px_180px_minmax(0,1fr)] sm:items-end">
+        <label className="flex items-center gap-2 text-xs font-bold">
+          <input
+            type="checkbox"
+            checked={wholeDay}
+            onChange={(e) => setWholeDay(e.target.checked)}
+            className="size-4 accent-pink"
+          />
+          Closed the whole day
+        </label>
+        {!wholeDay ? (
+          <>
+            <AdminInput label="Closed from" type="time" value={from} onChange={setFrom} />
+            <AdminInput label="Closed until" type="time" value={to} onChange={setTo} />
+          </>
+        ) : null}
+      </div>
+
       <div className="mt-6 space-y-2">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading holidays…</p>
@@ -111,15 +174,41 @@ export function HolidaysPanel({ branchId }: { branchId: string }) {
           rows.map((h) => (
             <div
               key={h.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-border bg-surface/40 px-4 py-3 sm:grid-cols-[160px_minmax(0,1fr)_auto]"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-border bg-surface/40 px-4 py-3 sm:grid-cols-[160px_minmax(0,1fr)_auto_auto]"
             >
-              <p className="text-sm font-bold">{prettyDate(h.holiday_date)}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-bold">{prettyDate(h.holiday_date)}</p>
+                <p className="text-[0.7rem] font-semibold text-muted-foreground">
+                  {h.start_time && h.end_time
+                    ? `Closed ${prettyTime(h.start_time)} – ${prettyTime(h.end_time)}`
+                    : "Closed all day"}
+                </p>
+              </div>
               <input
                 defaultValue={h.reason}
                 placeholder="Reason"
                 onBlur={(e) => void saveReason(h.id, e.target.value)}
                 className="col-span-2 w-full rounded-lg border border-border bg-transparent px-3 py-1.5 text-sm outline-none focus:border-cyan/50 sm:col-span-1"
               />
+              <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
+                <input
+                  type="time"
+                  defaultValue={h.start_time ? h.start_time.slice(0, 5) : ""}
+                  onBlur={(e) =>
+                    void saveTimes(h, e.target.value, h.end_time ? h.end_time.slice(0, 5) : "")
+                  }
+                  className="rounded-lg border border-border bg-transparent px-2 py-1.5 text-xs outline-none focus:border-cyan/50"
+                />
+                <span className="text-xs text-muted-foreground">to</span>
+                <input
+                  type="time"
+                  defaultValue={h.end_time ? h.end_time.slice(0, 5) : ""}
+                  onBlur={(e) =>
+                    void saveTimes(h, h.start_time ? h.start_time.slice(0, 5) : "", e.target.value)
+                  }
+                  className="rounded-lg border border-border bg-transparent px-2 py-1.5 text-xs outline-none focus:border-cyan/50"
+                />
+              </div>
               <button
                 type="button"
                 aria-label="Remove holiday"
