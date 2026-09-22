@@ -35,7 +35,13 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
     stationRates: StationRate[];
     stationGames: StationGame[];
     passes: PassOption[];
-    holidays: { branch_id: string; holiday_date: string; reason: string }[];
+    holidays: {
+      branch_id: string;
+      holiday_date: string;
+      reason: string;
+      start_time: string | null;
+      end_time: string | null;
+    }[];
   }> => {
     const { publicClient } = await import("@/lib/booking/repository.server");
     const db = publicClient();
