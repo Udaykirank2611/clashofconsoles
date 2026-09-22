@@ -360,25 +360,31 @@ export type Database = {
         Row: {
           branch_id: string
           created_at: string
+          end_time: string | null
           holiday_date: string
           id: string
           reason: string
+          start_time: string | null
           updated_at: string
         }
         Insert: {
           branch_id: string
           created_at?: string
+          end_time?: string | null
           holiday_date: string
           id?: string
           reason?: string
+          start_time?: string | null
           updated_at?: string
         }
         Update: {
           branch_id?: string
           created_at?: string
+          end_time?: string | null
           holiday_date?: string
           id?: string
           reason?: string
+          start_time?: string | null
           updated_at?: string
         }
         Relationships: [
