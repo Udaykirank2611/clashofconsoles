@@ -615,6 +615,34 @@ export const createBooking = createServerFn({ method: "POST" })
         return { ok: false, message: "One of the selected experiences is no longer available." };
     }
 
+    // Partial holiday — refuse any slot that overlaps the closed hours.
+    if (holidayWindow) {
+      const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+      const windows: { start: number; minutes: number }[] = [];
+      if (data.startTime && (hasSlot || isGroup))
+        windows.push({
+          start: mins(data.startTime),
+          minutes: isGroup ? 60 : (data.durationMinutes ?? 0),
+        });
+      for (const e of extras)
+        if (e.startTime)
+          windows.push({
+            start: mins(e.startTime),
+            minutes: (e.durationMinutes ?? 0) + (e.extraHours ?? 0) * 60,
+          });
+      const clash = windows.some(
+        (w) => w.start < holidayWindow.end && w.start + Math.max(w.minutes, 1) > holidayWindow.start,
+      );
+      if (clash)
+        return {
+          ok: false,
+          message: holidayRow?.reason
+            ? `We are closed between those hours on this date (${holidayRow.reason}). Please pick another time.`
+            : "We are closed between those hours on this date. Please pick another time.",
+        };
+    }
+
+
 
     /* Pass rules: Bronze/Silver/Gold cover PS5 console play only, the
        Unlimited Pass allows a single hour per booking, and a metered pass can
