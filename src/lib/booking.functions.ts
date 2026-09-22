@@ -35,7 +35,13 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
     stationRates: StationRate[];
     stationGames: StationGame[];
     passes: PassOption[];
-    holidays: { branch_id: string; holiday_date: string; reason: string }[];
+    holidays: {
+      branch_id: string;
+      holiday_date: string;
+      reason: string;
+      start_time: string | null;
+      end_time: string | null;
+    }[];
   }> => {
     const { publicClient } = await import("@/lib/booking/repository.server");
     const db = publicClient();
@@ -66,7 +72,7 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
 
     const { data: holidayRows } = await db
       .from("branch_holidays")
-      .select("branch_id, holiday_date, reason")
+      .select("branch_id, holiday_date, reason, start_time, end_time")
       .order("holiday_date");
 
     const passes: PassOption[] = [
@@ -102,10 +108,18 @@ export const getCatalogue = createServerFn({ method: "GET" }).handler(
       stationRates: (stationRates.data ?? []) as unknown as StationRate[],
       stationGames: (stationGames.data ?? []) as unknown as StationGame[],
       passes,
-      holidays: (holidayRows ?? []).map((h) => ({
-        branch_id: h.branch_id as string,
-        holiday_date: h.holiday_date as string,
-        reason: (h.reason as string) ?? "",
+      holidays: ((holidayRows ?? []) as {
+        branch_id: string;
+        holiday_date: string;
+        reason: string | null;
+        start_time?: string | null;
+        end_time?: string | null;
+      }[]).map((h) => ({
+        branch_id: h.branch_id,
+        holiday_date: h.holiday_date,
+        reason: h.reason ?? "",
+        start_time: h.start_time ?? null,
+        end_time: h.end_time ?? null,
       })),
     };
   },
@@ -478,20 +492,31 @@ export const createBooking = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!branch) return { ok: false, message: "Branch unavailable." };
 
-    // Branch holidays — no bookings can be made on these dates.
+    // Branch holidays — closed all day, or only between the given hours.
     const { data: holiday } = await db
       .from("branch_holidays")
-      .select("holiday_date, reason")
+      .select("holiday_date, reason, start_time, end_time")
       .eq("branch_id", data.branchId)
       .eq("holiday_date", data.date)
       .maybeSingle();
-    if (holiday)
+    const holidayRow = holiday as
+      | { reason: string | null; start_time: string | null; end_time: string | null }
+      | null;
+    const holidayWindow =
+      holidayRow?.start_time && holidayRow?.end_time
+        ? {
+            start: Number(holidayRow.start_time.slice(0, 2)) * 60 + Number(holidayRow.start_time.slice(3, 5)),
+            end: Number(holidayRow.end_time.slice(0, 2)) * 60 + Number(holidayRow.end_time.slice(3, 5)),
+          }
+        : null;
+    if (holidayRow && !holidayWindow)
       return {
         ok: false,
-        message: holiday.reason
-          ? `We are closed on this date (${holiday.reason}). Please pick another day.`
+        message: holidayRow.reason
+          ? `We are closed on this date (${holidayRow.reason}). Please pick another day.`
           : "We are closed on this date. Please pick another day.",
       };
+
 
     /* ---- Membership pass redemption ------------------------------------
        A pass funds the gaming portion of this booking. The slot is still
@@ -603,6 +628,34 @@ export const createBooking = createServerFn({ method: "POST" })
       if (!st || st.status !== "available")
         return { ok: false, message: "One of the selected experiences is no longer available." };
     }
+
+    // Partial holiday — refuse any slot that overlaps the closed hours.
+    if (holidayWindow) {
+      const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+      const windows: { start: number; minutes: number }[] = [];
+      if (data.startTime && (hasSlot || isGroup))
+        windows.push({
+          start: mins(data.startTime),
+          minutes: isGroup ? 60 : (data.durationMinutes ?? 0),
+        });
+      for (const e of extras)
+        if (e.startTime)
+          windows.push({
+            start: mins(e.startTime),
+            minutes: (e.durationMinutes ?? 0) + (e.extraHours ?? 0) * 60,
+          });
+      const clash = windows.some(
+        (w) => w.start < holidayWindow.end && w.start + Math.max(w.minutes, 1) > holidayWindow.start,
+      );
+      if (clash)
+        return {
+          ok: false,
+          message: holidayRow?.reason
+            ? `We are closed between those hours on this date (${holidayRow.reason}). Please pick another time.`
+            : "We are closed between those hours on this date. Please pick another time.",
+        };
+    }
+
 
 
     /* Pass rules: Bronze/Silver/Gold cover PS5 console play only, the
