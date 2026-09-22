@@ -506,15 +506,40 @@ export function BookingFlow() {
     [catalogue, branchId],
   );
   /** Admin-managed game list per console. */
-  /** Dates this branch is closed — bookings are blocked on these days. */
-  const holidayDates = useMemo(
+  /** Closures for this branch — whole-day or a specific window. */
+  const branchHolidays = useMemo(
     () =>
-      ((catalogue as { holidays?: { branch_id: string; holiday_date: string }[] } | undefined)
-        ?.holidays ?? [])
-        .filter((h) => h.branch_id === branchId)
-        .map((h) => h.holiday_date),
+      (
+        (catalogue as
+          | {
+              holidays?: {
+                branch_id: string;
+                holiday_date: string;
+                start_time?: string | null;
+                end_time?: string | null;
+              }[];
+            }
+          | undefined)?.holidays ?? []
+      ).filter((h) => h.branch_id === branchId),
     [catalogue, branchId],
   );
+  /** Dates this branch is closed all day — blocked on the calendar. */
+  const holidayDates = useMemo(
+    () =>
+      branchHolidays
+        .filter((h) => !(h.start_time && h.end_time))
+        .map((h) => h.holiday_date),
+    [branchHolidays],
+  );
+  /** Closed hours on the selected date (partial holiday), in minutes. */
+  const closedWindow = useMemo(() => {
+    const h = branchHolidays.find(
+      (x) => x.holiday_date === date && x.start_time && x.end_time,
+    );
+    if (!h) return null;
+    return { start: timeToMinutes(h.start_time!), end: timeToMinutes(h.end_time!) };
+  }, [branchHolidays, date]);
+
 
   const stationGames = useMemo(
     () => (catalogue?.stationGames ?? []).filter((g) => g.branch_id === branchId),
