@@ -454,16 +454,16 @@ export function BookingsPanel({
                 key={b.id}
                 className="overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30"
               >
-                <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-start gap-2">
-                      <h3 className="truncate text-sm font-bold">{b.customer_name}</h3>
+                <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5 lg:flex-nowrap lg:items-center lg:gap-6">
+                  <div className="min-w-0 flex-1 lg:max-w-[46%]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate text-sm font-bold lg:text-base">{b.customer_name}</h3>
                       <StatusPill status={b.status} />
                       <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">
                         {b.reference}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 text-xs text-muted-foreground lg:text-sm">
                       {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
                         weekday: "short",
                         day: "numeric",
@@ -472,40 +472,52 @@ export function BookingsPanel({
                       ·{" "}
                       {(() => {
                         const { start, end } = bookingWindow(b);
-                        const time =
-                          start && end ? `${formatTime(start)} – ${formatTime(end)} · ${durationLabel(start, end)}` : null;
                         return (
                           <>
-                            {time ? `${time} · ` : ""}
+                            {start && end ? (
+                              <>
+                                <span className="font-bold text-foreground">
+                                  {formatTime(start)} – {formatTime(end)}
+                                </span>
+                                {" · "}
+                                <span className="font-bold text-foreground">
+                                  {durationLabel(start, end)}
+                                </span>
+                                {" · "}
+                              </>
+                            ) : null}
                             {b.players}P
                           </>
                         );
                       })()}
                     </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                      <a
+                        href={`tel:${b.customer_phone}`}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
+                      >
+                        <Phone className="size-3" /> {b.customer_phone}
+                      </a>
+                      <a
+                        href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
+                      >
+                        <MessageCircle className="size-3" /> WhatsApp
+                      </a>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="mb-2 ml-auto w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
+                  <div className="flex items-center gap-3 lg:shrink-0">
+                    <div className="w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
                       <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}</p>
                       <p className="mt-1 text-[0.65rem] font-black uppercase tracking-[0.16em]">
                         Level {displayedLevel}
                       </p>
                     </div>
-                    <p className="text-lg font-black">{money(b.total_amount)}</p>
-                    <a
-                      href={`tel:${b.customer_phone}`}
-                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
-                    >
-                      <Phone className="size-3" /> {b.customer_phone}
-                    </a>
-                    <a
-                      href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
-                    >
-                      <MessageCircle className="size-3" /> WhatsApp
-                    </a>
+                    <p className="text-lg font-black lg:text-xl">{money(b.total_amount)}</p>
                   </div>
+
 
                   <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                     {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
