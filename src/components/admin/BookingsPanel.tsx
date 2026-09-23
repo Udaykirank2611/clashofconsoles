@@ -47,6 +47,23 @@ const durationLabel = (start?: string | null, end?: string | null) => {
     .join(" ");
 };
 
+const bookingCountdown = (
+  bookingDate: string,
+  startTime: string | null,
+  endTime: string | null,
+  now: number,
+) => {
+  if (!startTime || !endTime) return null;
+  const start = new Date(`${bookingDate}T${startTime}`).getTime();
+  let end = new Date(`${bookingDate}T${endTime}`).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  if (end <= start) end += 24 * 60 * 60 * 1_000;
+  const seconds = now < start ? Math.round((end - start) / 1_000) : Math.max(0, Math.ceil((end - now) / 1_000));
+  const minutesPart = Math.floor(seconds / 60);
+  const secondsPart = seconds % 60;
+  return `${String(minutesPart).padStart(2, "0")}:${String(secondsPart).padStart(2, "0")}`;
+};
+
 /** Normalise an Indian mobile number to wa.me E.164 digits. */
 const waNumber = (phone: string) => {
   const digits = phone.replace(/\D/g, "").replace(/^0+/, "");
@@ -151,6 +168,7 @@ export function BookingsPanel({
   focusReference?: string | null;
 }) {
   const [filter, setFilter] = useState<Filter>("payment_pending");
+  const [countdownNow, setCountdownNow] = useState(() => Date.now());
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -192,6 +210,11 @@ export function BookingsPanel({
     staleTime: 30_000,
   });
   const { template } = useMessageTemplates();
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCountdownNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const visitsByPhone = new Map(
     customers.map((customer) => [customer.phone.replace(/\D/g, "").slice(-10), customer.totalVisits] as const),
@@ -449,6 +472,10 @@ export function BookingsPanel({
                     (Number(slot.start!.slice(0, 2)) * 60 + Number(slot.start!.slice(3, 5))),
                 )
               : 0;
+            const countdown =
+              hasSlot && !["completed", "cancelled", "expired"].includes(b.status)
+                ? bookingCountdown(b.booking_date, slot.start, slot.end, countdownNow)
+                : null;
             return (
               <article
                 key={b.id}
@@ -491,7 +518,7 @@ export function BookingsPanel({
                         );
                       })()}
                     </p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                    <div className="mt-1.5 hidden flex-wrap items-center gap-3 sm:flex">
                       <a
                         href={`tel:${b.customer_phone}`}
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
@@ -508,7 +535,8 @@ export function BookingsPanel({
                       </a>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 lg:shrink-0">
+                  <div className="ml-auto flex flex-col items-end gap-2 sm:ml-0 lg:shrink-0">
+                    <div className="flex items-center gap-3">
                     <div className="w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
                       <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}</p>
                       <p className="mt-1 text-[0.65rem] font-black uppercase tracking-[0.16em]">
@@ -516,6 +544,30 @@ export function BookingsPanel({
                       </p>
                     </div>
                     <p className="text-lg font-black lg:text-xl">{money(b.total_amount)}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 sm:hidden">
+                      <a
+                        href={`tel:${b.customer_phone}`}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
+                      >
+                        <Phone className="size-3" /> {b.customer_phone}
+                      </a>
+                      <a
+                        href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
+                      >
+                        <MessageCircle className="size-3" /> WhatsApp
+                      </a>
+                    </div>
+                    {countdown ? (
+                      <div className="inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-2.5 py-1.5 text-cyan">
+                        <Clock className="size-3.5" aria-hidden="true" />
+                        <span className="text-[0.58rem] font-bold uppercase tracking-[0.16em]">Time left</span>
+                        <span className="min-w-[3.5rem] text-right font-mono text-sm font-black tabular-nums">{countdown}</span>
+                      </div>
+                    ) : null}
                   </div>
 
 

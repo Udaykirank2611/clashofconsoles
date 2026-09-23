@@ -12,3 +12,4 @@
 - [x] Simplify booking game headers to name plus availability
 - [x] Move pass redemption and pass purchases to the end of gaming selection
 - [x] Remove the coupon field highlight from the booking summary step
+- [x] Add live booking countdowns and right-align mobile booking contacts below the price
