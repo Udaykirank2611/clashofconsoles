@@ -562,7 +562,7 @@ export function BookingsPanel({
                       </a>
                     </div>
                     {countdown ? (
-                      <div className="inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-2.5 py-1.5 text-cyan">
+                      <div className="inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-2.5 py-1.5 text-cyan sm:hidden">
                         <Clock className="size-3.5" aria-hidden="true" />
                         <span className="text-[0.58rem] font-bold uppercase tracking-[0.16em]">Time left</span>
                         <span className="min-w-[3.5rem] text-right font-mono text-sm font-black tabular-nums">{countdown}</span>
