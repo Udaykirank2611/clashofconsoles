@@ -445,7 +445,7 @@ export function BookingsPanel({
       {rows.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">No {LABEL[filter].toLowerCase()} bookings.</p>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-3 2xl:grid-cols-4">
           {rows.map((b) => {
             const open = openId === b.id;
             const cockpit = b.booking_items.filter((i) => i.kind === "addon");
@@ -481,8 +481,8 @@ export function BookingsPanel({
                 key={b.id}
                 className="overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30"
               >
-                <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5 lg:flex-nowrap lg:items-center lg:gap-6">
-                  <div className="min-w-0 flex-1 lg:max-w-[46%]">
+                <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5 lg:flex-col lg:items-stretch lg:gap-3">
+                  <div className="min-w-0 flex-1 lg:max-w-none">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="truncate text-sm font-bold lg:text-base">{b.customer_name}</h3>
                       <StatusPill status={b.status} />
@@ -571,7 +571,7 @@ export function BookingsPanel({
                   </div>
 
 
-                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto lg:ml-auto lg:w-auto lg:flex-1 lg:justify-end">
+                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto lg:ml-0 lg:w-full lg:flex-none lg:justify-end">
                     {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
                       <>
                         <AdminButton
