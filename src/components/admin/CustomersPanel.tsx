@@ -8,6 +8,26 @@ import { rewardLabel } from "@/lib/loyalty.functions";
 import { loyaltyMessage, loyaltyTemplateKey, whatsappLink } from "@/lib/loyalty-messages";
 import { useMessageTemplates } from "@/lib/message-templates";
 import { AdminButton, Panel } from "./primitives";
+import { download } from "@/lib/reporting/format";
+
+type Cell = string | number;
+const esc = (v: Cell) => `"${String(v).replaceAll('"', '""')}"`;
+function saveCsv(rows: Cell[][], name: string) {
+  download(new Blob([rows.map((r) => r.map(esc).join(",")).join("\n")], { type: "text/csv;charset=utf-8" }), `${name}.csv`);
+}
+async function saveXlsx(rows: Cell[][], name: string) {
+  const writeXlsxFile = (await import("write-excel-file/browser")).default;
+  const data = rows.map((r, i) =>
+    r.map((v) =>
+      i === 0
+        ? { value: String(v), fontWeight: "bold" as const }
+        : typeof v === "number"
+          ? { type: Number, value: v }
+          : { type: String, value: v },
+    ),
+  );
+  await writeXlsxFile(data as never, { fontFamily: "Arial", fontSize: 11 }).toFile(`${name}.xlsx`);
+}
 
 
 /** Loyalty roster: name, phone, editable visit count and available rewards. */
@@ -36,6 +56,42 @@ export function CustomersPanel() {
     <Panel
       title="Customers"
       action={
+        <div className="flex flex-wrap items-center gap-2">
+        <select
+          value=""
+          disabled={!rows.length}
+          onChange={(e) => {
+            const v = e.target.value;
+            e.target.value = "";
+            const day = new Date().toISOString().slice(0, 10);
+            const phones: Cell[][] = [["Phone"], ...rows.map((c) => [c.phone])];
+            const full: Cell[][] = [
+              ["Name", "Phone", "Visits", "Level", "Reward", "Reward expires at visit", "Last played", "Last activity", "Customer since"],
+              ...rows.map((c) => [
+                c.name,
+                c.phone,
+                c.totalVisits,
+                c.totalVisits + 1,
+                c.rewardStatus === "available" ? rewardLabel(c.rewardMinutes ?? 30) : "—",
+                c.rewardExpiresAtVisit ?? "—",
+                [c.lastPlayedDate, c.lastPlayedTime?.slice(0, 5)].filter(Boolean).join(" ") || "—",
+                [c.lastActivityDate, c.lastActivityReason].filter(Boolean).join(" · ") || "—",
+                c.createdAt ? c.createdAt.slice(0, 10) : "—",
+              ]),
+            ];
+            if (v === "pc") saveCsv(phones, `customer-phones-${day}`);
+            if (v === "px") void saveXlsx(phones, `customer-phones-${day}`);
+            if (v === "fc") saveCsv(full, `customers-${day}`);
+            if (v === "fx") void saveXlsx(full, `customers-${day}`);
+          }}
+          className="rounded-xl border border-border bg-surface px-3 py-1.5 text-sm font-bold text-foreground outline-none focus:border-primary"
+        >
+          <option value="" disabled>Download…</option>
+          <option value="pc">Phone numbers only (CSV)</option>
+          <option value="px">Phone numbers only (Excel)</option>
+          <option value="fc">All details (CSV)</option>
+          <option value="fx">All details (Excel)</option>
+        </select>
         <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           Sort by
           <select
@@ -47,6 +103,7 @@ export function CustomersPanel() {
             <option value="visits">Most visits</option>
           </select>
         </label>
+        </div>
       }
     >
       {isLoading ? (
