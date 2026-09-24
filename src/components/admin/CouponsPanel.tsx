@@ -76,6 +76,7 @@ export function CouponsPanel({
     setFrom("");
     setTo("");
     setMaxUses("");
+    setPerUser("");
     setExpiry("");
     setMinLevel("");
     setMaxLevel("");
@@ -138,10 +139,16 @@ export function CouponsPanel({
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <AdminInput
-            label="Max uses (blank = unlimited)"
+            label="Max uses overall (blank = unlimited)"
             value={maxUses}
             onChange={(v) => setMaxUses(v.replace(/[^0-9]/g, ""))}
             placeholder="e.g. 100"
+          />
+          <AdminInput
+            label="Max uses per user (blank = unlimited)"
+            value={perUser}
+            onChange={(v) => setPerUser(v.replace(/[^0-9]/g, ""))}
+            placeholder="e.g. 1"
           />
           <label className="block">
             <span className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
