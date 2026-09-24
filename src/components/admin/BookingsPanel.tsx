@@ -518,22 +518,6 @@ export function BookingsPanel({
                         );
                       })()}
                     </p>
-                    <div className="mt-1.5 hidden flex-wrap items-center gap-3 sm:flex">
-                      <a
-                        href={`tel:${b.customer_phone}`}
-                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
-                      >
-                        <Phone className="size-3" /> {b.customer_phone}
-                      </a>
-                      <a
-                        href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
-                      >
-                        <MessageCircle className="size-3" /> WhatsApp
-                      </a>
-                    </div>
                   </div>
                   <div className="ml-auto flex shrink-0 flex-col items-end gap-2 sm:ml-0">
                     <div className="flex items-center gap-3">
@@ -545,7 +529,7 @@ export function BookingsPanel({
                     </div>
                     <p className="text-lg font-black">{money(b.total_amount)}</p>
                     </div>
-                    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 sm:hidden">
+                    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
                       <a
                         href={`tel:${b.customer_phone}`}
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
@@ -571,7 +555,7 @@ export function BookingsPanel({
                   </div>
 
 
-                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                  <div className="flex w-full flex-wrap items-center gap-2">
                     {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
                       <>
                         <AdminButton
