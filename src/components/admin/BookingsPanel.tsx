@@ -519,7 +519,7 @@ export function BookingsPanel({
                       })()}
                     </p>
                   </div>
-                  <div className="ml-auto flex shrink-0 flex-col items-end gap-2 sm:ml-0">
+                  <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
                     <div className="flex items-center gap-3">
                     <div className="w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
                       <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}</p>
