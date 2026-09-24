@@ -13,3 +13,5 @@
 - [x] Move pass redemption and pass purchases to the end of gaming selection
 - [x] Remove the coupon field highlight from the booking summary step
 - [x] Add live booking countdowns and right-align mobile booking contacts below the price
+- [x] Match laptop booking cards to the phone layout in a multi-card grid
+- [x] Hide mobile sign-out while notifications are open

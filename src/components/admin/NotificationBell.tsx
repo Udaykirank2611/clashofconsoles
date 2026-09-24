@@ -41,9 +41,11 @@ const ago = (iso: string) => {
 export function NotificationBell({
   branchId,
   onOpenBooking,
+  onOpenChange,
 }: {
   branchId: string;
   onOpenBooking: (reference: string) => void;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [items, setItems] = useState<AdminNotification[]>([]);
   const [open, setOpen] = useState(false);
@@ -104,6 +106,11 @@ export function NotificationBell({
   }, [open]);
 
   const unread = useMemo(() => items.filter((i) => !i.read_at).length, [items]);
+
+  useEffect(() => {
+    onOpenChange?.(open);
+    return () => onOpenChange?.(false);
+  }, [onOpenChange, open]);
 
   // Opening the panel counts as acknowledging the alert; so does clearing the
   // last unread item. Either way the repeating chime stops.

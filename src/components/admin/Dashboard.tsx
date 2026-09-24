@@ -60,6 +60,7 @@ export function AdminDashboard() {
   const { loading, branches, branchId, setBranchId, isOwner, signOut, session } = useAdminSession();
   const [tab, setTab] = useState<Tab>("Dashboard");
   const [focusReference, setFocusReference] = useState<string | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const data = useBranchData(branchId);
   const branch = branches.find((b) => b.id === branchId);
 
@@ -117,9 +118,11 @@ export function AdminDashboard() {
             {isOwner ? "Owner access" : "Branch manager"} · {session?.user.email}
           </p>
         </div>
-        <AdminButton className="absolute right-0 top-0 sm:hidden" onClick={() => void signOut()}>
-          <LogOut className="size-3.5" /> Sign out
-        </AdminButton>
+        {!notificationsOpen ? (
+          <AdminButton className="absolute right-0 top-0 sm:hidden" onClick={() => void signOut()}>
+            <LogOut className="size-3.5" /> Sign out
+          </AdminButton>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2">
           {branchId ? (
             <NotificationBell
@@ -128,6 +131,7 @@ export function AdminDashboard() {
                 setFocusReference(reference);
                 setTab("Bookings");
               }}
+              onOpenChange={setNotificationsOpen}
             />
           ) : null}
           {branches.length > 1 ? (
