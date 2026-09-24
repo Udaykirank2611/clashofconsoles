@@ -577,6 +577,7 @@ export type Database = {
           max_level: number | null
           min_level: number | null
           min_order_amount: number
+          per_user_limit: number | null
           starts_at: string | null
           updated_at: string
           usage_limit: number | null
@@ -600,6 +601,7 @@ export type Database = {
           max_level?: number | null
           min_level?: number | null
           min_order_amount?: number
+          per_user_limit?: number | null
           starts_at?: string | null
           updated_at?: string
           usage_limit?: number | null
@@ -623,6 +625,7 @@ export type Database = {
           max_level?: number | null
           min_level?: number | null
           min_order_amount?: number
+          per_user_limit?: number | null
           starts_at?: string | null
           updated_at?: string
           usage_limit?: number | null
