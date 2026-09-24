@@ -126,18 +126,6 @@ export async function loadReconciliation(
       continue;
     }
 
-    const mode = b['payment_mode'] ? String(b['payment_mode']) : "";
-    if ((mode === "cash" && upi > 0) || (mode === "upi" && cash > 0)) {
-      issues.push({
-        ...base,
-        ledgerAmount: recorded,
-        difference: 0,
-        kind: "mode_mismatch",
-        detail: `Booking marked as ${mode.toUpperCase()} but the ledger split records cash ${cash} / UPI ${upi}.`,
-      });
-      continue;
-    }
-
     matched += 1;
   }
 
