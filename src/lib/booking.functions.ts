@@ -326,6 +326,20 @@ export const validateCoupon = createServerFn({ method: "POST" })
       return { valid: false, message: "This coupon has expired." };
     if (coupon.usage_limit != null && coupon.used_count >= coupon.usage_limit)
       return { valid: false, message: "This coupon has been fully redeemed." };
+    if (coupon.per_user_limit != null) {
+      const digits = (data.phone ?? "").replace(/\D/g, "").slice(-10);
+      if (digits.length === 10) {
+        const { adminClient } = await import("@/lib/booking/repository.server");
+        const admin = await adminClient();
+        const { count } = await admin
+          .from("coupon_redemptions")
+          .select("id", { count: "exact", head: true })
+          .eq("coupon_id", coupon.id)
+          .like("customer_phone", `%${digits}`);
+        if ((count ?? 0) >= Number(coupon.per_user_limit))
+          return { valid: false, message: "You've already used this coupon the maximum number of times." };
+      }
+    }
 
     const minLevel = coupon.min_level == null ? null : Number(coupon.min_level);
     const maxLevel = coupon.max_level == null ? null : Number(coupon.max_level);
@@ -1026,6 +1040,19 @@ export const createBooking = createServerFn({ method: "POST" })
         const level = Number(cust?.total_visits ?? 0);
         if (coupon.min_level != null && level < Number(coupon.min_level)) levelOk = false;
         if (coupon.max_level != null && level > Number(coupon.max_level)) levelOk = false;
+      }
+      if (coupon && coupon.per_user_limit != null) {
+        const digits = loyaltyPhone.replace(/\D/g, "").slice(-10);
+        if (digits.length === 10) {
+          const { adminClient } = await import("@/lib/booking/repository.server");
+          const admin = await adminClient();
+          const { count } = await admin
+            .from("coupon_redemptions")
+            .select("id", { count: "exact", head: true })
+            .eq("coupon_id", coupon.id)
+            .like("customer_phone", `%${digits}`);
+          if ((count ?? 0) >= Number(coupon.per_user_limit)) levelOk = false;
+        }
       }
       const usable =
         !!coupon &&

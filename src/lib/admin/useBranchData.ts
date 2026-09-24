@@ -105,6 +105,7 @@ export interface AdminCoupon {
   used_count: number;
   /** Null when the coupon has no usage cap. */
   usage_limit: number | null;
+  per_user_limit: number | null;
   /** ISO expiry timestamp, or null for no expiry. */
   ends_at: string | null;
   /** Weekdays (0 = Sunday) the coupon is valid on. Empty = every day. */

@@ -29,6 +29,7 @@ export function CouponsPanel({
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [maxUses, setMaxUses] = useState("");
+  const [perUser, setPerUser] = useState("");
   const [expiry, setExpiry] = useState("");
   const [minLevel, setMinLevel] = useState("");
   const [maxLevel, setMaxLevel] = useState("");
@@ -57,6 +58,7 @@ export function CouponsPanel({
       active_start_time: from && to ? from : null,
       active_end_time: from && to ? to : null,
       usage_limit: maxUses.trim() ? Number(maxUses) : null,
+      per_user_limit: perUser.trim() ? Number(perUser) : null,
       ends_at: expiry ? new Date(`${expiry}T23:59:59`).toISOString() : null,
       min_level: minLevel.trim() ? Number(minLevel) : null,
       max_level: maxLevel.trim() ? Number(maxLevel) : null,
@@ -257,6 +259,7 @@ export function CouponsPanel({
                     {c.usage_limit == null
                       ? "unlimited left"
                       : `${Math.max(0, c.usage_limit - c.used_count)} left`}{" "}
+                    · {c.per_user_limit == null ? "unlimited per customer" : `${c.per_user_limit} per customer`}{" "}
                     · min order ₹{Math.round(Number(c.min_order_amount))} ·{" "}
                     {c.ends_at
                       ? `expires ${new Date(c.ends_at).toLocaleDateString("en-IN")}`
@@ -272,7 +275,7 @@ export function CouponsPanel({
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <label className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
-                      Max uses
+                      Max uses (overall)
                       <input
                         defaultValue={c.usage_limit == null ? "" : String(c.usage_limit)}
                         inputMode="numeric"
@@ -281,6 +284,20 @@ export function CouponsPanel({
                           const raw = e.target.value.replace(/[^0-9]/g, "");
                           const next = raw ? Number(raw) : null;
                           if (next !== c.usage_limit) void update(c, { usage_limit: next });
+                        }}
+                        className="w-16 rounded-xl border border-border bg-surface/70 px-2 py-1 text-center text-xs outline-none focus:border-cyan/50"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                      Max uses per user
+                      <input
+                        defaultValue={c.per_user_limit == null ? "" : String(c.per_user_limit)}
+                        inputMode="numeric"
+                        placeholder="∞"
+                        onBlur={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, "");
+                          const next = raw ? Number(raw) : null;
+                          if (next !== c.per_user_limit) void update(c, { per_user_limit: next });
                         }}
                         className="w-16 rounded-xl border border-border bg-surface/70 px-2 py-1 text-center text-xs outline-none focus:border-cyan/50"
                       />
