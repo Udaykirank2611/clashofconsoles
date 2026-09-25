@@ -42,22 +42,32 @@ export function Navbar() {
       setActive(window.location.pathname);
       return;
     }
-    const sections = LINKS.map((l) => {
-      const hash = hashOf(l.href);
-      return hash ? document.querySelector(hash) : null;
-    }).filter(Boolean) as HTMLElement[];
-    if (!sections.length || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible?.target.id) setActive(`/#${visible.target.id}`);
-      },
-      { rootMargin: "-40% 0px -50% 0px", threshold: [0, 0.25, 0.5, 1] },
-    );
-    sections.forEach((s) => io.observe(s));
-    return () => io.disconnect();
+    const sections = LINKS.flatMap((link) => {
+      const hash = hashOf(link.href);
+      const element = hash ? document.querySelector<HTMLElement>(hash) : null;
+      return element ? [{ link, element }] : [];
+    });
+    if (!sections.length) return;
+
+    const updateActive = () => {
+      const marker = window.scrollY + Math.min(window.innerHeight * 0.42, 360);
+      let current = sections[0];
+      if (!current) return;
+      for (const section of sections) {
+        if (section.element.offsetTop <= marker) current = section;
+      }
+      setActive(current.link.href);
+    };
+
+    updateActive();
+    window.addEventListener("scroll", updateActive, { passive: true });
+    window.addEventListener("resize", updateActive);
+    window.addEventListener("hashchange", updateActive);
+    return () => {
+      window.removeEventListener("scroll", updateActive);
+      window.removeEventListener("resize", updateActive);
+      window.removeEventListener("hashchange", updateActive);
+    };
   }, []);
 
 

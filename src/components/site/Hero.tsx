@@ -158,7 +158,7 @@ export function Hero() {
       <a
         href="#about"
         aria-label="Scroll to about section"
-        className="absolute inset-x-0 bottom-8 mx-auto flex w-fit flex-col items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+        className="absolute inset-x-0 bottom-2 mx-auto flex w-fit flex-col items-center gap-2 text-muted-foreground transition-colors hover:text-foreground lg:bottom-3"
       >
         <span className="text-[0.6rem] font-semibold uppercase tracking-[0.34em]">
           Scroll

@@ -91,10 +91,10 @@ export function ReportsView({
   return (
     <div className="space-y-6">
       <ScopeBar scope={scope} branches={branches} allowAllBranches={isOwner}>
-        <AdminButton onClick={() => exportCsv(filtered, filename)} disabled={!filtered.length}>
+        <AdminButton variant="download" onClick={() => exportCsv(filtered, filename)} disabled={!filtered.length}>
           <Download className="size-3.5" /> CSV
         </AdminButton>
-        <AdminButton onClick={() => void exportXlsx(filtered, filename)} disabled={!filtered.length}>
+        <AdminButton variant="download" onClick={() => void exportXlsx(filtered, filename)} disabled={!filtered.length}>
           <FileSpreadsheet className="size-3.5" /> Excel
         </AdminButton>
       </ScopeBar>

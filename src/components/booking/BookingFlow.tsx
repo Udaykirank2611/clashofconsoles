@@ -234,6 +234,7 @@ type ExtraMap = Record<
 const TOKEN_KEY = "coc_booking_token";
 const HOLD_KEY = "coc_booking_hold";
 const TAB_KEY = "coc_booking_tab";
+const TAB_ID_KEY = "coc_booking_tab_id";
 
 /** Stable per-browser token (localStorage so a refresh — and other tabs — see the same hold). */
 const sessionToken = () => {
@@ -653,7 +654,11 @@ export function BookingFlow() {
   const [tabBlocked, setTabBlocked] = useState(false);
   const tabIdRef = useRef<string>("");
   useEffect(() => {
-    if (!tabIdRef.current) tabIdRef.current = crypto.randomUUID();
+    if (!tabIdRef.current) {
+      const existing = window.sessionStorage.getItem(TAB_ID_KEY);
+      tabIdRef.current = existing || crypto.randomUUID();
+      window.sessionStorage.setItem(TAB_ID_KEY, tabIdRef.current);
+    }
     const me = tabIdRef.current;
     const read = () => {
       try {
@@ -2031,6 +2036,7 @@ export function BookingFlow() {
                   setStationId(id);
                   setStartTime(null);
                   setDurationMinutes(null);
+                  if (!id) setPlayers(null);
                 }}
                 enabled={consoleOn || Boolean(stationId)}
                 onToggle={() => {
@@ -2039,6 +2045,7 @@ export function BookingFlow() {
                       setStationId(null);
                       setStartTime(null);
                       setDurationMinutes(null);
+                      setPlayers(null);
                     }
                     return !v;
                   });

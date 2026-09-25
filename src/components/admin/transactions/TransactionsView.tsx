@@ -169,13 +169,13 @@ export function TransactionsView({
             <RefreshCw className={cn("size-3.5", loading && "animate-spin")} /> Refresh
           </AdminButton>
           <span className="grow" />
-          <AdminButton onClick={() => exportPayload && exportTransactionsPdf(exportPayload)}>
+          <AdminButton variant="download" onClick={() => exportPayload && exportTransactionsPdf(exportPayload)}>
             <FileText className="size-3.5" /> PDF
           </AdminButton>
-          <AdminButton onClick={() => exportPayload && void exportTransactionsXlsx(exportPayload)}>
+          <AdminButton variant="download" onClick={() => exportPayload && void exportTransactionsXlsx(exportPayload)}>
             <FileSpreadsheet className="size-3.5" /> Excel
           </AdminButton>
-          <AdminButton onClick={() => exportPayload && exportTransactionsCsv(exportPayload)}>
+          <AdminButton variant="download" onClick={() => exportPayload && exportTransactionsCsv(exportPayload)}>
             <Download className="size-3.5" /> CSV
           </AdminButton>
         </div>
