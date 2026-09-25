@@ -173,13 +173,13 @@ export function DailyClosingView({
 
           <Panel title="Export & close">
             <div className="flex flex-wrap items-center gap-2">
-              <AdminButton onClick={() => exportClosingPdf(summary)}>
+              <AdminButton variant="download" onClick={() => exportClosingPdf(summary)}>
                 <FileText className="size-3.5" /> PDF
               </AdminButton>
-              <AdminButton onClick={() => void exportClosingXlsx(summary)}>
+              <AdminButton variant="download" onClick={() => void exportClosingXlsx(summary)}>
                 <FileSpreadsheet className="size-3.5" /> Excel
               </AdminButton>
-              <AdminButton onClick={() => exportClosingCsv(summary)}>
+              <AdminButton variant="download" onClick={() => exportClosingCsv(summary)}>
                 <Download className="size-3.5" /> CSV
               </AdminButton>
               <span className="grow" />
@@ -380,13 +380,13 @@ function ClosingHistory({
             <div className="mt-4 flex flex-wrap gap-2">
               {open.summary ? (
                 <>
-                  <AdminButton onClick={() => open.summary && exportClosingPdf(open.summary)}>
+                  <AdminButton variant="download" onClick={() => open.summary && exportClosingPdf(open.summary)}>
                     <FileText className="size-3.5" /> PDF
                   </AdminButton>
-                  <AdminButton onClick={() => open.summary && void exportClosingXlsx(open.summary)}>
+                  <AdminButton variant="download" onClick={() => open.summary && void exportClosingXlsx(open.summary)}>
                     <FileSpreadsheet className="size-3.5" /> Excel
                   </AdminButton>
-                  <AdminButton onClick={() => open.summary && exportClosingCsv(open.summary)}>
+                  <AdminButton variant="download" onClick={() => open.summary && exportClosingCsv(open.summary)}>
                     <Download className="size-3.5" /> CSV
                   </AdminButton>
                 </>

@@ -15,3 +15,8 @@
 - [x] Add live booking countdowns and right-align mobile booking contacts below the price
 - [x] Match laptop booking cards to the phone layout in a multi-card grid
 - [x] Hide mobile sign-out while notifications are open
+- [x] Keep the home navigation underline synced across membership, branches, food, and contact sections
+- [x] Allow a deselected console to leave gaming optional and continue booking
+- [x] Preserve the same booking-tab identity across refreshes so saved bookings resume immediately
+- [x] Prevent the desktop hero scroll prompt from overlapping booking actions
+- [x] Add clear hover feedback to admin download controls
