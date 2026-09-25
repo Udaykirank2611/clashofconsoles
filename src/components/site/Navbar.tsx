@@ -52,6 +52,7 @@ export function Navbar() {
     const updateActive = () => {
       const marker = window.scrollY + Math.min(window.innerHeight * 0.42, 360);
       let current = sections[0];
+      if (!current) return;
       for (const section of sections) {
         if (section.element.offsetTop <= marker) current = section;
       }
