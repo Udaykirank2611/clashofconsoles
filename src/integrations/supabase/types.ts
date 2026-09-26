@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_login_events: {
+        Row: {
+          branch: string | null
+          browser: string | null
+          created_at: string
+          device: string | null
+          full_name: string | null
+          id: string
+          reason: string | null
+          role: string | null
+          success: boolean
+          user_id: string | null
+          username: string
+        }
+        Insert: {
+          branch?: string | null
+          browser?: string | null
+          created_at?: string
+          device?: string | null
+          full_name?: string | null
+          id?: string
+          reason?: string | null
+          role?: string | null
+          success: boolean
+          user_id?: string | null
+          username: string
+        }
+        Update: {
+          branch?: string | null
+          browser?: string | null
+          created_at?: string
+          device?: string | null
+          full_name?: string | null
+          id?: string
+          reason?: string | null
+          role?: string | null
+          success?: boolean
+          user_id?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           amount: number | null
@@ -70,6 +112,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admin_profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          is_disabled: boolean
+          last_login_at: string | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          is_disabled?: boolean
+          last_login_at?: string | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          is_disabled?: boolean
+          last_login_at?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      admin_sessions: {
+        Row: {
+          browser: string | null
+          device: string | null
+          id: string
+          last_seen_at: string
+          login_at: string
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          browser?: string | null
+          device?: string | null
+          id?: string
+          last_seen_at?: string
+          login_at?: string
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          browser?: string | null
+          device?: string | null
+          id?: string
+          last_seen_at?: string
+          login_at?: string
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       booking_items: {
         Row: {
