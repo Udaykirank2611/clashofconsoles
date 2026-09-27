@@ -56,11 +56,11 @@ function ChangePassword() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const submit = async () => {
-    if (next !== confirm) return toast.error("New passwords don't match.");
+    if (next !== confirm) { toast.error("New passwords don't match."); return; }
     setBusy(true);
     try {
       const res = await change({ data: { current, next, sessionId: getSessionId() } });
-      if (!res.ok) return toast.error(res.message ?? "Could not change password.");
+      if (!res.ok) { toast.error(res.message ?? "Could not change password."); return; }
       setCurrent(""); setNext(""); setConfirm("");
       toast.success("Password changed. Other devices were signed out.");
     } catch (e) {
@@ -105,7 +105,7 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
     setBusy(true);
     try {
       const res = await fn();
-      if (!res.ok) return toast.error(res.message ?? "Something went wrong.");
+      if (!res.ok) { toast.error(res.message ?? "Something went wrong."); return; }
       toast.success(ok);
       setForm(null);
       await load();
