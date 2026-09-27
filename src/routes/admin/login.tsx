@@ -113,7 +113,7 @@ function AdminLogin() {
         </p>
 
         <div className="mt-6 space-y-3">
-          <AdminInput label="Email" value={email} onChange={setEmail} type="email" placeholder="you@clash.com" />
+          <AdminInput label={needsSetup ? "Email" : "Username or email"} value={email} onChange={setEmail} type={needsSetup ? "email" : "text"} placeholder="you@clash.com" />
           <AdminInput label="Password" value={password} onChange={setPassword} type="password" placeholder="••••••••" />
         </div>
 
