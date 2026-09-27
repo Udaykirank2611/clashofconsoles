@@ -1,4 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { endSession, pingSession, registerSession } from "@/lib/security.functions";
+import { clientInfo, getSessionId, setSessionId } from "@/lib/admin/sessionTracker";
+import { SecurityPanel } from "./SecurityPanel";
+import { toast } from "sonner";
 import { useAdminSession } from "@/lib/admin/useAdminSession";
 import { useBranchData } from "@/lib/admin/useBranchData";
 import { AdminButton, Panel, StatCard, money } from "./primitives";
@@ -49,7 +54,7 @@ const MORE_TABS = [
   "Messages",
   "Settings",
 ] as const;
-const OWNER_TABS = ["Home page"] as const;
+const OWNER_TABS = ["Home page", "Security"] as const;
 type Tab =
   | (typeof PRIMARY_TABS)[number]
   | (typeof MORE_TABS)[number]
@@ -57,7 +62,46 @@ type Tab =
 
 
 export function AdminDashboard() {
-  const { loading, branches, branchId, setBranchId, isOwner, signOut, session } = useAdminSession();
+  const { loading, branches, branchId, setBranchId, isOwner, signOut: rawSignOut, session } = useAdminSession();
+  const ping = useServerFn(pingSession);
+  const register = useServerFn(registerSession);
+  const end = useServerFn(endSession);
+  const signOut = async () => {
+    const id = getSessionId();
+    setSessionId(null);
+    if (id) await end({ data: { sessionId: id } }).catch(() => undefined);
+    await rawSignOut();
+  };
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (!userId) return;
+    let stopped = false;
+    const check = async () => {
+      try {
+        let id = getSessionId();
+        if (!id) {
+          const r = await register({ data: clientInfo() });
+          id = r.sessionId;
+          setSessionId(id);
+        }
+        const res = await ping({ data: { sessionId: id } });
+        if (!res.valid && !stopped) {
+          stopped = true;
+          setSessionId(null);
+          toast.error("You have been signed out.");
+          await rawSignOut();
+        }
+      } catch {
+        /* network hiccup — try again next tick */
+      }
+    };
+    void check();
+    const t = window.setInterval(() => void check(), 20000);
+    return () => {
+      stopped = true;
+      window.clearInterval(t);
+    };
+  }, [userId, ping, register, rawSignOut]);
   const [tab, setTab] = useState<Tab>("Dashboard");
   const [focusReference, setFocusReference] = useState<string | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -316,6 +360,7 @@ export function AdminDashboard() {
 
 
         {tab === "Home page" && isOwner ? <HomepagePanel branches={branches} /> : null}
+        {tab === "Security" && isOwner ? <SecurityPanel branches={branches} /> : null}
       </div>
 
     </div>
