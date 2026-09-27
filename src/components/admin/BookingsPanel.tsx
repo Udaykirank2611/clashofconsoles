@@ -445,7 +445,7 @@ export function BookingsPanel({
       {rows.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">No {LABEL[filter].toLowerCase()} bookings.</p>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid gap-3 lg:[grid-template-columns:repeat(auto-fill,minmax(380px,1fr))]">
           {rows.map((b) => {
             const open = openId === b.id;
             const cockpit = b.booking_items.filter((i) => i.kind === "addon");
