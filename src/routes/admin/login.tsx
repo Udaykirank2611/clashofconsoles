@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { adminExists, bootstrapOwner } from "@/lib/admin.functions";
+import { adminSignIn } from "@/lib/security.functions";
+import { clientInfo, setSessionId } from "@/lib/admin/sessionTracker";
 import { AmbientBackground } from "@/components/site/AmbientBackground";
 import { AdminButton, AdminInput } from "@/components/admin/primitives";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
@@ -44,6 +46,8 @@ function AdminLogin() {
     };
   }, [checkExists, navigate]);
 
+  const signIn = useServerFn(adminSignIn);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -56,11 +60,26 @@ function AdminLogin() {
         }
         toast.success("Owner account created.");
         setNeedsSetup(false);
-      }
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (error) {
-        toast.error("Incorrect email or password.");
-        return;
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) {
+          toast.error("Incorrect email or password.");
+          return;
+        }
+      } else {
+        const res = await signIn({ data: { username: email.trim(), password, ...clientInfo() } });
+        if (!res.ok) {
+          toast.error(res.message);
+          return;
+        }
+        const { error } = await supabase.auth.setSession({
+          access_token: res.accessToken,
+          refresh_token: res.refreshToken,
+        });
+        if (error) {
+          toast.error("Could not start your session. Try again.");
+          return;
+        }
+        setSessionId(res.sessionId ?? null);
       }
       await navigate({ to: "/admin", replace: true });
     } finally {
@@ -94,7 +113,7 @@ function AdminLogin() {
         </p>
 
         <div className="mt-6 space-y-3">
-          <AdminInput label="Email" value={email} onChange={setEmail} type="email" placeholder="you@clash.com" />
+          <AdminInput label={needsSetup ? "Email" : "Username or email"} value={email} onChange={setEmail} type={needsSetup ? "email" : "text"} placeholder="you@clash.com" />
           <AdminInput label="Password" value={password} onChange={setPassword} type="password" placeholder="••••••••" />
         </div>
 
