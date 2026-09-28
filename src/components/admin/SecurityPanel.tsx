@@ -34,8 +34,8 @@ function Pager({ page, total, onPage }: { page: number; total: number; onPage: (
   );
 }
 
-const th = "px-3 py-2 text-left text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground";
-const td = "px-3 py-2 align-top";
+const th = "whitespace-nowrap px-3 py-2 text-left text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground";
+const td = "whitespace-nowrap px-3 py-2 align-middle";
 
 export function SecurityPanel({ branches }: { branches: AdminBranch[] }) {
   return (
