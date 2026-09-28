@@ -445,7 +445,7 @@ export function BookingsPanel({
       {rows.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">No {LABEL[filter].toLowerCase()} bookings.</p>
       ) : (
-        <div className="grid gap-3 lg:[grid-template-columns:repeat(auto-fill,minmax(380px,1fr))]">
+        <div className="flex flex-wrap items-start justify-start gap-3">
           {rows.map((b) => {
             const open = openId === b.id;
             const cockpit = b.booking_items.filter((i) => i.kind === "addon");
@@ -479,7 +479,7 @@ export function BookingsPanel({
             return (
               <article
                 key={b.id}
-                className="overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30"
+                className="w-full flex-none overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30 sm:w-[420px] sm:min-w-[400px] sm:max-w-[430px]"
               >
                 <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5">
                   <div className="min-w-0 flex-1">
