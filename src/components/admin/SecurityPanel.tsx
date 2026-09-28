@@ -85,7 +85,7 @@ function ChangePassword() {
   );
 }
 
-type Form = { userId?: string; fullName: string; username: string; role: "owner" | "branch_admin"; branchId: string; password: string; disabled: boolean };
+type Form = { userId?: string; username: string; role: "owner" | "branch_admin"; branchId: string; password: string; disabled: boolean };
 
 function Accounts({ branches }: { branches: AdminBranch[] }) {
   const list = useServerFn(listAccounts);
@@ -119,7 +119,6 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
   const save = () => {
     if (!form) return;
     const base = {
-      fullName: form.fullName,
       username: form.username,
       role: form.role,
       branchId: form.role === "owner" ? null : form.branchId || null,
@@ -138,7 +137,7 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
       <div className="mb-3 flex justify-end">
         <AdminButton
           variant="primary"
-          onClick={() => setForm({ fullName: "", username: "", role: "branch_admin", branchId: branches[0]?.id ?? "", password: "", disabled: false })}
+          onClick={() => setForm({ username: "", role: "branch_admin", branchId: branches[0]?.id ?? "", password: "", disabled: false })}
         >
           + New account
         </AdminButton>
@@ -146,7 +145,6 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
 
       {form ? (
         <div className="mb-4 grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2">
-          <AdminInput label="Full name" value={form.fullName} onChange={(v) => set({ fullName: v })} />
           <AdminInput label="Username" value={form.username} onChange={(v) => set({ username: v })} />
           <label className="block">
             <span className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Role</span>
@@ -179,19 +177,18 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr><th className={th}>Name</th><th className={th}>Username</th><th className={th}>Role</th><th className={th}>Branch</th><th className={th}>Status</th><th className={th}>Last login</th><th className={th} /></tr></thead>
+          <thead><tr><th className={th}>Username</th><th className={th}>Role</th><th className={th}>Branch</th><th className={th}>Status</th><th className={th}>Last login</th><th className={th} /></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.userId} className="border-t border-border">
-                <td className={td}>{r.fullName}</td>
                 <td className={td}>{r.username}</td>
                 <td className={td}>{r.role}</td>
                 <td className={td}>{r.branch}</td>
                 <td className={td}>{r.disabled ? <Pill tone="bad">Disabled</Pill> : <Pill tone="good">Active</Pill>}</td>
                 <td className={td}>{when(r.lastLogin)}</td>
                 <td className={td}>
-                  <div className="flex flex-wrap justify-end gap-1.5">
-                    <AdminButton onClick={() => setForm({ userId: r.userId, fullName: r.fullName, username: r.username, role: r.role === "Super Admin" ? "owner" : "branch_admin", branchId: r.branchId ?? branches[0]?.id ?? "", password: "", disabled: r.disabled })}>Edit</AdminButton>
+                  <div className="ml-auto grid w-max grid-cols-2 gap-1.5">
+                    <AdminButton onClick={() => setForm({ userId: r.userId, username: r.username, role: r.role === "Super Admin" ? "owner" : "branch_admin", branchId: r.branchId ?? branches[0]?.id ?? "", password: "", disabled: r.disabled })}>Edit</AdminButton>
                     <AdminButton disabled={busy} onClick={() => void run(() => disable({ data: { userId: r.userId, disabled: !r.disabled } }), r.disabled ? "Account enabled." : "Account disabled.")}>
                       {r.disabled ? "Enable" : "Disable"}
                     </AdminButton>
@@ -244,13 +241,14 @@ function Sessions() {
     <Panel title="Active sessions">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr><th className={th}>User</th><th className={th}>Branch</th><th className={th}>Device</th><th className={th}>Signed in</th><th className={th}>Status</th><th className={th} /></tr></thead>
+          <thead><tr><th className={th}>User</th><th className={th}>Branch</th><th className={th}>Device</th><th className={th}>IP address</th><th className={th}>Signed in</th><th className={th}>Status</th><th className={th} /></tr></thead>
           <tbody>
             {rows.slice(page * PAGE, page * PAGE + PAGE).map((s) => (
               <tr key={s.id} className="border-t border-border">
-                <td className={td}>{s.fullName || s.username}<div className="text-xs text-muted-foreground">{s.username}</div></td>
+                <td className={td}>{s.username}</td>
                 <td className={td}>{s.branch}</td>
                 <td className={td}>{[s.browser, s.device].filter(Boolean).join(" · ") || "—"}</td>
+                <td className={td}>{s.ip ?? "—"}</td>
                 <td className={td}>{when(s.loginAt)}</td>
                 <td className={td}>{s.isCurrent ? <Pill tone="good">This device</Pill> : <Pill tone={s.status === "Online" ? "good" : "muted"}>{s.status}</Pill>}</td>
                 <td className={td}>
@@ -268,7 +266,7 @@ function Sessions() {
                 </td>
               </tr>
             ))}
-            {!rows.length ? <tr><td className={td} colSpan={6}>No active sessions.</td></tr> : null}
+            {!rows.length ? <tr><td className={td} colSpan={7}>No active sessions.</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -292,8 +290,8 @@ function Events({ success }: { success: boolean }) {
         <table className="w-full text-sm">
           <thead>
             <tr>
-              <th className={th}>When</th><th className={th}>Username</th><th className={th}>Name</th>
-              <th className={th}>Role</th><th className={th}>Branch</th><th className={th}>Device</th>
+              <th className={th}>When</th><th className={th}>Username</th>
+              <th className={th}>Role</th><th className={th}>Branch</th><th className={th}>Device</th><th className={th}>IP address</th>
               {!success ? <th className={th}>Reason</th> : null}
             </tr>
           </thead>
@@ -302,10 +300,10 @@ function Events({ success }: { success: boolean }) {
               <tr key={e.id} className="border-t border-border">
                 <td className={td}>{when(e.created_at)}</td>
                 <td className={td}>{e.username}</td>
-                <td className={td}>{e.full_name ?? "—"}</td>
                 <td className={td}>{e.role ?? "—"}</td>
                 <td className={td}>{e.branch ?? "—"}</td>
                 <td className={td}>{[e.browser, e.device].filter(Boolean).join(" · ") || "—"}</td>
+                <td className={td}>{e.ip_address ?? "—"}</td>
                 {!success ? <td className={td}><Pill tone="bad">{e.reason ?? "Failed"}</Pill></td> : null}
               </tr>
             ))}

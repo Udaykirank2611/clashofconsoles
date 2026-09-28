@@ -25,6 +25,16 @@ async function anonClient() {
   });
 }
 
+async function clientIp(): Promise<string | null> {
+  try {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const raw = getRequestHeader("cf-connecting-ip") || getRequestHeader("x-real-ip") || getRequestHeader("x-forwarded-for") || "";
+    return raw.split(",")[0]?.trim().slice(0, 64) || null;
+  } catch {
+    return null;
+  }
+}
+
 async function assertOwner(ctx: Ctx) {
   const { data } = await ctx.supabase
     .from("user_roles")
@@ -64,8 +74,9 @@ export const adminSignIn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const admin = await loadAdmin();
     const uname = data.username.toLowerCase();
+    const ip = await clientIp();
     const log = (row: Record<string, unknown>) =>
-      admin.from("admin_login_events").insert({ username: data.username, browser: data.browser, device: data.device, ...row });
+      admin.from("admin_login_events").insert({ username: data.username, browser: data.browser, device: data.device, ip_address: ip, ...row });
 
     const { data: profile } = await admin.from("admin_profiles").select("*").eq("username", uname).maybeSingle();
     if (!profile) {
@@ -73,7 +84,7 @@ export const adminSignIn = createServerFn({ method: "POST" })
       return { ok: false as const, message: "Incorrect username or password." };
     }
     const info = await roleInfo(admin, profile.user_id);
-    const base = { user_id: profile.user_id, full_name: profile.full_name, role: info.role, branch: info.branch };
+    const base = { user_id: profile.user_id, role: info.role, branch: info.branch };
     if (profile.is_disabled) {
       await log({ ...base, success: false, reason: "Account disabled" });
       return { ok: false as const, message: "This account has been disabled." };
@@ -90,7 +101,7 @@ export const adminSignIn = createServerFn({ method: "POST" })
     }
     const { data: sess } = await admin
       .from("admin_sessions")
-      .insert({ user_id: profile.user_id, browser: data.browser, device: data.device })
+      .insert({ user_id: profile.user_id, browser: data.browser, device: data.device, ip_address: ip })
       .select("id")
       .single();
     await Promise.all([
@@ -114,7 +125,7 @@ export const registerSession = createServerFn({ method: "POST" })
     const admin = await loadAdmin();
     const { data: row } = await admin
       .from("admin_sessions")
-      .insert({ user_id: context.userId, browser: data.browser, device: data.device })
+      .insert({ user_id: context.userId, browser: data.browser, device: data.device, ip_address: await clientIp() })
       .select("id")
       .single();
     return { sessionId: row?.id as string };
@@ -181,7 +192,6 @@ export const changeMyPassword = createServerFn({ method: "POST" })
 export type LoginAccount = {
   userId: string;
   username: string;
-  fullName: string;
   role: "Super Admin" | "Branch Manager";
   branchId: string | null;
   branch: string;
@@ -206,7 +216,6 @@ export const listAccounts = createServerFn({ method: "GET" })
       return {
         userId: p.user_id,
         username: p.username,
-        fullName: p.full_name,
         role: owner ? "Super Admin" : "Branch Manager",
         branchId: owner ? null : branchId,
         branch: owner ? "All Branches" : (branches ?? []).find((b: any) => b.id === branchId)?.name ?? "—",
@@ -217,7 +226,6 @@ export const listAccounts = createServerFn({ method: "GET" })
   });
 
 const accountFields = z.object({
-  fullName: z.string().trim().min(1).max(100),
   username: z
     .string()
     .trim()
@@ -261,7 +269,7 @@ export const createAccount = createServerFn({ method: "POST" })
     if (error || !created.user) return { ok: false, message: error?.message ?? "Could not create account." };
     await admin
       .from("admin_profiles")
-      .insert({ user_id: created.user.id, username: data.username, full_name: data.fullName });
+      .insert({ user_id: created.user.id, username: data.username });
     await setRole(admin, created.user.id, data.role, data.branchId);
     return { ok: true };
   });
@@ -281,7 +289,7 @@ export const updateAccount = createServerFn({ method: "POST" })
       return { ok: false, message: "That username is already taken." };
     await admin
       .from("admin_profiles")
-      .update({ username: data.username, full_name: data.fullName, is_disabled: data.disabled, updated_at: new Date().toISOString() })
+      .update({ username: data.username, is_disabled: data.disabled, updated_at: new Date().toISOString() })
       .eq("user_id", data.userId);
     await setRole(admin, data.userId, data.role, data.branchId);
     await applyDisabled(admin, data.userId, data.disabled);
@@ -355,7 +363,7 @@ export const listLoginEvents = createServerFn({ method: "GET" })
     return (rows ?? []) as {
       id: string;
       username: string;
-      full_name: string | null;
+      ip_address: string | null;
       role: string | null;
       branch: string | null;
       browser: string | null;
@@ -379,7 +387,7 @@ export const listActiveSessions = createServerFn({ method: "GET" })
         .is("revoked_at", null)
         .gte("last_seen_at", since)
         .order("login_at", { ascending: false }),
-      admin.from("admin_profiles").select("user_id, username, full_name"),
+      admin.from("admin_profiles").select("user_id, username"),
       admin.from("user_roles").select("user_id, role, branch_id"),
       admin.from("branches").select("id, name"),
     ]);
@@ -392,7 +400,7 @@ export const listActiveSessions = createServerFn({ method: "GET" })
       return {
         id: s.id as string,
         username: p?.username ?? "—",
-        fullName: p?.full_name ?? "",
+        ip: (s.ip_address as string | null) ?? null,
         branch: owner ? "All Branches" : (branches ?? []).find((b: any) => b.id === bid)?.name ?? "—",
         browser: s.browser as string | null,
         device: s.device as string | null,
