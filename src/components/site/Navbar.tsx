@@ -42,21 +42,16 @@ export function Navbar() {
       setActive(window.location.pathname);
       return;
     }
-    const sections = LINKS.flatMap((link) => {
-      const hash = hashOf(link.href);
-      const element = hash ? document.querySelector<HTMLElement>(hash) : null;
-      return element ? [{ link, element }] : [];
-    });
-    if (!sections.length) return;
-
     const updateActive = () => {
-      const marker = window.scrollY + Math.min(window.innerHeight * 0.42, 360);
-      let current = sections[0];
-      if (!current) return;
-      for (const section of sections) {
-        if (section.element.offsetTop <= marker) current = section;
+      const marker = Math.min(window.innerHeight * 0.42, 360);
+      let current = "/#home";
+      for (const link of LINKS) {
+        const hash = hashOf(link.href);
+        const el = hash ? document.querySelector<HTMLElement>(hash) : null;
+        if (el && el.getBoundingClientRect().top <= marker) current = link.href;
       }
-      setActive(current.link.href);
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) current = "/#contact";
+      setActive(current);
     };
 
     updateActive();

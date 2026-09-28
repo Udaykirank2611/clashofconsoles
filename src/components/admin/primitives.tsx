@@ -115,7 +115,7 @@ export function AdminButton({
           "bg-linear-to-r from-primary via-cyan to-violet text-primary-foreground shadow-[0_16px_40px_-18px_var(--primary)] hover:brightness-110 active:scale-[0.97]",
         variant === "ghost" && "border border-border bg-surface/70 text-foreground hover:border-cyan/40",
         variant === "download" &&
-          "border border-border bg-surface/70 text-foreground hover:-translate-y-0.5 hover:border-pink/60 hover:bg-pink/10 hover:text-pink hover:shadow-[0_12px_28px_-16px_var(--pink)] active:scale-[0.97]",
+          "border border-border bg-surface/70 text-foreground hover:-translate-y-1 hover:scale-[1.03] hover:border-pink hover:bg-pink hover:text-background hover:shadow-[0_14px_32px_-10px_var(--pink)] active:scale-[0.97]",
         variant === "success" &&
           "border border-emerald-500/45 bg-emerald-400/25 text-emerald-950 hover:bg-emerald-400/40",
         variant === "danger" && "border border-rose-500/45 bg-rose-400/25 text-rose-950 hover:bg-rose-400/40",

@@ -20,8 +20,8 @@ export type Database = {
           browser: string | null
           created_at: string
           device: string | null
-          full_name: string | null
           id: string
+          ip_address: string | null
           reason: string | null
           role: string | null
           success: boolean
@@ -33,8 +33,8 @@ export type Database = {
           browser?: string | null
           created_at?: string
           device?: string | null
-          full_name?: string | null
           id?: string
+          ip_address?: string | null
           reason?: string | null
           role?: string | null
           success: boolean
@@ -46,8 +46,8 @@ export type Database = {
           browser?: string | null
           created_at?: string
           device?: string | null
-          full_name?: string | null
           id?: string
+          ip_address?: string | null
           reason?: string | null
           role?: string | null
           success?: boolean
@@ -116,7 +116,6 @@ export type Database = {
       admin_profiles: {
         Row: {
           created_at: string
-          full_name: string
           is_disabled: boolean
           last_login_at: string | null
           updated_at: string
@@ -125,7 +124,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          full_name?: string
           is_disabled?: boolean
           last_login_at?: string | null
           updated_at?: string
@@ -134,7 +132,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          full_name?: string
           is_disabled?: boolean
           last_login_at?: string | null
           updated_at?: string
@@ -148,6 +145,7 @@ export type Database = {
           browser: string | null
           device: string | null
           id: string
+          ip_address: string | null
           last_seen_at: string
           login_at: string
           revoked_at: string | null
@@ -157,6 +155,7 @@ export type Database = {
           browser?: string | null
           device?: string | null
           id?: string
+          ip_address?: string | null
           last_seen_at?: string
           login_at?: string
           revoked_at?: string | null
@@ -166,6 +165,7 @@ export type Database = {
           browser?: string | null
           device?: string | null
           id?: string
+          ip_address?: string | null
           last_seen_at?: string
           login_at?: string
           revoked_at?: string | null

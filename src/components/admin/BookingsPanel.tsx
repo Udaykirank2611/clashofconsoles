@@ -605,7 +605,7 @@ export function BookingsPanel({
                           Mark completed
                         </AdminButton>
 
-                        <AdminButton onClick={() => printReceipt(b, stationName)}>
+                        <AdminButton variant="download" onClick={() => printReceipt(b, stationName)}>
                           <Printer className="size-3.5" /> Receipt
                         </AdminButton>
                         <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void removeBooking(b)}>
@@ -614,7 +614,7 @@ export function BookingsPanel({
                       </>
                     ) : b.status === "completed" ? (
                       <>
-                        <AdminButton onClick={() => printReceipt(b, stationName)}>
+                        <AdminButton variant="download" onClick={() => printReceipt(b, stationName)}>
                           <Printer className="size-3.5" /> Receipt
                         </AdminButton>
                         <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
