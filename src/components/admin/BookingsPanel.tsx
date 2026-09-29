@@ -523,7 +523,7 @@ export function BookingsPanel({
                     <div className="flex items-center gap-3">
                     <div className="w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
                       <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}
-                          <span className="ml-2 text-[10px] font-semibold text-muted-foreground">
+                          <span className="max-w-40 text-xs font-black leading-tight">
                           • {b.players}P
                           </span>
                       </p>
