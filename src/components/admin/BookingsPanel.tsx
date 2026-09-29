@@ -510,10 +510,8 @@ export function BookingsPanel({
                                 <span className="font-bold text-foreground">
                                   {durationLabel(start, end)}
                                 </span>
-                                {" · "}
                               </>
                             ) : null}
-                            {b.players}P
                           </>
                         );
                       })()}
