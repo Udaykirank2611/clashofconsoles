@@ -367,7 +367,7 @@ export function WhyChooseUs() {
 
 /* -------------------------------- Reviews --------------------------------- */
 
-const REVIEWS = [
+const DEFAULT_REVIEWS = [
   { name: "Aarav M.", role: "Weekend Regular", text: "The setup genuinely feels like an esports arena. Zero lag, great screens and the seating is unreal for long sessions." },
   { name: "Sana K.", role: "Squad Captain", text: "We booked the multiplayer bay for a birthday clash — staff were quick, the snacks were hot and everyone left grinning." },
   { name: "Rohit V.", role: "FC Player", text: "Easily the cleanest, coolest gaming lounge I've been to in Hyderabad. The loyalty offer keeps pulling us back." },
@@ -378,6 +378,14 @@ export function Reviews() {
   const rating = media["google_rating"]?.url?.trim() || "4.9";
   const caption = media["google_rating_caption"]?.url?.trim() || "Rated on Google Maps";
   const reviewsUrl = media["google_reviews_url"]?.url?.trim() || "";
+  const reviews = DEFAULT_REVIEWS.map((fallback, index) => {
+    const key = index + 1;
+    return {
+      name: media[`review_${key}_name`]?.url?.trim() || fallback.name,
+      role: media[`review_${key}_role`]?.url?.trim() || fallback.role,
+      text: media[`review_${key}_text`]?.url?.trim() || fallback.text,
+    };
+  });
 
   const badge = (
     <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-pink/45 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--pink)_18%,transparent),color-mix(in_oklab,var(--primary)_16%,transparent))] px-6 py-3 shadow-[0_20px_60px_-30px_var(--pink)] transition-transform hover:-translate-y-0.5">
@@ -413,7 +421,7 @@ export function Reviews() {
         </Reveal>
 
         <ul className="mt-16 grid gap-5 lg:grid-cols-3">
-          {REVIEWS.map((r, i) => (
+          {reviews.map((r, i) => (
             <Reveal as="li" key={r.name} delay={i * 90}>
               <figure className="lift-card flex h-full flex-col rounded-3xl border border-border bg-surface/50 p-8">
                 <div className="flex gap-1 text-cyan" aria-label="Rated 5 out of 5">

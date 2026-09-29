@@ -26,12 +26,12 @@ const QUICK: { id: QuickReport; label: string; type: ReportType }[] = [
   { id: "combined", label: "Combined revenue", type: "combined" },
   { id: "gaming", label: "Gaming report", type: "gaming" },
   { id: "food", label: "Food report", type: "food" },
-  { id: "bookings", label: "Bookings report", type: "combined" },
-  { id: "visits", label: "Customer visits", type: "gaming" },
-  { id: "coupons", label: "Coupon report", type: "combined" },
-  { id: "loyalty", label: "Loyalty rewards", type: "gaming" },
-  { id: "student", label: "Student discount", type: "gaming" },
-  { id: "branches", label: "Branch comparison", type: "combined" },
+  { id: "bookings", label: "Bookings report", type: "bookings" },
+  { id: "visits", label: "Customer visits", type: "visits" },
+  { id: "coupons", label: "Coupon report", type: "coupons" },
+  { id: "loyalty", label: "Loyalty rewards", type: "loyalty" },
+  { id: "student", label: "Student discount", type: "student" },
+  { id: "branches", label: "Branch comparison", type: "branches" },
 ];
 
 export function ReportsView({
@@ -225,7 +225,7 @@ export function ReportsView({
       >
         {isFetching ? <p className="pb-3 text-xs text-muted-foreground">Updating…</p> : null}
         <ScrollTable
-          head={["Date", "Branch", "Ref", "Customer", "Phone", "Type", "Service / items", "Amount", "Discount", "Final", "Status", "Payment", "Payment mode"]}
+          head={["Date", "Branch", "Ref", "Customer", "Phone", "Type", quick === "coupons" ? "Coupon / category" : quick === "loyalty" ? "Reward" : "Service / items", "Amount", "Discount", "Final", "Status", "Payment", "Payment mode"]}
           empty="No records for these filters."
           rows={filtered.map((r) => [
             r.date,

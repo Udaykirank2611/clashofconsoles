@@ -23,7 +23,9 @@ export const getAnalytics = createServerFn({ method: "POST" })
 export const getReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    scopeSchema.extend({ type: z.enum(["gaming", "food", "combined"]) }).parse(i),
+    scopeSchema.extend({
+      type: z.enum(["gaming", "food", "combined", "bookings", "visits", "coupons", "loyalty", "student", "branches"]),
+    }).parse(i),
   )
   .handler(async ({ data, context }): Promise<ReportRow[]> =>
     loadReport(context.supabase, context.userId, data),

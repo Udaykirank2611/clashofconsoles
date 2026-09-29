@@ -84,7 +84,7 @@ export function CustomersPanel() {
             if (v === "fc") saveCsv(full, `customers-${day}`);
             if (v === "fx") void saveXlsx(full, `customers-${day}`);
           }}
-          className="rounded-xl border border-border bg-surface px-3 py-1.5 text-sm font-bold text-foreground outline-none transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-pink hover:bg-pink hover:text-background hover:shadow-[0_14px_32px_-10px_var(--pink)] focus:border-primary"
+          className="cursor-pointer rounded-xl border border-border bg-surface px-3 py-1.5 text-sm font-bold text-foreground outline-none focus:border-primary"
         >
           <option value="" disabled>Download…</option>
           <option value="pc">Phone numbers only (CSV)</option>

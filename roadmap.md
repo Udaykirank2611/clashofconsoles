@@ -20,3 +20,7 @@
 - [x] Preserve the same booking-tab identity across refreshes so saved bookings resume immediately
 - [x] Prevent the desktop hero scroll prompt from overlapping booking actions
 - [x] Add clear hover feedback to admin download controls
+- [x] Keep booking cards at a fixed 408px desktop width and wrap only when a full card fits
+- [x] Make every report tab use its own matching booking, coupon, loyalty, visit, student, or branch records
+- [x] Make the three Player Feedback reviews editable from Home page settings
+- [x] Remove the hover animation only from the Customers download menu

@@ -607,11 +607,84 @@ export function buildReportRows(
   bookings: RawBooking[],
   branchName: Map<string, string>,
   type: ReportType,
+  related?: {
+    redemptions?: { coupon_code: string; discount_amount: number; category: string; booking_id: string; created_at: string }[];
+    rewards?: { status: string; booking_id: string | null; phone: string; minutes: number; created_at: string }[];
+  },
 ): ReportRow[] {
   const rows: ReportRow[] = [];
+  const bookingById = new Map(bookings.map((booking) => [booking.id, booking]));
+
+  if (type === "coupons") {
+    for (const redemption of related?.redemptions ?? []) {
+      const booking = bookingById.get(redemption.booking_id);
+      if (!booking) continue;
+      const discount = Math.round(n(redemption.discount_amount));
+      rows.push({
+        date: redemption.created_at.slice(0, 10),
+        branch: branchName.get(booking.branch_id) ?? "",
+        phone: booking.customer_phone,
+        customer: booking.customer_name,
+        reference: booking.reference,
+        kind: "Coupon",
+        service: `${redemption.coupon_code} · ${redemption.category.replaceAll("_", " ")}`,
+        amount: discount,
+        discount,
+        finalAmount: Math.round(n(booking.total_amount)),
+        status: booking.status,
+        paymentStatus: paymentStatus(booking),
+        paymentMode: bookingPaymentLabel(booking),
+      });
+    }
+    return rows.sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  if (type === "loyalty") {
+    for (const reward of related?.rewards ?? []) {
+      const booking = reward.booking_id ? bookingById.get(reward.booking_id) : undefined;
+      rows.push({
+        date: reward.created_at.slice(0, 10),
+        branch: booking ? (branchName.get(booking.branch_id) ?? "") : "—",
+        phone: reward.phone,
+        customer: booking?.customer_name ?? "—",
+        reference: booking?.reference ?? "—",
+        kind: "Loyalty",
+        service: `${reward.minutes} free minutes · ${reward.status}`,
+        amount: 0,
+        discount: 0,
+        finalAmount: 0,
+        status: reward.status,
+        paymentStatus: "—",
+        paymentMode: "—",
+      });
+    }
+    return rows.sort((a, b) => b.date.localeCompare(a.date));
+  }
+
   for (const b of bookings) {
     const split = splitBooking(b);
     const branch = branchName.get(b.branch_id) ?? "";
+    if (type === "student" && (!b.student_discount || n(b.student_discount_amount) <= 0)) continue;
+    if (type === "visits" && b.status !== "completed") continue;
+
+    if (["bookings", "visits", "branches", "student"].includes(type)) {
+      rows.push({
+        date: b.booking_date,
+        branch,
+        phone: b.customer_phone,
+        customer: b.customer_name,
+        reference: b.reference,
+        kind: type === "visits" ? "Visit" : type === "student" ? "Student" : "Booking",
+        service: b.gaming_stations?.name ?? (isFoodOnly(b) ? "Food order" : "Passes / add-ons"),
+        amount: Math.round(n(b.total_amount) + n(b.discount_amount)),
+        discount: Math.round(type === "student" ? n(b.student_discount_amount) : n(b.discount_amount)),
+        finalAmount: Math.round(n(b.total_amount)),
+        status: b.status,
+        paymentStatus: paymentStatus(b),
+        paymentMode: bookingPaymentLabel(b),
+      });
+      continue;
+    }
     if (type !== "food" && split.gamingGross > 0) {
       rows.push({
         date: b.booking_date,

@@ -50,10 +50,10 @@ export function SiteMediaPanel() {
   }
 
   return (
-    <Panel title="Site images & video">
+    <Panel title="Site images, video & player feedback">
       <p className="mb-4 text-xs text-muted-foreground">
-        Paste a public link to an image or an MP4 video. Leave blank to use the built-in artwork. The
-        hero background plays automatically (muted, looping) when you choose video.
+        Update homepage media, Google rating details and the three Player Feedback reviews. Leave media
+        links blank to use the built-in artwork.
       </p>
       <ul className="grid gap-4 lg:grid-cols-2">
         {rows.map((row) => (

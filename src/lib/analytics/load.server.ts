@@ -131,7 +131,51 @@ export async function loadReport(
   const scope = await resolveScope(supabase, userId, input.branchId);
   if (!scope) return [];
   const bookings = await fetchBookings(supabase, scope.ids, input.from, input.to);
-  return buildReportRows(bookings, new Map(scope.branches.map((b) => [b.id, b.name])), input.type);
+  const related: Parameters<typeof buildReportRows>[3] = {};
+  if (input.type === "coupons") {
+    const [{ data: coupons }, { data: redemptions }] = await Promise.all([
+      supabase.from("coupons").select("id, category").in("branch_id", scope.ids),
+      supabase
+        .from("coupon_redemptions")
+        .select("coupon_id, coupon_code, discount_amount, booking_id, created_at")
+        .in("branch_id", scope.ids)
+        .gte("created_at", `${input.from}T00:00:00`)
+        .lte("created_at", `${input.to}T23:59:59.999`),
+    ]);
+    const categories = new Map((coupons ?? []).map((coupon) => [coupon.id, String(coupon.category)]));
+    related.redemptions = (redemptions ?? []).map((redemption) => ({
+      coupon_code: redemption.coupon_code,
+      discount_amount: Number(redemption.discount_amount),
+      category: categories.get(redemption.coupon_id) ?? "entire_bill",
+      booking_id: redemption.booking_id,
+      created_at: redemption.created_at,
+    }));
+  }
+  if (input.type === "loyalty") {
+    const phones = [...new Set(bookings.map((booking) => booking.customer_phone))];
+    if (phones.length) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: rewards } = await supabaseAdmin
+        .from("rewards")
+        .select("status, booking_id, phone, minutes, created_at")
+        .in("phone", phones.slice(0, 800))
+        .gte("created_at", `${input.from}T00:00:00`)
+        .lte("created_at", `${input.to}T23:59:59.999`);
+      related.rewards = (rewards ?? []).map((reward) => ({
+        status: reward.status,
+        booking_id: reward.booking_id,
+        phone: reward.phone,
+        minutes: Number(reward.minutes),
+        created_at: reward.created_at,
+      }));
+    }
+  }
+  return buildReportRows(
+    bookings,
+    new Map(scope.branches.map((b) => [b.id, b.name])),
+    input.type,
+    related,
+  );
 }
 
 /** Underlying bookings/sessions behind one analytics chart slice. */
