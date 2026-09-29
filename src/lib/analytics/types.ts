@@ -223,7 +223,16 @@ export interface AnalyticsResult {
   branchComparison: BranchCompareRow[];
 }
 
-export type ReportType = "gaming" | "food" | "combined";
+export type ReportType =
+  | "gaming"
+  | "food"
+  | "combined"
+  | "bookings"
+  | "visits"
+  | "coupons"
+  | "loyalty"
+  | "student"
+  | "branches";
 
 export interface ReportRow {
   date: string;
@@ -231,7 +240,7 @@ export interface ReportRow {
   phone: string;
   customer: string;
   reference: string;
-  kind: "Gaming" | "Food";
+  kind: "Gaming" | "Food" | "Booking" | "Visit" | "Coupon" | "Loyalty" | "Student";
   service: string;
   amount: number;
   discount: number;
