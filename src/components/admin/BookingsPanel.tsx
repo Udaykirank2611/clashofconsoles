@@ -522,7 +522,11 @@ export function BookingsPanel({
                   <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
                     <div className="flex items-center gap-3">
                     <div className="w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
-                      <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}</p>
+                      <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}
+                          <span className="ml-2 text-[10px] font-semibold text-muted-foreground">
+                          • {b.players}P
+                          </span>
+                      </p>
                       <p className="mt-1 text-[0.65rem] font-black uppercase tracking-[0.16em]">
                         Level {displayedLevel}
                       </p>
