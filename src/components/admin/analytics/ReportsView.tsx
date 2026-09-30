@@ -104,7 +104,10 @@ export function ReportsView({
           <button
             key={q.id}
             type="button"
-            onClick={() => setQuick(q.id)}
+            onClick={() => {
+              setQuick(q.id);
+              setStatus(q.id === "loyalty" ? "used" : "all");
+            }}
             className={cn(
               "rounded-full border px-3.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] transition-colors",
               quick === q.id
@@ -214,7 +217,7 @@ export function ReportsView({
               onChange={(e) => setStatus(e.target.value)}
               className="rounded-full border border-border bg-surface/70 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] outline-none"
             >
-              {["all", "completed", "confirmed", "pending", "payment_pending", "awaiting_payment", "cancelled", "expired"].map((s) => (
+              {(quick === "loyalty" ? ["used", "expired", "available", "all"] : ["all", "completed", "confirmed", "pending", "payment_pending", "awaiting_payment", "cancelled", "expired"]).map((s) => (
                 <option key={s} value={s}>
                   {s === "all" ? "All statuses" : s.replace("_", " ")}
                 </option>
