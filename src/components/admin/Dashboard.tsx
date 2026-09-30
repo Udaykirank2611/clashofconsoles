@@ -102,7 +102,20 @@ export function AdminDashboard() {
       window.clearInterval(t);
     };
   }, [userId, ping, register, rawSignOut]);
-  const [tab, setTab] = useState<Tab>("Dashboard");
+  const [tab, setTabState] = useState<Tab>("Dashboard");
+  const setTab = (t: Tab) => {
+    setTabState(t);
+    try {
+      window.sessionStorage.setItem("coc_admin_tab", t);
+    } catch {
+      /* ignore */
+    }
+  };
+  useEffect(() => {
+    const saved = window.sessionStorage.getItem("coc_admin_tab") as Tab | null;
+    const all: readonly string[] = [...PRIMARY_TABS, ...MORE_TABS, ...OWNER_TABS];
+    if (saved && all.includes(saved)) setTabState(saved);
+  }, []);
   const [focusReference, setFocusReference] = useState<string | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const data = useBranchData(branchId);
