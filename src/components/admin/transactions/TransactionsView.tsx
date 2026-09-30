@@ -56,6 +56,7 @@ export function TransactionsView({
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TransactionRow | null>(null);
 
+  const [fSearch, setFSearch] = useState("");
   const [fCustomer, setFCustomer] = useState("");
   const [fPhone, setFPhone] = useState("");
   const [fMode, setFMode] = useState("all");
@@ -97,6 +98,10 @@ export function TransactionsView({
     const rows = data?.rows ?? [];
     return rows.filter(
       (r) =>
+        (!fSearch.trim() ||
+          [r.reference, r.customer, r.phone].some((v) =>
+            (v ?? "").toLowerCase().includes(fSearch.trim().toLowerCase()),
+          )) &&
         (!fCustomer || r.customer.toLowerCase().includes(fCustomer.toLowerCase())) &&
         (!fPhone || r.phone.includes(fPhone)) &&
         (fMode === "all" || r.paymentMode === fMode) &&
@@ -104,7 +109,7 @@ export function TransactionsView({
         (fConsole === "all" || r.consoleName === fConsole) &&
         (fSource === "all" || r.source === fSource),
     );
-  }, [data, fCustomer, fPhone, fMode, fService, fConsole, fSource]);
+  }, [data, fSearch, fCustomer, fPhone, fMode, fService, fConsole, fSource]);
 
   const exportPayload: TransactionsPayload | null = data ? { ...data, rows: filtered } : null;
 
@@ -122,6 +127,12 @@ export function TransactionsView({
           </select>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={field} />
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={field} />
+          <input
+            value={fSearch}
+            onChange={(e) => setFSearch(e.target.value)}
+            placeholder="Search ref, name, phone"
+            className={field}
+          />
           <input
             value={fCustomer}
             onChange={(e) => setFCustomer(e.target.value)}

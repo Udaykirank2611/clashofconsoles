@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, Check, Copy, Gift, MessageCircle, Phone } from "lucide-react";
+import { CalendarClock, Check, Copy, Gift, MessageCircle, Phone, Search } from "lucide-react";
 import { toast } from "sonner";
 import { listCustomers, updateCustomerVisits } from "@/lib/admin.functions";
 import { rewardLabel } from "@/lib/loyalty.functions";
@@ -33,6 +33,7 @@ async function saveXlsx(rows: Cell[][], name: string) {
 /** Loyalty roster: name, phone, editable visit count and available rewards. */
 export function CustomersPanel() {
   const fn = useServerFn(listCustomers);
+  const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"latest" | "visits">("latest");
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-customers"],
@@ -40,7 +41,10 @@ export function CustomersPanel() {
     staleTime: 30_000,
   });
 
-  const rows = [...data].sort((a, b) =>
+  const q = search.trim().toLowerCase();
+  const rows = data
+    .filter((c) => !q || c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q))
+    .sort((a, b) =>
     sortBy === "visits"
       ? b.totalVisits - a.totalVisits ||
         (b.latestActivityAt ?? b.createdAt ?? "").localeCompare(
@@ -57,6 +61,15 @@ export function CustomersPanel() {
       title="Customers"
       action={
         <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1.5">
+          <Search className="size-3.5 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name, phone"
+            className="w-40 bg-transparent text-xs outline-none"
+          />
+        </label>
         <select
           value=""
           disabled={!rows.length}
