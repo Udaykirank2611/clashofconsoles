@@ -640,13 +640,21 @@ export function buildReportRows(
   }
 
   if (type === "loyalty") {
+    const norm = (p: string) => p.replace(/\D/g, "").slice(-10);
+    const latestByPhone = new Map<string, (typeof bookings)[number]>();
+    for (const b of bookings) {
+      const key = norm(b.customer_phone);
+      const prev = latestByPhone.get(key);
+      if (!prev || b.booking_date > prev.booking_date) latestByPhone.set(key, b);
+    }
     for (const reward of related?.rewards ?? []) {
       const booking = reward.booking_id ? bookingById.get(reward.booking_id) : undefined;
+      const fallback = booking ?? latestByPhone.get(norm(reward.phone));
       rows.push({
         date: reward.created_at.slice(0, 10),
-        branch: booking ? (branchName.get(booking.branch_id) ?? "") : "—",
+        branch: fallback ? (branchName.get(fallback.branch_id) ?? "") : "—",
         phone: reward.phone,
-        customer: booking?.customer_name ?? "—",
+        customer: fallback?.customer_name ?? "—",
         reference: booking?.reference ?? "—",
         kind: "Loyalty",
         service: `${reward.minutes} free minutes · ${reward.status}`,

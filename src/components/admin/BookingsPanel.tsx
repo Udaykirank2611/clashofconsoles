@@ -460,7 +460,8 @@ export function BookingsPanel({
                     .join(", ") ||
                   (b.booking_items.some((i) => i.kind === "food") ? "Food only" : "Passes only");
             const visitLevel = visitsByPhone.get(b.customer_phone.replace(/\D/g, "").slice(-10)) ?? 0;
-            const displayedLevel = visitLevel + 1;
+            // Completed bookings are already counted in totalVisits.
+            const displayedLevel = b.status === "completed" ? Math.max(1, visitLevel) : visitLevel + 1;
             const gameLabel = bookingGameLabel(b, serviceName);
             // Pass-only bookings have no gaming slot at all.
             const slot = bookingWindow(b);
@@ -484,7 +485,16 @@ export function BookingsPanel({
                 <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate text-sm font-bold">{b.customer_name}</h3>
+                      <h3
+                        className="truncate text-sm font-bold"
+                        onMouseEnter={(e) => {
+                          const el = e.currentTarget;
+                          if (el.scrollWidth > el.clientWidth) el.title = b.customer_name;
+                          else el.removeAttribute("title");
+                        }}
+                      >
+                        {b.customer_name}
+                      </h3>
                       <StatusPill status={b.status} />
                       <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">
                         {b.reference}
