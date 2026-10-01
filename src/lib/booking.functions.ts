@@ -4,6 +4,7 @@ import { addMinutes, computeBill, isRangeBusy, slotPrice } from "@/lib/booking/p
 import type { CouponCategory } from "@/lib/booking/pricing";
 
 import { rateFor } from "@/lib/booking/config";
+import { dussehraExperiencePrice, dussehraPs5Price } from "@/lib/booking/dussehra-offer";
 import type {
   AvailabilityEntry,
   Branch,
@@ -865,7 +866,8 @@ export const createBooking = createServerFn({ method: "POST" })
     }));
     const fullSessionAmount = !hasSlot
       ? 0
-      : rateFor(rateRows, data.players, data.durationMinutes ?? 0);
+      : (dussehraPs5Price(data.date, data.startTime ?? "", data.players, data.durationMinutes ?? 0) ??
+        rateFor(rateRows, data.players, data.durationMinutes ?? 0));
 
     // The reward is free play time, never a discount: the guest still pays the
     // full price of the duration they booked. A Group Pass is a flat branch rate.
@@ -889,9 +891,11 @@ export const createBooking = createServerFn({ method: "POST" })
       const base = rate ? Math.round(Number(rate.price)) : Math.round(slotPrice(st, e.durationMinutes));
       /* A Combo Pass covers this hour, so the line is free and always 60 min. */
       const covered = Boolean(pass?.combo);
-      const price = covered ? 0 : base + hours * extraHourPrice;
       // Duration is derived server-side so the blocked time always matches what was paid for.
       const minutes = covered ? 60 : rate ? Number(rate.duration_minutes) + hours * 60 : e.durationMinutes;
+      const offerPrice = dussehraExperiencePrice(data.date, e.startTime, st.station_type, minutes);
+      const price = covered ? 0 : (offerPrice ?? base + hours * extraHourPrice);
+      const appliedExtraHourPrice = offerPrice === null ? extraHourPrice : 200;
       return {
         station_id: st.id,
         label: covered
@@ -905,7 +909,7 @@ export const createBooking = createServerFn({ method: "POST" })
         start_time: e.startTime,
         end_time: addMinutes(e.startTime, minutes),
         extra_hours: covered ? 0 : hours,
-        extra_hour_price: covered ? 0 : extraHourPrice,
+        extra_hour_price: covered ? 0 : appliedExtraHourPrice,
       };
     });
 

@@ -126,6 +126,11 @@ import {
   timeAgo,
   type BookingDraft,
 } from "@/lib/booking/draft";
+import {
+  dussehraExperiencePrice,
+  dussehraPs5Price,
+  isDussehraOfferDate,
+} from "@/lib/booking/dussehra-offer";
 
 const STEPS = ["Branch", "Gaming", "Food", "Checkout"] as const;
 
@@ -950,7 +955,8 @@ export function BookingFlow() {
   const fullSessionAmount = isGroup
     ? groupAmount
     : startTime && durationMinutes && players
-      ? rateFor(rates, players, durationMinutes)
+      ? (dussehraPs5Price(date, startTime, players, durationMinutes) ??
+        rateFor(rates, players, durationMinutes))
       : 0;
   const sessionAmount = passCoversSession ? 0 : fullSessionAmount;
 
@@ -982,8 +988,15 @@ export function BookingFlow() {
     const tier = stationRates.find((r) => r.id === e.rateId);
     const extraHourRate = extraHourRateFor(e.station!.id);
     const hours = tier && extraHourRate ? (e.extraHours ?? 0) : 0;
+    const totalDuration = tier ? Number(tier.duration_minutes) + hours * 60 : e.durationMinutes;
+    const offerPrice = dussehraExperiencePrice(
+      date,
+      e.startTime,
+      e.station!.station_type,
+      totalDuration,
+    );
     const base = tier ? Math.round(Number(tier.price)) : Math.round(slotPrice(e.station!, e.durationMinutes));
-    return base + hours * Math.round(Number(extraHourRate?.price ?? 0));
+    return offerPrice ?? base + hours * Math.round(Number(extraHourRate?.price ?? 0));
   };
   const extrasAmount = selectedExtras.reduce((sum, e) => sum + extraAmountFor(e), 0);
   const passLines = passOptions
@@ -2022,10 +2035,15 @@ export function BookingFlow() {
                     ? durations.filter((option) => option.minutes === 60)
                     : durations
                 }
-                priceFor={(m) => rateFor(rates, players ?? 2, m)}
+                priceFor={(m) =>
+                  dussehraPs5Price(date, startTime ?? "10:00:00", players ?? 2, m) ??
+                  rateFor(rates, players ?? 2, m)
+                }
                 players={players}
                 playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
-                playerPrice={(p) => rateFor(rates, p, 60)}
+                playerPrice={(p) =>
+                  dussehraPs5Price(date, startTime ?? "10:00:00", p, 60) ?? rateFor(rates, p, 60)
+                }
                 onPlayers={setPlayers}
                 startTime={startTime}
                 onStartTime={setStartTime}
@@ -2175,8 +2193,14 @@ export function BookingFlow() {
                   isConsole
                     ? rateFor(rates, players ?? 2, minutes)
                     : currentTier
-                      ? Math.round(Number(currentTier.price)) +
-                        extraHours * Math.round(Number(extraHourRate?.price ?? 0))
+                      ? (dussehraExperiencePrice(
+                          date,
+                          curStart ?? "10:00:00",
+                          active!.station_type,
+                          Number(currentTier.duration_minutes) + extraHours * 60,
+                        ) ??
+                        Math.round(Number(currentTier.price)) +
+                          extraHours * Math.round(Number(extraHourRate?.price ?? 0)))
                       : Math.round(slotPrice(active!, minutes));
 
                 return (
@@ -2325,7 +2349,14 @@ export function BookingFlow() {
                                   <span className="flex items-baseline justify-between gap-3">
                                     <span className="text-sm font-bold">{t.label}</span>
                                     <span className="text-base font-black text-cyan">
-                                      {inr(Number(t.price))}
+                                      {inr(
+                                        dussehraExperiencePrice(
+                                          date,
+                                          curStart ?? "10:00:00",
+                                          active.station_type,
+                                          Number(t.duration_minutes),
+                                        ) ?? Number(t.price),
+                                      )}
                                     </span>
                                   </span>
                                   <span className="mt-1 block text-[0.65rem] text-muted-foreground">
@@ -2354,7 +2385,13 @@ export function BookingFlow() {
                               <div className="min-w-0">
                                 <p className="text-sm font-bold">{extraHourRate.label}</p>
                                 <p className="text-[0.65rem] text-muted-foreground">
-                                  {inr(Number(extraHourRate.price))} per extra hour · your slot is held
+                                  {inr(
+                                    isDussehraOfferDate(date) &&
+                                      (active.station_type === "vr" ||
+                                        active.station_type === "driving_simulator")
+                                      ? 200
+                                      : Number(extraHourRate.price),
+                                  )} per extra hour · your slot is held
                                   for {Math.round(blockedMinutes / 60)}h
                                   {blockedMinutes % 60 ? ` ${blockedMinutes % 60}m` : ""}
                                 </p>

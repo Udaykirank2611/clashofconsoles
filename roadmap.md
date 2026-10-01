@@ -24,6 +24,6 @@
 - [x] Make every report tab use its own matching booking, coupon, loyalty, visit, student, or branch records
 - [x] Make the three Player Feedback reviews editable from Home page settings
 - [x] Remove the hover animation only from the Customers download menu
-27. [ ] Apply temporary Dussehra 10 AM–4 PM PS5, Cockpit Racing, and VR prices across both branches
-28. [ ] Show the supplied Dussehra poster when the home page opens
+27. [x] Apply temporary Dussehra 10 AM–4 PM PS5, Cockpit Racing, and VR prices across both branches
+28. [x] Show the supplied Dussehra poster when the home page opens
 29. [ ] Verify promotional totals and poster behavior
