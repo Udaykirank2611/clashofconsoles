@@ -23,6 +23,7 @@ import { FoodPreview } from "@/components/site/sections/FoodPreview";
 import { useSiteContent } from "@/lib/site-content";
 import { FAQS } from "@/components/site/Sections";
 import { PRIMARY_PHONE, SECONDARY_PHONE } from "@/lib/contact";
+import { DussehraOfferPopup } from "@/components/site/DussehraOfferPopup";
 
 const TITLE = "Clash of Consoles — Gaming Cafe in Hyderabad";
 const DESC =
@@ -101,6 +102,7 @@ function Index() {
   return (
     <div className="theme-neon-pink relative bg-background text-foreground">
       <AmbientBackground />
+      <DussehraOfferPopup />
       <CustomCursor />
       <ScrollProgress />
       <Loader />

@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep temporary promotional pricing in a shared client-safe booking utility and recompute it server-side, so displayed and charged totals cannot diverge.
