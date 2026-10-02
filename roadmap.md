@@ -27,3 +27,5 @@
 27. [x] Apply temporary Dussehra 10 AM–4 PM PS5, Cockpit Racing, and VR prices across both branches
 28. [x] Show the supplied Dussehra poster when the home page opens
 29. [ ] Verify promotional totals and poster behavior
+30. [x] Replace the homepage popup with the updated Dussehra poster
+31. [x] Add Snooker and Private Theatre promotional prices and keep pre-selection prices time-aware

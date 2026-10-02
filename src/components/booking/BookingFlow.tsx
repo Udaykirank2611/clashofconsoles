@@ -128,6 +128,7 @@ import {
 } from "@/lib/booking/draft";
 import {
   dussehraExperiencePrice,
+  dussehraPreviewTime,
   dussehraPs5Price,
   isDussehraOfferDate,
 } from "@/lib/booking/dussehra-offer";
@@ -994,6 +995,7 @@ export function BookingFlow() {
       e.startTime,
       e.station!.station_type,
       totalDuration,
+      tier?.label,
     );
     const base = tier ? Math.round(Number(tier.price)) : Math.round(slotPrice(e.station!, e.durationMinutes));
     return offerPrice ?? base + hours * Math.round(Number(extraHourRate?.price ?? 0));
@@ -2035,15 +2037,22 @@ export function BookingFlow() {
                     ? durations.filter((option) => option.minutes === 60)
                     : durations
                 }
-                priceFor={(m) =>
-                  dussehraPs5Price(date, startTime ?? "10:00:00", players ?? 2, m) ??
-                  rateFor(rates, players ?? 2, m)
-                }
+                priceFor={(m) => {
+                  const pricingTime = dussehraPreviewTime(date, startTime);
+                  return (
+                    (pricingTime ? dussehraPs5Price(date, pricingTime, players ?? 2, m) : null) ??
+                    rateFor(rates, players ?? 2, m)
+                  );
+                }}
                 players={players}
                 playerOptions={appliedPass ? [1] : PLAYER_OPTIONS}
-                playerPrice={(p) =>
-                  dussehraPs5Price(date, startTime ?? "10:00:00", p, 60) ?? rateFor(rates, p, 60)
-                }
+                playerPrice={(p) => {
+                  const pricingTime = dussehraPreviewTime(date, startTime);
+                  return (
+                    (pricingTime ? dussehraPs5Price(date, pricingTime, p, 60) : null) ??
+                    rateFor(rates, p, 60)
+                  );
+                }}
                 onPlayers={setPlayers}
                 startTime={startTime}
                 onStartTime={setStartTime}
@@ -2189,19 +2198,24 @@ export function BookingFlow() {
                 const blockedMinutes = currentTier
                   ? Number(currentTier.duration_minutes) + extraHours * 60
                   : (curDuration ?? 30);
-                const priceFor = (minutes: number) =>
-                  isConsole
+                const priceFor = (minutes: number) => {
+                  const pricingTime = dussehraPreviewTime(date, curStart);
+                  return isConsole
                     ? rateFor(rates, players ?? 2, minutes)
                     : currentTier
-                      ? (dussehraExperiencePrice(
-                          date,
-                          curStart ?? "10:00:00",
-                          active!.station_type,
-                          Number(currentTier.duration_minutes) + extraHours * 60,
-                        ) ??
+                      ? ((pricingTime
+                          ? dussehraExperiencePrice(
+                              date,
+                              pricingTime,
+                              active!.station_type,
+                              Number(currentTier.duration_minutes) + extraHours * 60,
+                              currentTier.label,
+                            )
+                          : null) ??
                         Math.round(Number(currentTier.price)) +
                           extraHours * Math.round(Number(extraHourRate?.price ?? 0)))
                       : Math.round(slotPrice(active!, minutes));
+                };
 
                 return (
                   <div
@@ -2349,14 +2363,20 @@ export function BookingFlow() {
                                   <span className="flex items-baseline justify-between gap-3">
                                     <span className="text-sm font-bold">{t.label}</span>
                                     <span className="text-base font-black text-cyan">
-                                      {inr(
-                                        dussehraExperiencePrice(
-                                          date,
-                                          curStart ?? "10:00:00",
-                                          active.station_type,
-                                          Number(t.duration_minutes),
-                                        ) ?? Number(t.price),
-                                      )}
+                                      {inr((() => {
+                                        const pricingTime = dussehraPreviewTime(date, curStart);
+                                        return (
+                                          (pricingTime
+                                            ? dussehraExperiencePrice(
+                                                date,
+                                                pricingTime,
+                                                active.station_type,
+                                                Number(t.duration_minutes),
+                                                t.label,
+                                              )
+                                            : null) ?? Number(t.price)
+                                        );
+                                      })())}
                                     </span>
                                   </span>
                                   <span className="mt-1 block text-[0.65rem] text-muted-foreground">
@@ -2386,11 +2406,14 @@ export function BookingFlow() {
                                 <p className="text-sm font-bold">{extraHourRate.label}</p>
                                 <p className="text-[0.65rem] text-muted-foreground">
                                   {inr(
-                                    isDussehraOfferDate(date) &&
-                                      (active.station_type === "vr" ||
-                                        active.station_type === "driving_simulator")
-                                      ? 200
-                                      : Number(extraHourRate.price),
+                                    (() => {
+                                      const pricingTime = dussehraPreviewTime(date, curStart);
+                                      return pricingTime &&
+                                        (active.station_type === "vr" ||
+                                          active.station_type === "driving_simulator")
+                                        ? 200
+                                        : Number(extraHourRate.price);
+                                    })(),
                                   )} per extra hour · your slot is held
                                   for {Math.round(blockedMinutes / 60)}h
                                   {blockedMinutes % 60 ? ` ${blockedMinutes % 60}m` : ""}

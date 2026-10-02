@@ -893,9 +893,22 @@ export const createBooking = createServerFn({ method: "POST" })
       const covered = Boolean(pass?.combo);
       // Duration is derived server-side so the blocked time always matches what was paid for.
       const minutes = covered ? 60 : rate ? Number(rate.duration_minutes) + hours * 60 : e.durationMinutes;
-      const offerPrice = dussehraExperiencePrice(data.date, e.startTime, st.station_type, minutes);
+      const offerPrice = dussehraExperiencePrice(
+        data.date,
+        e.startTime,
+        st.station_type,
+        minutes,
+        rate?.label,
+      );
       const price = covered ? 0 : (offerPrice ?? base + hours * extraHourPrice);
-      const appliedExtraHourPrice = offerPrice === null ? extraHourPrice : 200;
+      const appliedExtraHourPrice =
+        offerPrice === null
+          ? extraHourPrice
+          : st.station_type === "snooker"
+            ? 150
+            : st.station_type === "vr" || st.station_type === "driving_simulator"
+              ? 200
+              : extraHourPrice;
       return {
         station_id: st.id,
         label: covered
