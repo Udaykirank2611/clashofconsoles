@@ -2,7 +2,7 @@
 
 You are an award-winning UI/UX designer, creative director, and senior frontend engineer.
 
-Your task is to design and build an extraordinary, premium, futuristic website for a gaming cafe called
+Your task is to design and build an extraordinary, premium, futuristic website for a gaming cafe called.
 
 "Clash of Consoles"
 
