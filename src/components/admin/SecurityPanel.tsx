@@ -97,6 +97,8 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
   const [rows, setRows] = useState<LoginAccount[]>([]);
   const [form, setForm] = useState<Form | null>(null);
   const [busy, setBusy] = useState(false);
+  const [branchFilter, setBranchFilter] = useState("all");
+  const visibleRows = rows.filter((row) => branchFilter === "all" || row.branchId === branchFilter || (branchFilter === "all-branches" && row.branchId === null));
 
   const load = useCallback(() => list().then(setRows).catch(() => toast.error("Could not load accounts.")), [list]);
   useEffect(() => void load(), [load]);
@@ -134,7 +136,17 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
 
   return (
     <Panel title="Login accounts">
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <select
+          value={branchFilter}
+          onChange={(event) => setBranchFilter(event.target.value)}
+          aria-label="Filter login accounts by branch"
+          className="rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
+        >
+          <option value="all">Every branch</option>
+          <option value="all-branches">All Branches</option>
+          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+        </select>
         <AdminButton
           variant="primary"
           onClick={() => setForm({ username: "", role: "branch_admin", branchId: branches[0]?.id ?? "", password: "", disabled: false })}
@@ -179,7 +191,7 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
         <table className="w-full text-sm">
           <thead><tr><th className={th}>Username</th><th className={th}>Role</th><th className={th}>Branch</th><th className={th}>Status</th><th className={th}>Last login</th><th className={th} /></tr></thead>
           <tbody>
-            {rows.map((r) => (
+            {visibleRows.map((r) => (
               <tr key={r.userId} className="border-t border-border">
                 <td className={td}>{r.username}</td>
                 <td className={td}>{r.role}</td>
@@ -214,6 +226,7 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
                 </td>
               </tr>
             ))}
+            {!visibleRows.length ? <tr><td className={td} colSpan={6}>No accounts for this branch.</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -228,6 +241,7 @@ function Sessions() {
   const kick = useServerFn(forceLogout);
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [page, setPage] = useState(0);
+  const [userFilter, setUserFilter] = useState("all");
   const load = useCallback(
     () => list({ data: { sessionId: getSessionId() } }).then(setRows).catch(() => undefined),
     [list],
@@ -237,13 +251,26 @@ function Sessions() {
     const t = window.setInterval(() => void load(), 30000);
     return () => window.clearInterval(t);
   }, [load]);
+  const filtered = rows.filter((row) => userFilter === "all" || row.userId === userFilter);
+  const users = [...new Map(rows.map((row) => [row.userId, row.username])).entries()];
   return (
     <Panel title="Active sessions">
+      <div className="mb-3">
+        <select
+          value={userFilter}
+          onChange={(event) => { setUserFilter(event.target.value); setPage(0); }}
+          aria-label="Filter active sessions by user ID"
+          className="rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
+        >
+          <option value="all">All user IDs</option>
+          {users.map(([id, username]) => <option key={id} value={id}>{username}</option>)}
+        </select>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr><th className={th}>User</th><th className={th}>Branch</th><th className={th}>Device</th><th className={th}>IP address</th><th className={th}>Signed in</th><th className={th}>Status</th><th className={th} /></tr></thead>
           <tbody>
-            {rows.slice(page * PAGE, page * PAGE + PAGE).map((s) => (
+            {filtered.slice(page * PAGE, page * PAGE + PAGE).map((s) => (
               <tr key={s.id} className="border-t border-border">
                 <td className={td}>{s.username}</td>
                 <td className={td}>{s.branch}</td>
@@ -266,11 +293,11 @@ function Sessions() {
                 </td>
               </tr>
             ))}
-            {!rows.length ? <tr><td className={td} colSpan={7}>No active sessions.</td></tr> : null}
+            {!filtered.length ? <tr><td className={td} colSpan={7}>No active sessions.</td></tr> : null}
           </tbody>
         </table>
       </div>
-      <Pager page={page} total={rows.length} onPage={setPage} />
+      <Pager page={page} total={filtered.length} onPage={setPage} />
     </Panel>
   );
 }
@@ -281,11 +308,25 @@ function Events({ success }: { success: boolean }) {
   const list = useServerFn(listLoginEvents);
   const [rows, setRows] = useState<EventRow[]>([]);
   const [page, setPage] = useState(0);
+  const [userFilter, setUserFilter] = useState("all");
   useEffect(() => {
     void list({ data: { success } }).then(setRows).catch(() => undefined);
   }, [list, success]);
+  const users = [...new Map(rows.filter((row) => row.user_id).map((row) => [row.user_id, row.username])).entries()];
+  const filtered = rows.filter((row) => userFilter === "all" || row.user_id === userFilter);
   return (
     <Panel title={success ? "Login activity" : "Failed login attempts"}>
+      <div className="mb-3">
+        <select
+          value={userFilter}
+          onChange={(event) => { setUserFilter(event.target.value); setPage(0); }}
+          aria-label={`Filter ${success ? "login activity" : "failed login attempts"} by user ID`}
+          className="rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
+        >
+          <option value="all">All user IDs</option>
+          {users.map(([id, username]) => <option key={id ?? username} value={id ?? ""}>{username}</option>)}
+        </select>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -296,7 +337,7 @@ function Events({ success }: { success: boolean }) {
             </tr>
           </thead>
           <tbody>
-            {rows.slice(page * PAGE, page * PAGE + PAGE).map((e) => (
+            {filtered.slice(page * PAGE, page * PAGE + PAGE).map((e) => (
               <tr key={e.id} className="border-t border-border">
                 <td className={td}>{when(e.created_at)}</td>
                 <td className={td}>{e.username}</td>
@@ -307,11 +348,11 @@ function Events({ success }: { success: boolean }) {
                 {!success ? <td className={td}><Pill tone="bad">{e.reason ?? "Failed"}</Pill></td> : null}
               </tr>
             ))}
-            {!rows.length ? <tr><td className={td} colSpan={7}>Nothing yet.</td></tr> : null}
+            {!filtered.length ? <tr><td className={td} colSpan={7}>Nothing yet.</td></tr> : null}
           </tbody>
         </table>
       </div>
-      <Pager page={page} total={rows.length} onPage={setPage} />
+      <Pager page={page} total={filtered.length} onPage={setPage} />
     </Panel>
   );
 }
