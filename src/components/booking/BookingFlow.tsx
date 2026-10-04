@@ -2929,11 +2929,11 @@ export function BookingFlow() {
     </label>
 
     {/* Buttons */}
-    <div className="flex w-full items-center justify-between gap-2">
+    <div className="flex w-full gap-3">
       <button
         type="button"
         onClick={goBack}
-        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40"
+        className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40"
       >
         <ArrowLeft className="size-3.5" />
         Back
@@ -2943,7 +2943,7 @@ export function BookingFlow() {
         type="button"
         onClick={submit}
         disabled={submitting || !agreed}
-        className="inline-flex items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
+        className="inline-flex flex-1 items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
       >
         {submitting ? (
           <Loader2 className="size-4 animate-spin" />
