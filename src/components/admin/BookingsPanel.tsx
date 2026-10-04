@@ -499,6 +499,17 @@ export function BookingsPanel({
       <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         {b.reference}
       </p>
+      <div className="mt-3 w-fit rounded-xl border border-violet/50 bg-violet/20 px-4 py-3 shadow-sm">
+
+  <p className="text-sm font-black leading-tight">
+    {gameLabel}
+  </p>
+
+  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+    LEVEL {displayedLevel} • 👥 {b.players}P
+  </p>
+
+</div>
 
       <div className="mt-3 flex items-center gap-4">
         <a
@@ -557,18 +568,6 @@ export function BookingsPanel({
       <p className="text-xl font-black">
         {money(b.total_amount)}
       </p>
-
-      <div className="mt-2 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center">
-
-        <p className="text-xs font-black">
-          {gameLabel}
-        </p>
-
-        <p className="mt-1 text-[11px] font-bold">
-          Level {displayedLevel} • 👥 {b.players}P
-        </p>
-
-      </div>
 
       {countdown && (
         <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-3 py-2 text-cyan">
