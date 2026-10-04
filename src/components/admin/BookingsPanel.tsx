@@ -167,7 +167,7 @@ export function BookingsPanel({
   /** Booking reference to open automatically (e.g. from a notification). */
   focusReference?: string | null;
 }) {
-  const [filter, setFilter] = useState<Filter>("payment_pending");
+  const [filter, setFilter] = useState<Filter>("all");
   const [countdownNow, setCountdownNow] = useState(() => Date.now());
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
