@@ -29,3 +29,7 @@
 29. [ ] Verify promotional totals and poster behavior
 30. [x] Replace the homepage popup with the updated Dussehra poster
 31. [x] Add Snooker and Private Theatre promotional prices and keep pre-selection prices time-aware
+
+32. [x] Add Privacy, Terms, and Refund policy pages with footer links
+33. [x] Move Transactions search into its card and default Bookings to All
+34. [x] Add Security dropdown filters and coupon search
