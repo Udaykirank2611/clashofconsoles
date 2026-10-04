@@ -1255,8 +1255,13 @@ export function BookingFlow() {
   };
 
   const submittingRef = useRef(false);
+  const [agreed, setAgreed] = useState(true);
   const submit = async () => {
     if (submittingRef.current) return;
+    if (!agreed) {
+      toast.error("Please agree to the Terms & Conditions and Privacy Policy to continue.");
+      return;
+    }
     const next: Partial<Record<keyof CustomerForm, string>> = {};
     if (form.fullName.trim().length < 2) next.fullName = "Please enter your name";
     if (!isValidPhone(form.phone)) next.phone = "Enter a valid 10-digit mobile number";
@@ -2894,15 +2899,26 @@ export function BookingFlow() {
               </button>
 
             ) : (
+              <div className="flex flex-1 flex-col items-stretch gap-2 sm:flex-none sm:items-end">
+              <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 size-4 accent-[var(--pink)]" />
+                <span>
+                  I agree to the{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan underline">Terms &amp; Conditions</a>{" "}
+                  and{" "}
+                  <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan underline">Privacy Policy</a>
+                </span>
+              </label>
               <button
                 type="button"
                 onClick={submit}
-                disabled={submitting}
+                disabled={submitting || !agreed}
                 className="inline-flex flex-1 items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60 sm:flex-none"
               >
                 {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
                 Confirm Booking
               </button>
+              </div>
 
             )}
           </div>

@@ -38,13 +38,18 @@ const th = "whitespace-nowrap px-3 py-2 text-left text-[0.6rem] font-semibold up
 const td = "whitespace-nowrap px-3 py-2 align-middle";
 
 export function SecurityPanel({ branches }: { branches: AdminBranch[] }) {
+  const list = useServerFn(listAccounts);
+  const [accounts, setAccounts] = useState<LoginAccount[]>([]);
+  const load = useCallback(() => list().then(setAccounts).catch(() => toast.error("Could not load accounts.")), [list]);
+  useEffect(() => void load(), [load]);
+  const users: [string, string][] = accounts.map((a) => [a.userId, a.username]);
   return (
     <div className="space-y-6">
       <ChangePassword />
-      <Accounts branches={branches} />
-      <Sessions />
-      <Events success />
-      <Events success={false} />
+      <Accounts branches={branches} rows={accounts} load={load} />
+      <Sessions users={users} />
+      <Events success users={users} />
+      <Events success={false} users={users} />
     </div>
   );
 }
@@ -87,21 +92,16 @@ function ChangePassword() {
 
 type Form = { userId?: string; username: string; role: "owner" | "branch_admin"; branchId: string; password: string; disabled: boolean };
 
-function Accounts({ branches }: { branches: AdminBranch[] }) {
-  const list = useServerFn(listAccounts);
+function Accounts({ branches, rows, load }: { branches: AdminBranch[]; rows: LoginAccount[]; load: () => Promise<unknown> }) {
   const create = useServerFn(createAccount);
   const update = useServerFn(updateAccount);
   const disable = useServerFn(setAccountDisabled);
   const reset = useServerFn(resetAccountPassword);
   const remove = useServerFn(deleteAccount);
-  const [rows, setRows] = useState<LoginAccount[]>([]);
   const [form, setForm] = useState<Form | null>(null);
   const [busy, setBusy] = useState(false);
   const [branchFilter, setBranchFilter] = useState("all");
   const visibleRows = rows.filter((row) => branchFilter === "all" || row.branchId === branchFilter || (branchFilter === "all-branches" && row.branchId === null));
-
-  const load = useCallback(() => list().then(setRows).catch(() => toast.error("Could not load accounts.")), [list]);
-  useEffect(() => void load(), [load]);
 
   const run = async (fn: () => Promise<{ ok: boolean; message?: string }>, ok: string) => {
     setBusy(true);
@@ -236,7 +236,7 @@ function Accounts({ branches }: { branches: AdminBranch[] }) {
 
 type SessionRow = Awaited<ReturnType<typeof listActiveSessions>>[number];
 
-function Sessions() {
+function Sessions({ users }: { users: [string, string][] }) {
   const list = useServerFn(listActiveSessions);
   const kick = useServerFn(forceLogout);
   const [rows, setRows] = useState<SessionRow[]>([]);
@@ -252,7 +252,6 @@ function Sessions() {
     return () => window.clearInterval(t);
   }, [load]);
   const filtered = rows.filter((row) => userFilter === "all" || row.userId === userFilter);
-  const users = [...new Map(rows.map((row) => [row.userId, row.username])).entries()];
   return (
     <Panel title="Active sessions">
       <div className="mb-3">
@@ -262,7 +261,7 @@ function Sessions() {
           aria-label="Filter active sessions by user ID"
           className="rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
         >
-          <option value="all">All user IDs</option>
+          <option value="all">All users</option>
           {users.map(([id, username]) => <option key={id} value={id}>{username}</option>)}
         </select>
       </div>
@@ -304,7 +303,7 @@ function Sessions() {
 
 type EventRow = Awaited<ReturnType<typeof listLoginEvents>>[number];
 
-function Events({ success }: { success: boolean }) {
+function Events({ success, users }: { success: boolean; users: [string, string][] }) {
   const list = useServerFn(listLoginEvents);
   const [rows, setRows] = useState<EventRow[]>([]);
   const [page, setPage] = useState(0);
@@ -312,7 +311,6 @@ function Events({ success }: { success: boolean }) {
   useEffect(() => {
     void list({ data: { success } }).then(setRows).catch(() => undefined);
   }, [list, success]);
-  const users = [...new Map(rows.filter((row) => row.user_id).map((row) => [row.user_id, row.username])).entries()];
   const filtered = rows.filter((row) => userFilter === "all" || row.user_id === userFilter);
   return (
     <Panel title={success ? "Login activity" : "Failed login attempts"}>
@@ -323,8 +321,8 @@ function Events({ success }: { success: boolean }) {
           aria-label={`Filter ${success ? "login activity" : "failed login attempts"} by user ID`}
           className="rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none focus:border-cyan/50"
         >
-          <option value="all">All user IDs</option>
-          {users.map(([id, username]) => <option key={id ?? username} value={id ?? ""}>{username}</option>)}
+          <option value="all">All users</option>
+          {users.map(([id, username]) => <option key={id} value={id}>{username}</option>)}
         </select>
       </div>
       <div className="overflow-x-auto">
