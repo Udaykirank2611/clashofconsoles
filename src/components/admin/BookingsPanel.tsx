@@ -483,91 +483,117 @@ export function BookingsPanel({
                 className="w-full flex-none overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30 sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
               >
                 <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3
-                        className="truncate text-sm font-bold"
-                        onMouseEnter={(e) => {
-                          const el = e.currentTarget;
-                          if (el.scrollWidth > el.clientWidth) el.title = b.customer_name;
-                          else el.removeAttribute("title");
-                        }}
-                      >
-                        {b.customer_name}
-                      </h3>
-                      <StatusPill status={b.status} />
-                      <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">
-                        {b.reference}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
-                        weekday: "short",
-                        day: "numeric",
-                        month: "short",
-                      })}{" "}
-                      ·{" "}
-                      {(() => {
-                        const { start, end } = bookingWindow(b);
-                        return (
-                          <>
-                            {start && end ? (
-                              <>
-                                <span className="font-bold text-foreground">
-                                  {formatTime(start)} – {formatTime(end)}
-                                </span>
-                                {" · "}
-                                <span className="font-bold text-foreground">
-                                  {durationLabel(start, end)}
-                                </span>
-                              </>
-                            ) : null}
-                          </>
-                        );
-                      })()}
-                    </p>
-                  </div>
-                  <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
-                    <div className="flex items-center gap-3">
-                    <div className="w-fit min-w-28 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center text-foreground shadow-sm">
-                      <p className="max-w-40 text-xs font-black leading-tight">{gameLabel}
-                          <span className="max-w-40 text-xs font-black leading-tight">
-                          • {b.players}P
-                          </span>
-                      </p>
-                      <p className="mt-1 text-[0.65rem] font-black uppercase tracking-[0.16em]">
-                        Level {displayedLevel}
-                      </p>
-                    </div>
-                    <p className="text-lg font-black">{money(b.total_amount)}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-                      <a
-                        href={`tel:${b.customer_phone}`}
-                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
-                      >
-                        <Phone className="size-3" /> {b.customer_phone}
-                      </a>
-                      <a
-                        href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
-                      >
-                        <MessageCircle className="size-3" /> WhatsApp
-                      </a>
-                    </div>
-                    {countdown ? (
-                      <div className="inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-2.5 py-1.5 text-cyan">
-                        <Clock className="size-3.5" aria-hidden="true" />
-                        <span className="text-[0.58rem] font-bold uppercase tracking-[0.16em]">Time left</span>
-                        <span className="min-w-[3.5rem] text-right font-mono text-sm font-black tabular-nums">{countdown}</span>
-                      </div>
-                    ) : null}
-                  </div>
+<div className="p-4 sm:p-5">
+  <div className="flex items-start justify-between gap-4">
+
+    {/* LEFT */}
+    <div className="min-w-0 flex-1">
+
+      <div className="flex items-center gap-2">
+        <h3 className="truncate text-sm font-bold">
+          {b.customer_name}
+        </h3>
+
+        <StatusPill status={b.status} />
+      </div>
+
+      <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        {b.reference}
+      </p>
+
+      <div className="mt-3 flex items-center gap-4">
+        <a
+          href={`tel:${b.customer_phone}`}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
+        >
+          <Phone className="size-3" />
+          {b.customer_phone}
+        </a>
+
+        <a
+          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
+        >
+          <MessageCircle className="size-3" />
+          WhatsApp
+        </a>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-xs text-muted-foreground">
+          📅{" "}
+          {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          })}
+        </p>
+
+        {(() => {
+          const { start, end } = bookingWindow(b);
+
+          return start && end ? (
+            <p className="mt-1 text-xs">
+              🕑{" "}
+              <span className="font-bold">
+                {formatTime(start)} – {formatTime(end)}
+              </span>
+              {" • "}
+              <span className="font-bold">
+                {durationLabel(start, end)}
+              </span>
+            </p>
+          ) : null;
+        })()}
+      </div>
+
+    </div>
+
+    {/* RIGHT */}
+
+    <div className="flex w-[180px] flex-col items-end">
+
+      <p className="text-xl font-black">
+        {money(b.total_amount)}
+      </p>
+
+      <div className="mt-2 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center">
+
+        <p className="text-xs font-black">
+          {gameLabel}
+        </p>
+
+        <p className="mt-1 text-[11px] font-bold">
+          LEVEL {displayedLevel} • {b.players} PLAYER{b.players > 1 ? "S" : ""}
+        </p>
+
+      </div>
+
+      {countdown && (
+        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-3 py-2 text-cyan">
+
+          <Clock className="size-4" />
+
+          <span className="text-xs font-bold">
+            TIME LEFT
+          </span>
+
+          <span className="font-mono font-black">
+            {countdown}
+          </span>
+
+        </div>
+      )}
+
+    </div>
+
+  </div>
 
 
-                  <div className="flex w-full flex-wrap items-center gap-2">
+            <div className="mt-5 border-t border-border pt-4">
+                  <div className="grid w-full grid-cols-2 gap-2">
                     {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
                       <>
                         <AdminButton
@@ -644,6 +670,7 @@ export function BookingsPanel({
                   </div>
 
                 </div>
+  </div>
 
                 <div
                   className={cn(
