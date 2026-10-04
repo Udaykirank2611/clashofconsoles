@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Instagram, Phone, Mail, MapPin, MessageCircle } from "lucide-react";
 import logoAsset from "@/assets/coc-logo.png.asset.json";
 import {
@@ -100,6 +101,17 @@ export function Footer() {
       </div>
 
       <div className="mx-auto mt-10 max-w-7xl px-6 text-xs text-muted-foreground">
+        <nav aria-label="Legal" className="mb-4 flex flex-wrap gap-x-5 gap-y-2">
+          <Link to="/privacy-policy" className="transition-colors hover:text-cyan">
+            Privacy Policy
+          </Link>
+          <Link to="/terms" className="transition-colors hover:text-cyan">
+            Terms &amp; Conditions
+          </Link>
+          <Link to="/refund-policy" className="transition-colors hover:text-cyan">
+            Refund &amp; Cancellation Policy
+          </Link>
+        </nav>
         <p>© {new Date().getFullYear()} Clash of Consoles. All rights reserved.</p>
         <p className="mt-2">
           Developed by{" "}

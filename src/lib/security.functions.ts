@@ -362,6 +362,7 @@ export const listLoginEvents = createServerFn({ method: "GET" })
       .limit(data.success ? 100 : 500);
     return (rows ?? []) as {
       id: string;
+      user_id: string | null;
       username: string;
       ip_address: string | null;
       role: string | null;

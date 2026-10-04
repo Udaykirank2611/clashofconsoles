@@ -14,8 +14,11 @@ import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as MenuRouteImport } from './routes/menu'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StatusRouteImport } from './routes/status'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as BookingReferenceRouteImport } from './routes/booking.$reference'
@@ -46,6 +49,16 @@ const MenuRoute = MenuRouteImport.update({
   path: '/menu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -54,6 +67,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const StatusRoute = StatusRouteImport.update({
   id: '/status',
   path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -83,8 +101,11 @@ export interface FileRoutesByFullPath {
   '/book': typeof BookRoute
   '/games': typeof GamesRoute
   '/menu': typeof MenuRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
   '/booking/$reference': typeof BookingReferenceRoute
   '/pay/$reference': typeof PayReferenceRoute
@@ -95,8 +116,11 @@ export interface FileRoutesByTo {
   '/book': typeof BookRoute
   '/games': typeof GamesRoute
   '/menu': typeof MenuRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
   '/booking/$reference': typeof BookingReferenceRoute
   '/pay/$reference': typeof PayReferenceRoute
@@ -109,8 +133,11 @@ export interface FileRoutesById {
   '/book': typeof BookRoute
   '/games': typeof GamesRoute
   '/menu': typeof MenuRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
   '/booking/$reference': typeof BookingReferenceRoute
   '/pay/$reference': typeof PayReferenceRoute
@@ -124,8 +151,11 @@ export interface FileRouteTypes {
     | '/book'
     | '/games'
     | '/menu'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/sitemap.xml'
     | '/status'
+    | '/terms'
     | '/admin/login'
     | '/booking/$reference'
     | '/pay/$reference'
@@ -136,8 +166,11 @@ export interface FileRouteTypes {
     | '/book'
     | '/games'
     | '/menu'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/sitemap.xml'
     | '/status'
+    | '/terms'
     | '/admin/login'
     | '/booking/$reference'
     | '/pay/$reference'
@@ -149,8 +182,11 @@ export interface FileRouteTypes {
     | '/book'
     | '/games'
     | '/menu'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/sitemap.xml'
     | '/status'
+    | '/terms'
     | '/admin/login'
     | '/booking/$reference'
     | '/pay/$reference'
@@ -163,8 +199,11 @@ export interface RootRouteChildren {
   BookRoute: typeof BookRoute
   GamesRoute: typeof GamesRoute
   MenuRoute: typeof MenuRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatusRoute: typeof StatusRoute
+  TermsRoute: typeof TermsRoute
   BookingReferenceRoute: typeof BookingReferenceRoute
   PayReferenceRoute: typeof PayReferenceRoute
 }
@@ -206,6 +245,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MenuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -218,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/status'
       fullPath: '/status'
       preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -271,8 +331,11 @@ const rootRouteChildren: RootRouteChildren = {
   BookRoute: BookRoute,
   GamesRoute: GamesRoute,
   MenuRoute: MenuRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatusRoute: StatusRoute,
+  TermsRoute: TermsRoute,
   BookingReferenceRoute: BookingReferenceRoute,
   PayReferenceRoute: PayReferenceRoute,
 }
