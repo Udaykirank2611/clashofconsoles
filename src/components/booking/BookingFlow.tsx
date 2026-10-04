@@ -2875,7 +2875,7 @@ export function BookingFlow() {
             </p>
           </div>
           <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
-            {step > 0 ? (
+            {step > 0 && step < STEPS.length - 1 ? (
               <button
                 type="button"
                 onClick={goBack}
@@ -2884,43 +2884,75 @@ export function BookingFlow() {
                 <ArrowLeft className="size-3.5" /> Back
               </button>
             ) : null}
+{step === 0 ? null : step < STEPS.length - 1 ? (
+  <button
+    type="button"
+    onClick={tryNext}
+    aria-disabled={!canAdvance}
+    className={cn(
+      "inline-flex flex-1 items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300 hover:scale-[1.03] active:scale-[0.99] sm:flex-none",
+      !canAdvance && "opacity-60",
+    )}
+  >
+    Next <ArrowRight className="size-3.5" />
+  </button>
+) : (
+  <div className="flex flex-1 flex-col gap-3">
+    {/* Agreement */}
+    <label className="flex items-start gap-2 text-xs text-muted-foreground">
+      <input
+        type="checkbox"
+        checked={agreed}
+        onChange={(e) => setAgreed(e.target.checked)}
+        className="mt-0.5 size-4 accent-[var(--pink)]"
+      />
+      <span>
+        I agree to the{" "}
+        <a
+          href="/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-cyan underline"
+        >
+          Terms &amp; Conditions
+        </a>{" "}
+        and{" "}
+        <a
+          href="/privacy-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-cyan underline"
+        >
+          Privacy Policy
+        </a>
+      </span>
+    </label>
 
-            {step === 0 ? null : step < STEPS.length - 1 ? (
-              <button
-                type="button"
-                onClick={tryNext}
-                aria-disabled={!canAdvance}
-                className={cn(
-                  "inline-flex flex-1 items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-all duration-300 hover:scale-[1.03] active:scale-[0.99] sm:flex-none",
-                  !canAdvance && "opacity-60",
-                )}
-              >
-                Next <ArrowRight className="size-3.5" />
-              </button>
+    {/* Buttons */}
+    <div className="flex w-full items-center justify-between gap-2">
+      <button
+        type="button"
+        onClick={goBack}
+        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:border-cyan/40"
+      >
+        <ArrowLeft className="size-3.5" />
+        Back
+      </button>
 
-            ) : (
-              <div className="flex flex-1 flex-col items-stretch gap-2 sm:flex-none sm:items-end">
-              <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 size-4 accent-[var(--pink)]" />
-                <span>
-                  I agree to the{" "}
-                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan underline">Terms &amp; Conditions</a>{" "}
-                  and{" "}
-                  <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan underline">Privacy Policy</a>
-                </span>
-              </label>
-              <button
-                type="button"
-                onClick={submit}
-                disabled={submitting || !agreed}
-                className="inline-flex flex-1 items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60 sm:flex-none"
-              >
-                {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-                Confirm Booking
-              </button>
-              </div>
-
-            )}
+      <button
+        type="button"
+        onClick={submit}
+        disabled={submitting || !agreed}
+        className="inline-flex items-center justify-center gap-2 coc-cta px-6 py-3 text-xs font-extrabold uppercase tracking-[0.18em] transition-transform hover:scale-[1.03] active:scale-[0.99] disabled:opacity-60"
+      >
+        {submitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : null}
+        Confirm Booking
+      </button>
+    </div>
+  </div>
+)}
           </div>
         </div>
       </div>
