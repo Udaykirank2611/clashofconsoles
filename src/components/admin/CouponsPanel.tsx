@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, AdminInput, Panel, Pill } from "./primitives";
 import type { AdminCoupon } from "@/lib/admin/useBranchData";
-import { History, Trash2 } from "lucide-react";
+import { History, Search, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { DAY_LABELS, daysLabel, windowLabel } from "@/lib/booking/coupon-schedule";
 import { COUPON_CATEGORY_LABELS, type CouponCategory } from "@/lib/booking/pricing";
@@ -35,6 +35,20 @@ export function CouponsPanel({
   const [maxLevel, setMaxLevel] = useState("");
 
   const [historyFor, setHistoryFor] = useState<AdminCoupon | null>(null);
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const visibleCoupons = !q
+    ? coupons
+    : coupons.filter((c) =>
+        [
+          c.code,
+          COUPON_CATEGORY_LABELS[(c.category ?? "entire_bill") as CouponCategory],
+          c.is_active ? "active" : "disabled",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      );
 
   const toggleDay = (d: number) =>
     setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)));
@@ -240,12 +254,24 @@ export function CouponsPanel({
       </Panel>
 
       <Panel title="Coupons">
+        <div className="relative mb-4 max-w-md">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search coupon code or details"
+            aria-label="Search coupons"
+            className="w-full rounded-2xl border border-border bg-surface/70 py-2.5 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-cyan/50"
+          />
+        </div>
         {coupons.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">No coupons yet.</p>
+        ) : visibleCoupons.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">No coupons match this search.</p>
         ) : (
           <div className="space-y-3">
             {/* Active coupons sit on top; disabling one returns it to creation order. */}
-            {coupons
+            {visibleCoupons
               .slice()
               .sort((a, b) => Number(Boolean(b.is_active)) - Number(Boolean(a.is_active)))
               .map((c) => (
