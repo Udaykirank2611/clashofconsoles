@@ -482,60 +482,47 @@ export function BookingsPanel({
                 key={b.id}
                 className="w-full flex-none overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30 sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
               >
-<div className="p-5">
-  <div className="flex items-start justify-between gap-5">
+<div className="p-4 sm:p-5">
+  <div className="flex items-start justify-between gap-4">
 
     {/* LEFT */}
-    <div className="flex-1 min-w-0">
+    <div className="min-w-0 flex-1">
 
       <div className="flex items-center gap-2">
-        <h3
-          className="truncate text-lg font-bold"
-          onMouseEnter={(e) => {
-            const el = e.currentTarget;
-            if (el.scrollWidth > el.clientWidth)
-              el.title = b.customer_name;
-            else
-              el.removeAttribute("title");
-          }}
-        >
+        <h3 className="truncate text-sm font-bold">
           {b.customer_name}
         </h3>
 
         <StatusPill status={b.status} />
       </div>
 
-      <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         {b.reference}
       </p>
 
-      <div className="mt-3 flex items-center gap-5 text-sm">
-
+      <div className="mt-3 flex items-center gap-4">
         <a
           href={`tel:${b.customer_phone}`}
-          className="inline-flex items-center gap-1 text-muted-foreground hover:text-cyan"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
         >
-          <Phone className="size-4" />
+          <Phone className="size-3" />
           {b.customer_phone}
         </a>
 
         <a
-          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(
-            customerMessage(b, stationName)
-          )}`}
+          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-emerald-500"
+          className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
         >
-          <MessageCircle className="size-4" />
+          <MessageCircle className="size-3" />
           WhatsApp
         </a>
-
       </div>
 
       <div className="mt-4">
-
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
+          📅{" "}
           {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
             weekday: "short",
             day: "numeric",
@@ -546,69 +533,62 @@ export function BookingsPanel({
         {(() => {
           const { start, end } = bookingWindow(b);
 
-          if (!start || !end) return null;
-
-          return (
-            <p className="mt-1 text-sm">
+          return start && end ? (
+            <p className="mt-1 text-xs">
+              🕑{" "}
               <span className="font-bold">
                 {formatTime(start)} – {formatTime(end)}
               </span>
-
               {" • "}
-
               <span className="font-bold">
                 {durationLabel(start, end)}
               </span>
             </p>
-          );
+          ) : null;
         })()}
-
       </div>
 
     </div>
 
     {/* RIGHT */}
 
-    <div className="flex w-[200px] flex-col items-end">
+    <div className="flex w-[180px] flex-col items-end">
 
-      <p className="text-3xl font-black">
+      <p className="text-xl font-black">
         {money(b.total_amount)}
       </p>
 
-      <div className="mt-3 w-full rounded-xl border border-violet/50 bg-violet/20 px-3 py-3 text-center">
+      <div className="mt-2 rounded-xl border border-violet/50 bg-violet/20 px-3 py-2 text-center">
 
-        <p className="text-sm font-bold">
+        <p className="text-xs font-black">
           {gameLabel}
         </p>
 
-        <p className="mt-1 text-xs uppercase tracking-wide">
-          Level {displayedLevel} • {b.players}P
+        <p className="mt-1 text-[11px] font-bold">
+          Level {displayedLevel} • 👥 {b.players}P
         </p>
 
       </div>
 
       {countdown && (
-
-        <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-cyan/30 bg-cyan/10 px-3 py-2 text-cyan">
+        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-3 py-2 text-cyan">
 
           <Clock className="size-4" />
 
-          <span className="text-xs font-bold uppercase">
-            Time Left
+          <span className="text-xs font-bold">
+            TIME LEFT
           </span>
 
-          <span className="font-mono text-lg font-black">
+          <span className="font-mono font-black">
             {countdown}
           </span>
 
         </div>
-
       )}
 
     </div>
 
   </div>
-</div>
 
 
             <div className="mt-5 border-t border-border pt-4">
