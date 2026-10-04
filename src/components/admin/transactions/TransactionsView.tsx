@@ -128,12 +128,6 @@ export function TransactionsView({
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={field} />
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={field} />
           <input
-            value={fSearch}
-            onChange={(e) => setFSearch(e.target.value)}
-            placeholder="Search ref, name, phone"
-            className={field}
-          />
-          <input
             value={fCustomer}
             onChange={(e) => setFCustomer(e.target.value)}
             placeholder="Customer name"
@@ -212,6 +206,15 @@ export function TransactionsView({
           </Panel>
 
           <Panel title="Transactions">
+            <div className="mb-4">
+              <input
+                value={fSearch}
+                onChange={(e) => setFSearch(e.target.value)}
+                placeholder="Search booking ID, customer name or phone"
+                aria-label="Search transactions"
+                className="w-full max-w-md rounded-2xl border border-border bg-surface/70 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-cyan/50"
+              />
+            </div>
             {!filtered.length ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 No transactions for this selection.
