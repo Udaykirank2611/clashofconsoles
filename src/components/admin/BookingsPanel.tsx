@@ -419,7 +419,7 @@ export function BookingsPanel({
               void Promise.resolve(onChanged()).finally(() => setRefreshing(false));
             }}
             disabled={refreshing}
-            className="flex items-center gap-1.5 rounded-full border border-border bg-surface/60 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-full border border-border bg-surface/60 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-slate-400 transition-colors hover:text-slate-900 disabled:opacity-60"
           >
             <RefreshCw className={cn("size-3", refreshing && "animate-spin")} />
             {refreshing ? "Refreshing" : "Refresh"}
@@ -433,7 +433,7 @@ export function BookingsPanel({
                 "rounded-full border px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] transition-colors",
                 filter === f
                   ? "border-cyan/50 bg-cyan/10 text-cyan"
-                  : "border-border bg-surface/60 text-muted-foreground hover:text-foreground",
+                  : "border-border bg-surface/60 text-slate-400 hover:text-slate-900",
               )}
             >
               {LABEL[f]}
@@ -443,7 +443,7 @@ export function BookingsPanel({
       }
     >
       {rows.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">No {LABEL[filter].toLowerCase()} bookings.</p>
+        <p className="py-10 text-center text-sm text-slate-400">No {LABEL[filter].toLowerCase()} bookings.</p>
       ) : (
         <div className="flex flex-wrap items-start justify-start gap-3">
           {rows.map((b) => {
@@ -480,217 +480,233 @@ export function BookingsPanel({
             return (
               <article
                 key={b.id}
-                className="w-full flex-none overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30 sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
+                className="w-full flex-none overflow-hidden rounded-[2rem] border border-border bg-white text-slate-900 shadow-xl transition-all hover:shadow-2xl sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
               >
-<div className="p-4 sm:p-5">
-  <div className="flex items-start justify-between gap-4">
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusPill status={b.status} />
+                        <h3 className="truncate text-base font-bold text-slate-900">
+                          {b.customer_name}
+                        </h3>
+                      </div>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                        {b.reference}
+                      </p>
 
-    {/* LEFT */}
-    <div className="min-w-0 flex-1">
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-1.5 text-violet-700 shadow-sm">
+                          <p className="text-xs font-black uppercase tracking-wide">
+                            {gameLabel}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-slate-500 shadow-sm">
+                          <p className="text-[10px] font-bold uppercase tracking-wider">
+                            LEVEL {displayedLevel} • 👥 {b.players}P
+                          </p>
+                        </div>
+                      </div>
 
-      <div className="flex items-center gap-2">
-        <h3 className="truncate text-sm font-bold">
-          {b.customer_name}
-        </h3>
-
-        <StatusPill status={b.status} />
-      </div>
-
-      <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        {b.reference}
-      </p>
-      <div className="mt-3 w-fit rounded-xl border border-violet/50 bg-violet/20 px-4 py-3 shadow-sm">
-
-  <p className="text-sm font-black leading-tight">
-    {gameLabel}
-  </p>
-
-  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-    LEVEL {displayedLevel} • 👥 {b.players}P
-  </p>
-
-</div>
-
-      <div className="mt-3 flex items-center gap-4">
-        <a
-          href={`tel:${b.customer_phone}`}
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
-        >
-          <Phone className="size-3" />
-          {b.customer_phone}
-        </a>
-
-        <a
-          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
-        >
-          <MessageCircle className="size-3" />
-          WhatsApp
-        </a>
-      </div>
-
-      <div className="mt-4">
-        <p className="text-xs text-muted-foreground">
-          📅{" "}
-          {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-          })}
-        </p>
-
-        {(() => {
-          const { start, end } = bookingWindow(b);
-
-          return start && end ? (
-            <p className="mt-1 text-xs">
-              🕑{" "}
-              <span className="font-bold">
-                {formatTime(start)} – {formatTime(end)}
-              </span>
-              {" • "}
-              <span className="font-bold">
-                {durationLabel(start, end)}
-              </span>
-            </p>
-          ) : null;
-        })()}
-      </div>
-
-    </div>
-
-    {/* RIGHT */}
-
-    <div className="flex w-[180px] flex-col items-end">
-
-      <p className="text-xl font-black">
-        {money(b.total_amount)}
-      </p>
-
-      {countdown && (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-3 py-2 text-cyan">
-
-          <Clock className="size-4" />
-
-          <span className="text-xs font-bold">
-            TIME LEFT
-          </span>
-
-          <span className="font-mono font-black">
-            {countdown}
-          </span>
-
-        </div>
-      )}
-
-    </div>
-
-  </div>
-
-
-            <div className="mt-5 border-t border-border pt-4">
-                  <div className="grid w-full grid-cols-2 gap-2">
-                    {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
-                      <>
-                        <AdminButton
-                          variant="success"
-                          disabled={busy === b.id}
-                          onClick={() => {
-                            setExtraDiscount("");
-                            setApproving(b);
-                          }}
-
+                      <div className="mt-5 flex items-center gap-5">
+                        <a
+                          href={`tel:${b.customer_phone}`}
+                          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 transition-colors hover:text-primary"
                         >
-                          Approve
-                        </AdminButton>
-                        <AdminButton
-                          variant="danger"
-                          disabled={busy === b.id}
-                          onClick={() => void setStatus(b, "cancelled")}
+                          <Phone className="size-3.5" />
+                          {b.customer_phone}
+                        </a>
+
+                        <a
+                          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-700"
                         >
-                          {b.status === "awaiting_payment" ? "Cancel" : "Decline"}
-                        </AdminButton>
-                      </>
+                          <MessageCircle className="size-3.5" />
+                          WhatsApp
+                        </a>
+                      </div>
 
-                    ) : b.status === "confirmed" ? (
-                      <>
-                        <AdminButton disabled={busy === b.id} onClick={() => setAddingFood(b)}>
-                          <UtensilsCrossed className="size-3.5" /> Add food
-                        </AdminButton>
-                        {hasSlot ? (
-                          <AdminButton
-                            variant="primary"
-                            disabled={busy === b.id}
-                            onClick={() => void openExtend(b)}
-                          >
-                            <Clock className="size-3.5" /> Extend session
-                          </AdminButton>
-                        ) : null}
-                        <AdminButton
-                          variant="success"
-                          disabled={busy === b.id}
-                          onClick={() => {
-                            setSplitCash("");
-                            setSplitUpi("");
-                            setExtraDiscount("");
-                            setSettling(b);
-                          }}
-                        >
-                          Mark completed
-                        </AdminButton>
+                      <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                          <span className="text-slate-400">📅</span>
+                          {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </div>
 
-                        <AdminButton variant="download" onClick={() => printReceipt(b, stationName)}>
-                          <Printer className="size-3.5" /> Receipt
-                        </AdminButton>
-                        <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void removeBooking(b)}>
-                          <Trash2 className="size-3.5" /> Remove
-                        </AdminButton>
-                      </>
-                    ) : b.status === "completed" ? (
-                      <>
-                        <AdminButton variant="download" onClick={() => printReceipt(b, stationName)}>
-                          <Printer className="size-3.5" /> Receipt
-                        </AdminButton>
-                        <AdminButton onClick={() => void copyConfirmation(b, stationName)}>
-                          <Copy className="size-3.5" /> Copy summary
-                        </AdminButton>
-                        <AdminButton variant="danger" disabled={busy === b.id} onClick={() => void removeBooking(b)}>
-                          <Trash2 className="size-3.5" /> Remove
-                        </AdminButton>
-                      </>
-                    ) : null}
+                        {(() => {
+                          const { start, end } = bookingWindow(b);
+                          return start && end ? (
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <span className="text-slate-400">🕑</span>
+                              <span className="font-bold text-slate-700">
+                                {formatTime(start)} – {formatTime(end)}
+                              </span>
+                              <span className="ml-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-black text-slate-400">
+                                {durationLabel(start, end)}
+                              </span>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
 
-                    <AdminButton onClick={() => setOpenId(open ? null : b.id)}>
-                      Details <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
-                    </AdminButton>
+                    <div className="flex flex-col items-end gap-3">
+                      <p className="text-2xl font-black text-slate-900">
+                        {money(b.total_amount)}
+                      </p>
+
+                      {countdown && (
+                        <div className="inline-flex items-center gap-2 rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-cyan-700 shadow-sm">
+                          <Clock className="size-4 shrink-0" />
+                          <div className="flex flex-col leading-none">
+                            <span className="text-[9px] font-black uppercase tracking-tighter opacity-60">
+                              TIME LEFT
+                            </span>
+                            <span className="font-mono text-sm font-black">
+                              {countdown}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                </div>
-  </div>
 
-                <div
-                  className={cn(
-                    "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-                  )}
+            <div className="mt-5 border-t border-slate-100 pt-5">
+              <div className="grid w-full grid-cols-2 gap-3">
+                {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (
+                  <>
+                    <AdminButton
+                      variant="success"
+                      disabled={busy === b.id}
+                      className="border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50"
+                      onClick={() => {
+                        setExtraDiscount("");
+                        setApproving(b);
+                      }}
+                    >
+                      Approve
+                    </AdminButton>
+                    <AdminButton
+                      variant="danger"
+                      disabled={busy === b.id}
+                      className="border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
+                      onClick={() => void setStatus(b, "cancelled")}
+                    >
+                      {b.status === "awaiting_payment" ? "Cancel" : "Decline"}
+                    </AdminButton>
+                  </>
+                ) : b.status === "confirmed" ? (
+                  <>
+                    <AdminButton 
+                      className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      disabled={busy === b.id} 
+                      onClick={() => setAddingFood(b)}
+                    >
+                      <UtensilsCrossed className="size-3.5" /> Food
+                    </AdminButton>
+                    {hasSlot ? (
+                      <AdminButton
+                        variant="primary"
+                        disabled={busy === b.id}
+                        className="shadow-md"
+                        onClick={() => void openExtend(b)}
+                      >
+                        <Clock className="size-3.5" /> Extend
+                      </AdminButton>
+                    ) : null}
+                    <AdminButton
+                      variant="success"
+                      disabled={busy === b.id}
+                      className="border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50"
+                      onClick={() => {
+                        setSplitCash("");
+                        setSplitUpi("");
+                        setExtraDiscount("");
+                        setSettling(b);
+                      }}
+                    >
+                      Complete
+                    </AdminButton>
+
+                    <AdminButton 
+                      variant="download" 
+                      className="border-pink-200 bg-white text-pink-600 hover:bg-pink-50" 
+                      onClick={() => printReceipt(b, stationName)}
+                    >
+                      <Printer className="size-3.5" /> Receipt
+                    </AdminButton>
+                    <AdminButton 
+                      variant="danger" 
+                      disabled={busy === b.id} 
+                      className="border-rose-200 bg-white text-rose-600 hover:bg-rose-50" 
+                      onClick={() => void removeBooking(b)}
+                    >
+                      <Trash2 className="size-3.5" /> Remove
+                    </AdminButton>
+                  </>
+                ) : b.status === "completed" ? (
+                  <>
+                    <AdminButton 
+                      variant="download" 
+                      className="border-pink-200 bg-white text-pink-600 hover:bg-pink-50" 
+                      onClick={() => printReceipt(b, stationName)}
+                    >
+                      <Printer className="size-3.5" /> Receipt
+                    </AdminButton>
+                    <AdminButton 
+                      className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50" 
+                      onClick={() => void copyConfirmation(b, stationName)}
+                    >
+                      <Copy className="size-3.5" /> Copy
+                    </AdminButton>
+                    <AdminButton 
+                      variant="danger" 
+                      disabled={busy === b.id} 
+                      className="border-rose-200 bg-white text-rose-600 hover:bg-rose-50" 
+                      onClick={() => void removeBooking(b)}
+                    >
+                      <Trash2 className="size-3.5" /> Remove
+                    </AdminButton>
+                  </>
+                ) : null}
+
+                <AdminButton 
+                  className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 col-span-1" 
+                  onClick={() => setOpenId(open ? null : b.id)}
                 >
-                  <div className="overflow-hidden">
-                    <div className="grid gap-4 border-t border-border/70 p-4 text-sm sm:grid-cols-2 sm:p-5">
-                      <div className="space-y-1.5">
-                        <Detail label="Email" value={b.customer_email ?? "—"} />
-                        <Detail
-                          label="Station / experience"
-                          value={
-                            b.station_id && stationName !== "—"
-                              ? stationName
-                              : cockpit.filter((c) => c.station_id).map((c) => c.label).join(", ") || stationName
-                          }
-                        />
-                        <Detail label="Players" value={`${b.players} ${b.players === 1 ? "player" : "players"}`} />
-                        <Detail
-                          label="Slot"
+                  {open ? "Hide" : "Details"} <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
+                </AdminButton>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+            )}
+          >
+            <div className="overflow-hidden">
+              <div className="grid gap-6 border-t border-slate-100 bg-slate-50/50 p-6 text-sm sm:grid-cols-2">
+                <div className="space-y-4">
+                  <Detail label="Email" value={b.customer_email ?? "—"} />
+                  <Detail
+                    label="Station / experience"
+                    value={
+                      b.station_id && stationName !== "—"
+                        ? stationName
+                        : cockpit.filter((c) => c.station_id).map((c) => c.label).join(", ") || stationName
+                    }
+                  />
+                  <Detail label="Players" value={`${b.players} ${b.players === 1 ? "player" : "players"}`} />
+                  <Detail
+                    label="Slot"
                           value={
                             hasSlot
                               ? `${formatTime(slot.start!)} – ${formatTime(slot.end!)} (${durationLabel(slot.start, slot.end)})${
@@ -759,7 +775,7 @@ export function BookingsPanel({
                                   <li key={c.id} className="flex items-center justify-between gap-3">
                                     <span className="min-w-0 text-xs">
                                       <span className="block truncate font-semibold">{c.label}</span>
-                                      <span className="text-[0.65rem] text-muted-foreground">
+                                      <span className="text-[0.65rem] text-slate-400">
                                         {c.start_time ? formatTime(c.start_time) : ""}
                                         {c.end_time ? ` – ${formatTime(c.end_time)}` : ""} ·{" "}
                                         {money(Number(c.extra_hour_price))}/extra hr
@@ -804,7 +820,7 @@ export function BookingsPanel({
                         <Detail label="Tax" value={money(b.tax_amount)} />
 
                         <div className="mt-2 flex items-center justify-between border-t border-border/70 pt-2">
-                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                             Total
                           </span>
                           <span className="text-lg font-black">{money(b.total_amount)}</span>
@@ -823,11 +839,11 @@ export function BookingsPanel({
         <ModalPortal onClose={() => setApproving(null)}>
           <div className="mx-auto max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl">
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Verify Payment</h3>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-slate-400">
               Confirm this booking. You will record how it was paid — and apply any last-minute discount — when you
               mark it completed.
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-slate-400">
               {approving.reference} · {approving.customer_name} · {money(approving.total_amount)}
             </p>
 
@@ -893,26 +909,26 @@ export function BookingsPanel({
         <ModalPortal onClose={() => setExtendConfirm(null)}>
           <div className="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Extend this session?</h3>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-slate-400">
               Extend this booking by {extendQuote?.label ?? "the next step"}?
             </p>
             <div className="mt-4 rounded-2xl border border-border bg-background/40 px-4 py-3 text-sm">
               <p className="flex items-center justify-between">
-                <span className="text-muted-foreground">Players</span>
+                <span className="text-slate-400">Players</span>
                 <span className="font-bold">{extendConfirm.players ?? 1}</span>
               </p>
               {extendQuote?.pass ? (
                 <>
                   <p className="mt-1.5 flex items-center justify-between">
-                    <span className="text-muted-foreground">Pass {extendQuote.pass.code}</span>
+                    <span className="text-slate-400">Pass {extendQuote.pass.code}</span>
                     <span className="font-bold">Paid by pass</span>
                   </p>
                   <p className="mt-1.5 flex items-center justify-between">
-                    <span className="text-muted-foreground">Current balance</span>
+                    <span className="text-slate-400">Current balance</span>
                     <span className="font-black">{hoursLabel(extendQuote.pass.before)}</span>
                   </p>
                   <p className="mt-1.5 flex items-center justify-between">
-                    <span className="text-muted-foreground">Balance after extend</span>
+                    <span className="text-slate-400">Balance after extend</span>
                     <span className="font-black">{hoursLabel(extendQuote.pass.after)}</span>
                   </p>
                   {!extendQuote.pass.enough ? (
@@ -924,13 +940,13 @@ export function BookingsPanel({
               ) : (
                 <>
                   <p className="mt-1.5 flex items-center justify-between">
-                    <span className="text-muted-foreground">Extra {extendQuote?.label ?? "time"} charge</span>
+                    <span className="text-slate-400">Extra {extendQuote?.label ?? "time"} charge</span>
                     <span className="font-black">
                       {extendQuote === null ? "Calculating…" : money(extendQuote.price)}
                     </span>
                   </p>
                   <p className="mt-1.5 flex items-center justify-between">
-                    <span className="text-muted-foreground">New booking total</span>
+                    <span className="text-slate-400">New booking total</span>
                     <span className="font-black">
                       {extendQuote === null ? "…" : money(extendQuote.newTotal)}
                     </span>
@@ -960,7 +976,7 @@ export function BookingsPanel({
         <ModalPortal onClose={() => setExtendChoice(null)}>
           <div className="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
             <h3 className="text-sm font-black uppercase tracking-[0.18em]">Console not free</h3>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-slate-400">
               Sorry — this console is already booked for{" "}
               {extendChoice.window.start
                 ? `${formatTime(extendChoice.window.start)} – ${formatTime(extendChoice.window.end)}`
@@ -969,7 +985,7 @@ export function BookingsPanel({
             </p>
             {extendChoice.alternatives.length ? (
               <>
-                <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
                   Free right now — switch and keep playing
                 </p>
                 <ul className="mt-2 space-y-2">
@@ -980,7 +996,7 @@ export function BookingsPanel({
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold">{a.name}</span>
-                        <span className="text-[0.65rem] text-muted-foreground">{money(a.price)} / hour</span>
+                        <span className="text-[0.65rem] text-slate-400">{money(a.price)} / hour</span>
                       </span>
                       <AdminButton
                         variant="primary"
@@ -994,7 +1010,7 @@ export function BookingsPanel({
                 </ul>
               </>
             ) : (
-              <p className="mt-4 text-xs text-muted-foreground">
+              <p className="mt-4 text-xs text-slate-400">
                 No other console is free for that hour either.
               </p>
             )}
@@ -1012,8 +1028,8 @@ export function BookingsPanel({
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
-      <span className="text-right text-xs text-foreground">{value}</span>
+      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</span>
+      <span className="text-right text-xs text-slate-900">{value}</span>
     </div>
   );
 }
@@ -1024,7 +1040,7 @@ function ItemList({ title, items, empty }: { title: string; items: AdminBookingI
     <div className="rounded-2xl border border-border/70 bg-background/40 p-3">
       <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan">{title}</p>
       {items.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{empty}</p>
+        <p className="text-xs text-slate-400">{empty}</p>
       ) : (
         <ul className="space-y-1.5">
           {items.map((i) => (
@@ -1033,7 +1049,7 @@ function ItemList({ title, items, empty }: { title: string; items: AdminBookingI
                 <span className="block font-semibold">
                   {i.quantity} × {i.label}
                 </span>
-                <span className="text-[0.65rem] text-muted-foreground">
+                <span className="text-[0.65rem] text-slate-400">
                   {i.start_time && i.end_time
                     ? `${formatTime(i.start_time)} – ${formatTime(i.end_time)} · ${durationLabel(i.start_time, i.end_time)}`
                     : `${money(Number(i.unit_price))} each`}
@@ -1105,7 +1121,7 @@ function SettleDialog({
     fill: () => void,
   ) => (
     <label className="block space-y-1.5">
-      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
         {label} (₹)
       </span>
       <span className="flex items-center gap-2">
@@ -1132,24 +1148,24 @@ function SettleDialog({
     <ModalPortal onClose={onClose}>
       <div className="mx-auto max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl">
         <h3 className="text-sm font-black uppercase tracking-[0.18em]">Collect payment</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-slate-400">
           {booking.reference} · {booking.customer_name}
         </p>
 
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-border bg-background/40 px-4 py-3">
-          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
             Total bill
           </span>
           <span className="text-right">
             {discountValue > 0 ? (
-              <span className="mr-2 text-xs text-muted-foreground line-through tabular-nums">{money(billed)}</span>
+              <span className="mr-2 text-xs text-slate-400 line-through tabular-nums">{money(billed)}</span>
             ) : null}
             <span className="text-lg font-black tabular-nums">{money(total)}</span>
           </span>
         </div>
 
         <label className="mt-4 block space-y-1.5">
-          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
             Last-minute discount (₹)
           </span>
           <input
@@ -1191,7 +1207,7 @@ function SettleDialog({
           <span className="text-base font-black tabular-nums">{money(remaining)}</span>
         </div>
         {remaining !== 0 ? (
-          <p className="mt-2 text-[0.65rem] text-muted-foreground">
+          <p className="mt-2 text-[0.65rem] text-slate-400">
             {remaining > 0
               ? "Cash + UPI must add up to the total bill before you can complete this booking."
               : "The entered amounts exceed the total bill."}

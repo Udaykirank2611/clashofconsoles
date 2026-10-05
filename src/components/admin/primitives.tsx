@@ -78,10 +78,10 @@ export function Pill({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em]",
-        tone === "good" && "border-emerald-500/40 bg-emerald-400/25 text-emerald-950",
-        tone === "warn" && "border-amber-500/40 bg-amber-400/25 text-amber-950",
-        tone === "bad" && "border-rose-500/40 bg-rose-400/25 text-rose-950",
-        tone === "muted" && "border-border bg-muted/40 text-muted-foreground",
+        tone === "good" && "border-emerald-200 bg-emerald-50 text-emerald-700",
+        tone === "warn" && "border-amber-200 bg-amber-50 text-amber-700",
+        tone === "bad" && "border-rose-200 bg-rose-50 text-rose-700",
+        tone === "muted" && "border-slate-200 bg-slate-50 text-slate-500",
       )}
     >
       {children}
