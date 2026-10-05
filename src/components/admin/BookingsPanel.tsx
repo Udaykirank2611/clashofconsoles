@@ -480,114 +480,101 @@ export function BookingsPanel({
             return (
               <article
                 key={b.id}
-                className="w-full flex-none overflow-hidden rounded-3xl border border-border bg-card transition-colors hover:border-cyan/30 sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
+                className="w-full flex-none overflow-hidden rounded-[2rem] border border-border bg-white text-slate-900 shadow-xl transition-all hover:shadow-2xl sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
               >
-<div className="p-4 sm:p-5">
-  <div className="flex items-start justify-between gap-4">
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusPill status={b.status} />
+                        <h3 className="truncate text-base font-bold text-slate-900">
+                          {b.customer_name}
+                        </h3>
+                      </div>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                        {b.reference}
+                      </p>
 
-    {/* LEFT */}
-    <div className="min-w-0 flex-1">
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-1.5 text-violet-700 shadow-sm">
+                          <p className="text-xs font-black uppercase tracking-wide">
+                            {gameLabel}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-slate-500 shadow-sm">
+                          <p className="text-[10px] font-bold uppercase tracking-wider">
+                            LEVEL {displayedLevel} • 👥 {b.players}P
+                          </p>
+                        </div>
+                      </div>
 
-      <div className="flex items-center gap-2">
-        <h3 className="truncate text-sm font-bold">
-          {b.customer_name}
-        </h3>
+                      <div className="mt-5 flex items-center gap-5">
+                        <a
+                          href={`tel:${b.customer_phone}`}
+                          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 transition-colors hover:text-primary"
+                        >
+                          <Phone className="size-3.5" />
+                          {b.customer_phone}
+                        </a>
 
-        <StatusPill status={b.status} />
-      </div>
+                        <a
+                          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-700"
+                        >
+                          <MessageCircle className="size-3.5" />
+                          WhatsApp
+                        </a>
+                      </div>
 
-      <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        {b.reference}
-      </p>
-      <div className="mt-3 w-fit rounded-xl border border-violet/30 bg-violet/5 px-4 py-3 shadow-sm">
+                      <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                          <span className="text-slate-400">📅</span>
+                          {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </div>
 
-  <p className="text-sm font-black leading-tight">
-    {gameLabel}
-  </p>
+                        {(() => {
+                          const { start, end } = bookingWindow(b);
+                          return start && end ? (
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <span className="text-slate-400">🕑</span>
+                              <span className="font-bold text-slate-700">
+                                {formatTime(start)} – {formatTime(end)}
+                              </span>
+                              <span className="ml-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-black text-slate-400">
+                                {durationLabel(start, end)}
+                              </span>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
 
-  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-    LEVEL {displayedLevel} • 👥 {b.players}P
-  </p>
+                    <div className="flex flex-col items-end gap-3">
+                      <p className="text-2xl font-black text-slate-900">
+                        {money(b.total_amount)}
+                      </p>
 
-</div>
-
-      <div className="mt-3 flex items-center gap-4">
-        <a
-          href={`tel:${b.customer_phone}`}
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cyan"
-        >
-          <Phone className="size-3" />
-          {b.customer_phone}
-        </a>
-
-        <a
-          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
-        >
-          <MessageCircle className="size-3" />
-          WhatsApp
-        </a>
-      </div>
-
-      <div className="mt-4">
-        <p className="text-xs text-muted-foreground">
-          📅{" "}
-          {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-          })}
-        </p>
-
-        {(() => {
-          const { start, end } = bookingWindow(b);
-
-          return start && end ? (
-            <p className="mt-1 text-xs">
-              🕑{" "}
-              <span className="font-bold">
-                {formatTime(start)} – {formatTime(end)}
-              </span>
-              {" • "}
-              <span className="font-bold">
-                {durationLabel(start, end)}
-              </span>
-            </p>
-          ) : null;
-        })()}
-      </div>
-
-    </div>
-
-    {/* RIGHT */}
-
-    <div className="flex w-[180px] flex-col items-end">
-
-      <p className="text-xl font-black">
-        {money(b.total_amount)}
-      </p>
-
-      {countdown && (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/20 bg-cyan/5 px-3 py-2 text-cyan">
-
-          <Clock className="size-4" />
-
-          <span className="text-xs font-bold">
-            TIME LEFT
-          </span>
-
-          <span className="font-mono font-black">
-            {countdown}
-          </span>
-
-        </div>
-      )}
-
-    </div>
-
-  </div>
+                      {countdown && (
+                        <div className="inline-flex items-center gap-2 rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-cyan-700 shadow-sm">
+                          <Clock className="size-4 shrink-0" />
+                          <div className="flex flex-col leading-none">
+                            <span className="text-[9px] font-black uppercase tracking-tighter opacity-60">
+                              TIME LEFT
+                            </span>
+                            <span className="font-mono text-sm font-black">
+                              {countdown}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
 
             <div className="mt-5 border-t border-border pt-4">
