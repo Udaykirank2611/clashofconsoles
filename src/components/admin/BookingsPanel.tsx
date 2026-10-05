@@ -480,7 +480,7 @@ export function BookingsPanel({
             return (
               <article
                 key={b.id}
-                className="w-full flex-none overflow-hidden rounded-3xl border border-border bg-surface/50 transition-colors hover:border-cyan/30 sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
+                className="w-full flex-none overflow-hidden rounded-3xl border border-border bg-card transition-colors hover:border-cyan/30 sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
               >
 <div className="p-4 sm:p-5">
   <div className="flex items-start justify-between gap-4">
@@ -499,7 +499,7 @@ export function BookingsPanel({
       <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         {b.reference}
       </p>
-      <div className="mt-3 w-fit rounded-xl border border-violet/50 bg-violet/20 px-4 py-3 shadow-sm">
+      <div className="mt-3 w-fit rounded-xl border border-violet/30 bg-violet/5 px-4 py-3 shadow-sm">
 
   <p className="text-sm font-black leading-tight">
     {gameLabel}
@@ -570,7 +570,7 @@ export function BookingsPanel({
       </p>
 
       {countdown && (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 px-3 py-2 text-cyan">
+        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/20 bg-cyan/5 px-3 py-2 text-cyan">
 
           <Clock className="size-4" />
 
