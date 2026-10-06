@@ -483,7 +483,7 @@ export function BookingsPanel({
             return (
               <article
                 key={b.id}
-                className="w-full flex-none overflow-hidden rounded-[1.75rem] border border-border bg-white text-slate-900 shadow-lg transition-shadow hover:shadow-xl sm:w-[408px] sm:min-w-[408px] sm:max-w-[408px]"
+                className="w-full flex-none overflow-hidden rounded-[1.75rem] border border-border bg-white text-slate-900 shadow-lg transition-shadow hover:shadow-xl sm:w-[335px] sm:min-w-[315px] sm:max-w-[345px]"
               >
                 <div className="p-5">
                   <div className="flex items-center justify-between gap-3">
