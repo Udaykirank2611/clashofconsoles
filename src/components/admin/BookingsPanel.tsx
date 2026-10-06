@@ -584,7 +584,7 @@ export function BookingsPanel({
                 ) : b.status === "confirmed" ? (
                   <>
                     <AdminButton 
-                      className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
                       disabled={busy === b.id} 
                       onClick={() => setAddingFood(b)}
                     >
