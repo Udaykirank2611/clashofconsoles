@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminButton, Panel, Pill, money } from "./primitives";
 import type { AdminBooking, AdminBookingItem, AdminMenuItem, AdminStation } from "@/lib/admin/useBranchData";
 import { formatTime } from "@/lib/booking/pricing";
-import { ChevronDown, Clock, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock, Gamepad2, Timer, Users, Copy, MessageCircle, Phone, Printer, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
 import { ModalPortal } from "./ModalPortal";
 import { useServerFn } from "@tanstack/react-start";
 import { listCustomers, updateBookingExtraHours } from "@/lib/admin.functions";
@@ -480,103 +480,75 @@ export function BookingsPanel({
             return (
               <article
                 key={b.id}
-                className="w-full flex-none overflow-hidden rounded-[2rem] border border-border bg-white text-slate-900 shadow-xl transition-all hover:shadow-2xl sm:w-[505px] sm:min-w-[485px] sm:max-w-[515px]"
+                className="w-full flex-none overflow-hidden rounded-[1.75rem] border border-border bg-white text-slate-900 shadow-lg transition-shadow hover:shadow-xl sm:w-[408px] sm:min-w-[408px] sm:max-w-[408px]"
               >
-                <div className="p-5 sm:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <StatusPill status={b.status} />
-                        <h3 className="truncate text-base font-bold text-slate-900">
-                          {b.customer_name}
-                        </h3>
-                      </div>
-                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                        {b.reference}
+                <div className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <StatusPill status={b.status} />
+                    <p className="text-2xl font-black text-slate-900">{money(b.total_amount)}</p>
+                  </div>
+                  <h3 className="mt-3 truncate text-lg font-bold text-slate-900" title={b.customer_name}>
+                    {b.customer_name}
+                  </h3>
+                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{b.reference}</p>
+
+                  <div className="mt-4 flex items-center gap-3 rounded-2xl bg-violet-600 px-4 py-3 text-white shadow-md">
+                    <Gamepad2 className="size-6 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-black uppercase tracking-wide break-words">{gameLabel}</p>
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold opacity-90">
+                        Level {displayedLevel} • <Users className="size-3" /> {b.players} Player{b.players === 1 ? "" : "s"}
                       </p>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-3">
-                        <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-1.5 text-violet-700 shadow-sm">
-                          <p className="text-xs font-black uppercase tracking-wide">
-                            {gameLabel}
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-slate-500 shadow-sm">
-                          <p className="text-[10px] font-bold uppercase tracking-wider">
-                            LEVEL {displayedLevel} • 👥 {b.players}P
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 flex items-center gap-5">
-                        <a
-                          href={`tel:${b.customer_phone}`}
-                          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 transition-colors hover:text-primary"
-                        >
-                          <Phone className="size-3.5" />
-                          {b.customer_phone}
-                        </a>
-
-                        <a
-                          href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-700"
-                        >
-                          <MessageCircle className="size-3.5" />
-                          WhatsApp
-                        </a>
-                      </div>
-
-                      <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                          <span className="text-slate-400">📅</span>
-                          {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </div>
-
-                        {(() => {
-                          const { start, end } = bookingWindow(b);
-                          return start && end ? (
-                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                              <span className="text-slate-400">🕑</span>
-                              <span className="font-bold text-slate-700">
-                                {formatTime(start)} – {formatTime(end)}
-                              </span>
-                              <span className="ml-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-black text-slate-400">
-                                {durationLabel(start, end)}
-                              </span>
-                            </div>
-                          ) : null;
-                        })()}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-3">
-                      <p className="text-2xl font-black text-slate-900">
-                        {money(b.total_amount)}
-                      </p>
-
-                      {countdown && (
-                        <div className="inline-flex items-center gap-2 rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-cyan-700 shadow-sm">
-                          <Clock className="size-4 shrink-0" />
-                          <div className="flex flex-col leading-none">
-                            <span className="text-[9px] font-black uppercase tracking-tighter opacity-60">
-                              TIME LEFT
-                            </span>
-                            <span className="font-mono text-sm font-black">
-                              {countdown}
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
 
+                  <div className="mt-4 flex flex-wrap items-center gap-5">
+                    <a
+                      href={`tel:${b.customer_phone}`}
+                      className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition-colors hover:text-primary"
+                    >
+                      <Phone className="size-4" />
+                      {b.customer_phone}
+                    </a>
+                    <a
+                      href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition-colors hover:text-emerald-700"
+                    >
+                      <MessageCircle className="size-4" />
+                      WhatsApp
+                    </a>
+                  </div>
 
+                  <div className="mt-3 space-y-2 text-sm text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="size-4 text-slate-400" />
+                      {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </div>
+                    {hasSlot ? (
+                      <div className="flex items-center gap-2">
+                        <Clock className="size-4 text-slate-400" />
+                        <span className="font-bold text-slate-800">
+                          {formatTime(slot.start!)} – {formatTime(slot.end!)}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">• {durationLabel(slot.start!, slot.end!)}</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {countdown ? (
+                    <div className="mt-4 flex items-center justify-between rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-2.5 text-cyan-700">
+                      <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]">
+                        <Timer className="size-4" /> Time left
+                      </span>
+                      <span className="font-mono text-lg font-black">{countdown}</span>
+                    </div>
+                  ) : null}
             <div className="mt-5 border-t border-slate-100 pt-5">
               <div className="grid w-full grid-cols-2 gap-3">
                 {b.status === "payment_pending" || b.status === "pending" || b.status === "awaiting_payment" ? (

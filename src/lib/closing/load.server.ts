@@ -121,6 +121,7 @@ export async function loadClosingHistory(
     .gte("report_date", input.from)
     .lte("report_date", input.to)
     .order("report_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(500);
   if (input.branchId) query = query.eq("branch_id", input.branchId);
   const { data } = await query;
