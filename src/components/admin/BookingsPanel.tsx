@@ -584,7 +584,7 @@ export function BookingsPanel({
                 ) : b.status === "confirmed" ? (
                   <>
                     <AdminButton 
-                      className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
+                      className="border-slate-400 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-500"
                       disabled={busy === b.id} 
                       onClick={() => setAddingFood(b)}
                     >
@@ -616,7 +616,7 @@ export function BookingsPanel({
 
                     <AdminButton 
                       variant="download" 
-                      className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
+                      className="border-slate-400 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-500"
                       onClick={() => printReceipt(b, stationName)}
                     >
                       <Printer className="size-3.5" /> Receipt
@@ -634,7 +634,7 @@ export function BookingsPanel({
                   <>
                     <AdminButton 
                       variant="download" 
-                      className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
+                      className="border-slate-400 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-500"
                       onClick={() => printReceipt(b, stationName)}
                     >
                       <Printer className="size-3.5" /> Receipt
@@ -657,7 +657,7 @@ export function BookingsPanel({
                 ) : null}
 
                 <AdminButton 
-                  className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50 col-span-1"
+                  className="border-slate-400 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-500 col-span-1"
                   onClick={() => setOpenId(open ? null : b.id)}
                 >
                   {open ? "Hide" : "Details"} <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
