@@ -594,7 +594,7 @@ export function BookingsPanel({
                       <AdminButton
                         variant="primary"
                         disabled={busy === b.id}
-                        className="shadow-md"
+                        className="border-2 border-blue-700 shadow-md"
                         onClick={() => void openExtend(b)}
                       >
                         <Clock className="size-3.5" /> Extend
@@ -603,7 +603,7 @@ export function BookingsPanel({
                     <AdminButton
                       variant="success"
                       disabled={busy === b.id}
-                      className="border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50"
+                      className="border-2 border-emerald-400 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                       onClick={() => {
                         setSplitCash("");
                         setSplitUpi("");
@@ -616,7 +616,7 @@ export function BookingsPanel({
 
                     <AdminButton 
                       variant="download" 
-                      className="border-pink-200 bg-white text-pink-600 hover:bg-pink-50" 
+                      className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
                       onClick={() => printReceipt(b, stationName)}
                     >
                       <Printer className="size-3.5" /> Receipt
@@ -624,7 +624,7 @@ export function BookingsPanel({
                     <AdminButton 
                       variant="danger" 
                       disabled={busy === b.id} 
-                      className="border-rose-200 bg-white text-rose-600 hover:bg-rose-50" 
+                      className="border-2 border-rose-400 bg-rose-100 text-rose-700 hover:bg-rose-200"
                       onClick={() => void removeBooking(b)}
                     >
                       <Trash2 className="size-3.5" /> Remove
@@ -634,7 +634,7 @@ export function BookingsPanel({
                   <>
                     <AdminButton 
                       variant="download" 
-                      className="border-pink-200 bg-white text-pink-600 hover:bg-pink-50" 
+                      className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
                       onClick={() => printReceipt(b, stationName)}
                     >
                       <Printer className="size-3.5" /> Receipt
@@ -648,7 +648,7 @@ export function BookingsPanel({
                     <AdminButton 
                       variant="danger" 
                       disabled={busy === b.id} 
-                      className="border-rose-200 bg-white text-rose-600 hover:bg-rose-50" 
+                      className="border-2 border-rose-400 bg-rose-100 text-rose-700 hover:bg-rose-200"
                       onClick={() => void removeBooking(b)}
                     >
                       <Trash2 className="size-3.5" /> Remove
@@ -657,7 +657,7 @@ export function BookingsPanel({
                 ) : null}
 
                 <AdminButton 
-                  className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 col-span-1" 
+                  className="border-2 border-slate-400 bg-white text-slate-700 hover:bg-slate-50 col-span-1"
                   onClick={() => setOpenId(open ? null : b.id)}
                 >
                   {open ? "Hide" : "Details"} <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
