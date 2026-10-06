@@ -501,7 +501,7 @@ export function BookingsPanel({
                   ) : (
                     <Gamepad2 className="size-6 shrink-0 text-violet-500" />
                   )}
-                  <span aria-hidden="true" className="h-12 w-px bg-violet-400/50" />
+                  <span aria-hidden="true" className="h-10 w-px bg-violet-400/40" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-bold text-foreground">{experienceTitle}</span>
                     <span className="mt-1 block truncate text-sm text-slate-600">
