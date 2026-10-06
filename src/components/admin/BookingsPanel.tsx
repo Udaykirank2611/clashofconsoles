@@ -495,43 +495,48 @@ export function BookingsPanel({
                   </h3>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{b.reference}</p>
 
-                <div className="mt-4 flex items-center gap-3 rounded-2xl bg-violet-500/15 px-4 py-3">
+                <div className="mt-4 flex items-center gap-4 rounded-2xl bg-violet-500/15 px-5 py-4">
                   {food.length && !experienceNames.length ? (
                     <UtensilsCrossed className="size-6 shrink-0 text-violet-500" />
                   ) : (
-                    <Gamepad2 className="size-6 shrink-0 text-violet-500" />
+                    <Gamepad2 className="size-7 shrink-0 text-violet-500" />
                   )}
-                  <span aria-hidden="true" className="h-10 w-px bg-violet-400/40" />
+                  <span aria-hidden="true" className="h-12 w-px bg-violet-400/50" />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-foreground">{experienceTitle}</span>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      {[groupLabel, `${b.players} ${b.players === 1 ? "Player" : "Players"}`].filter(Boolean).join(" • ")}
-                    </span>
+                    <span className="block truncate text-lg font-bold text-foreground">{experienceTitle}</span>
+                    <span className="mt-1 block truncate text-sm text-slate-600">
+  {groupLabel}
+  {" • "}
+  <span className="inline-flex items-center gap-1">
+    👥 {b.players} {b.players === 1 ? "Player" : "Players"}
+  </span>
+</span>
                   </span>
                 </div>
 
                   <div className="mt-4 flex flex-wrap items-center gap-5">
                     <a
                       href={`tel:${b.customer_phone}`}
-                      className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition-colors hover:text-primary"
+                      className="inline-flex items-center gap-2.5 text-[15px] font-semibold text-slate-600 transition-colors hover:text-primary"
                     >
-                      <Phone className="size-4" />
+                      <Phone className="size-[22px]" />
                       {b.customer_phone}
                     </a>
+                    <div className="h-5 w-px bg-slate-300" />
                     <a
                       href={`https://wa.me/${waNumber(b.customer_phone)}?text=${encodeURIComponent(customerMessage(b, stationName))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition-colors hover:text-emerald-700"
                     >
-                      <MessageCircle className="size-4" />
+                      <MessageCircle className="size-[22px]" />
                       WhatsApp
                     </a>
                   </div>
 
-                  <div className="mt-3 space-y-2 text-sm text-slate-600">
+                  <div className="mt-4 space-y-3 text-[15px] text-slate-600">
                     <div className="flex items-center gap-2">
-                      <CalendarDays className="size-4 text-slate-400" />
+                      <CalendarDays className="size-5 text-slate-400" />
                       {new Date(`${b.booking_date}T00:00:00`).toLocaleDateString("en-IN", {
                         weekday: "short",
                         day: "numeric",
@@ -540,11 +545,11 @@ export function BookingsPanel({
                     </div>
                     {hasSlot ? (
                       <div className="flex items-center gap-2">
-                        <Clock className="size-4 text-slate-400" />
+                        <Clock className="size-5 text-slate-400" />
                         <span className="font-bold text-slate-800">
                           {formatTime(slot.start!)} – {formatTime(slot.end!)}
                         </span>
-                        <span className="text-xs font-bold text-slate-400">• {durationLabel(slot.start!, slot.end!)}</span>
+                        <span className="text-sm font-medium text-slate-500">• {durationLabel(slot.start!, slot.end!)}</span>
                       </div>
                     ) : null}
                   </div>
