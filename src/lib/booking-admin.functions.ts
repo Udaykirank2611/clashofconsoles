@@ -587,16 +587,33 @@ export const extendBookingSession = createServerFn({ method: "POST" })
 
 
     if (target === baseStation) {
-      // Same console: simply push the session end time out.
+      // Same console: push the session end time out and charge on the same line,
+      // so the add-on shows its real length and price (e.g. "1 Hour · ₹300").
       if (itemId) {
-        await supabaseAdmin.from("booking_items").update({ end_time: clock(end) }).eq("id", itemId);
+        const { data: item } = await supabaseAdmin
+          .from("booking_items")
+          .select("label, start_time, line_total")
+          .eq("id", itemId)
+          .maybeSingle();
+        const total = Number(item?.line_total ?? 0) + price;
+        const mins = item?.start_time ? end - toMinutes(String(item.start_time)) : 0;
+        const lenLabel = mins % 60 === 0 ? `${mins / 60} Hour${mins > 60 ? "s" : ""}` : `${mins} Minutes`;
+        const base = String(item?.label ?? station?.name ?? "Session").split(" · ")[0];
+        await supabaseAdmin
+          .from("booking_items")
+          .update({
+            end_time: clock(end),
+            unit_price: total,
+            line_total: total,
+            ...(mins > 0 ? { label: `${base} · ${lenLabel}` } : {}),
+          })
+          .eq("id", itemId);
       } else {
-        await supabaseAdmin.from("bookings").update({ end_time: clock(end) }).eq("id", data.bookingId);
+        await supabaseAdmin
+          .from("bookings")
+          .update({ end_time: clock(end), session_amount: Number(booking.session_amount ?? 0) + price })
+          .eq("id", data.bookingId);
       }
-      await supabaseAdmin
-        .from("bookings")
-        .update({ session_amount: Number(booking.session_amount ?? 0) + price })
-        .eq("id", data.bookingId);
     } else {
       // Different console: book the extra window there as an add-on line so it
       // blocks that console everywhere.
