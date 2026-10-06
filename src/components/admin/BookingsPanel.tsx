@@ -492,15 +492,20 @@ export function BookingsPanel({
                   </h3>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{b.reference}</p>
 
-                  <div className="mt-4 flex items-center gap-3 rounded-2xl bg-violet-600 px-4 py-3 text-white shadow-md">
-                    <Gamepad2 className="size-6 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-black uppercase tracking-wide break-words">{gameLabel}</p>
-                      <p className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold opacity-90">
-                        Level {displayedLevel} • <Users className="size-3" /> {b.players} Player{b.players === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                  </div>
+                <div className="mt-4 flex items-center gap-3 rounded-2xl bg-violet-500/15 px-4 py-3">
+                  {food.length && !experienceNames.length ? (
+                    <UtensilsCrossed className="size-6 shrink-0 text-violet-500" />
+                  ) : (
+                    <Gamepad2 className="size-6 shrink-0 text-violet-500" />
+                  )}
+                  <span aria-hidden="true" className="h-10 w-px bg-violet-400/40" />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold text-foreground">{experienceTitle}</span>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {[groupLabel, `${b.players} ${b.players === 1 ? "Player" : "Players"}`].filter(Boolean).join(" • ")}
+                    </span>
+                  </span>
+                </div>
 
                   <div className="mt-4 flex flex-wrap items-center gap-5">
                     <a
