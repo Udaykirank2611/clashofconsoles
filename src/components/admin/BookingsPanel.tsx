@@ -463,6 +463,9 @@ export function BookingsPanel({
             // Completed bookings are already counted in totalVisits.
             const displayedLevel = b.status === "completed" ? Math.max(1, visitLevel) : visitLevel + 1;
             const gameLabel = bookingGameLabel(b, serviceName);
+            const experienceNames = b.station_id || cockpit.some((i) => i.station_id) ? [serviceName] : [];
+            const experienceTitle = gameLabel || serviceName;
+            const groupLabel = b.booking_type === "group" ? "Party Booking" : `Level ${displayedLevel}`;
             // Pass-only bookings have no gaming slot at all.
             const slot = bookingWindow(b);
             const hasSlot = Boolean(slot.start && slot.end);
