@@ -640,7 +640,7 @@ export function BookingsPanel({
                       <Printer className="size-3.5" /> Receipt
                     </AdminButton>
                     <AdminButton 
-                      className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50" 
+                      className="border-slate-400 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-500"
                       onClick={() => void copyConfirmation(b, stationName)}
                     >
                       <Copy className="size-3.5" /> Copy
