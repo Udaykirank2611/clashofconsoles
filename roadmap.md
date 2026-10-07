@@ -33,3 +33,4 @@
 32. [x] Add Privacy, Terms, and Refund policy pages with footer links
 33. [x] Move Transactions search into its card and default Bookings to All
 34. [x] Add Security dropdown filters and coupon search
+- [ ] Add branch/date-scoped deposit and expense analytics with graphs and verify totals

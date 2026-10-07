@@ -15,6 +15,7 @@ import {
   type DrilldownSelection,
 } from "./compute";
 import type { AnalyticsResult, DrilldownRow, ReportRow, ReportType } from "./types";
+import { computeCashflow, type CashflowEntry } from "./cashflow";
 
 type Client = SupabaseClient<Database>;
 
@@ -54,6 +55,27 @@ async function fetchBookings(supabase: Client, ids: string[], from: string, to: 
   return (data ?? []) as unknown as RawBooking[];
 }
 
+/** Paginate ledger entries so long date ranges do not silently lose rows. */
+async function fetchCashflowEntries(supabase: Client, ids: string[], from: string, to: string, kind: "deposits" | "expenses"): Promise<CashflowEntry[]> {
+  const rows: CashflowEntry[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = kind === "deposits"
+      ? await supabase.from("cash_deposits").select("id, branch_id, deposit_date, amount, deposit_to").in("branch_id", ids).gte("deposit_date", from).lte("deposit_date", to).order("id").range(offset, offset + 999)
+      : await supabase.from("daily_expenses").select("id, branch_id, expense_date, amount, paid_from").in("branch_id", ids).gte("expense_date", from).lte("expense_date", to).order("id").range(offset, offset + 999);
+    if (result.error) throw new Error(`Unable to load ${kind} analytics`);
+    const page = result.data ?? [];
+    for (const row of page) {
+      rows.push({
+        branchId: row.branch_id,
+        date: "deposit_date" in row ? row.deposit_date : row.expense_date,
+        amount: Number(row.amount),
+        account: "deposit_to" in row ? row.deposit_to : row.paid_from,
+      });
+    }
+    if (page.length < 1000) return rows;
+  }
+}
+
 export async function loadAnalytics(
   supabase: Client,
   userId: string,
@@ -62,7 +84,7 @@ export async function loadAnalytics(
   const scope = await resolveScope(supabase, userId, input.branchId);
   if (!scope) return null;
 
-  const [bookings, stationsRes, menuRes, couponRes, redemptionRes, plansRes] = await Promise.all([
+  const [bookings, stationsRes, menuRes, couponRes, redemptionRes, plansRes, deposits, expenses] = await Promise.all([
     fetchBookings(supabase, scope.ids, input.from, input.to),
     supabase.from("gaming_stations").select("id, branch_id, name, station_type, status, is_addon").in("branch_id", scope.ids),
     supabase.from("menu_items").select("id, category").in("branch_id", scope.ids),
@@ -74,6 +96,8 @@ export async function loadAnalytics(
       .gte("created_at", `${input.from}T00:00:00`)
       .lte("created_at", `${input.to}T23:59:59.999`),
     supabase.from("membership_plans").select("name, branch_id").in("branch_id", scope.ids),
+    fetchCashflowEntries(supabase, scope.ids, input.from, input.to, "deposits"),
+    fetchCashflowEntries(supabase, scope.ids, input.from, input.to, "expenses"),
   ]);
 
   // customers + rewards are owner-restricted rows; read them with the service
@@ -100,7 +124,7 @@ export async function loadAnalytics(
     if (!firstSeen.has(r.customer_phone)) firstSeen.set(r.customer_phone, r.booking_date);
   }
 
-  return computeAnalytics({
+  const analytics = computeAnalytics({
     from: input.from,
     to: input.to,
     branchId: input.branchId,
@@ -121,6 +145,7 @@ export async function loadAnalytics(
     firstSeen,
     membershipPlans: (plansRes.data ?? []).map((p) => ({ name: p.name, branch_id: p.branch_id })),
   });
+  return { ...analytics, cashflow: computeCashflow(deposits, expenses, scope.branches, input) };
 }
 
 export async function loadReport(
