@@ -508,7 +508,7 @@ export function BookingsPanel({
   {groupLabel}
   {" • "}
   <span className="inline-flex items-center gap-1">
-    👥 {b.players} {b.players === 1 ? "Playerss" : "Players"}
+    👥 {b.players} {b.players === 1 ? "Player" : "Players"}
   </span>
 </span>
                   </span>
