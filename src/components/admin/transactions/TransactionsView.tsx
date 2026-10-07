@@ -267,8 +267,8 @@ export function TransactionsView({
                       <tr
                         key={r.id}
                         className={cn(
-                          "border-t border-border/60 align-middle transition-colors",
-                          "hover:bg-pink/10 hover:shadow-[inset_0_0_0_1px_var(--pink)]",
+                          "relative origin-left border-t border-border/60 align-middle transition-all duration-200 motion-reduce:transition-none",
+                          "hover:z-10 hover:scale-[1.005] hover:bg-pink/20 hover:shadow-[inset_0_0_0_1px_var(--pink)] motion-reduce:hover:scale-100",
                           i % 2 ? "bg-surface/40" : "",
                         )}
                       >
