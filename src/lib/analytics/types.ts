@@ -176,7 +176,19 @@ export interface CouponTopRow {
   discount: number;
 }
 
+export interface CashflowAnalytics {
+  totalDeposits: number;
+  totalExpenses: number;
+  depositCount: number;
+  expenseCount: number;
+  avgDailyExpenses: number;
+  series: { date: string; deposits: number; expenses: number }[];
+  accounts: { account: string; deposits: number; expenses: number }[];
+  branches: { branch: string; deposits: number; expenses: number }[];
+}
+
 export interface AnalyticsResult {
+  cashflow?: CashflowAnalytics;
   range: { from: string; to: string };
   scope: { branchId: string | null; branchName: string };
   kpis: Kpis;

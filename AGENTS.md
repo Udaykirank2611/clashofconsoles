@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep temporary promotional pricing in a shared client-safe booking utility and recompute it server-side, so displayed and charged totals cannot diverge.
+- Aggregate deposit and expense analytics in the client-safe cashflow utility from paginated, authenticated branch/date-scoped ledger reads; keep funding deposits separate from sales revenue to avoid inflated revenue.
