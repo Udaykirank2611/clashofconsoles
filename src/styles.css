@@ -708,3 +708,25 @@
   text-transform: uppercase;
   box-shadow: 0 10px 30px -12px color-mix(in oklab, var(--pink, #ff2d90) 90%, transparent);
 }
+
+/* Transactions table row highlight — plain :hover so it also works on
+   touch-enabled laptops where Tailwind's hover variant is disabled. */
+.coc-txn-row {
+  transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+.coc-txn-row > td {
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.coc-txn-row:hover,
+.coc-txn-row:active {
+  position: relative;
+  z-index: 10;
+  transform: scale(1.01, 1.08);
+  background-color: var(--pink);
+  box-shadow: 0 6px 20px -6px color-mix(in oklab, var(--pink) 70%, transparent);
+}
+.coc-txn-row:hover > td,
+.coc-txn-row:active > td {
+  background-color: var(--pink);
+  color: var(--primary-foreground);
+}
