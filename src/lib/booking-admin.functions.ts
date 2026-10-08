@@ -194,13 +194,30 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { extensionPrice, recomputeBookingTotals, stationPriceForMinutes, durationLabel } = await import(
+      "@/lib/booking-admin.server"
+    );
+
+    // Experience bookings (VR, cockpit, snooker, theatre) keep their slot on the
+    // add-on line item; the calendar shows that slot, so edits must land there.
+    let addon: { id: string; label: string; start_time: string | null; end_time: string | null; station_id: string | null } | null = null;
+    if (!booking.start_time) {
+      const { data: items } = await supabaseAdmin
+        .from("booking_items")
+        .select("id, label, station_id, start_time, end_time")
+        .eq("booking_id", data.bookingId)
+        .eq("kind", "addon")
+        .not("station_id", "is", null);
+      addon = (items ?? []).find((i) => i.start_time && i.end_time) ?? null;
+    }
+
     const { error } = await supabaseAdmin
       .from("bookings")
       .update({
-        station_id: data.stationId,
+        station_id: addon ? booking.station_id : data.stationId,
         booking_date: data.date,
-        start_time: start === null ? null : clock(start),
-        end_time: end === null ? null : clock(end),
+        start_time: addon || start === null ? null : clock(start),
+        end_time: addon || end === null ? null : clock(end),
         special_instructions: data.notes || null,
         status: data.status,
         payment_mode: data.paymentMode === "none" ? null : data.paymentMode,
@@ -208,9 +225,32 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
       .eq("id", data.bookingId);
     if (error) return { ok: false, message: error.message };
 
+    if (addon && start !== null && end !== null) {
+      const oldMin = toMinutes(String(addon.end_time)) - toMinutes(String(addon.start_time));
+      const newMin = end - start;
+      const stationId = data.stationId ?? addon.station_id;
+      const patch: Record<string, unknown> = { start_time: clock(start), end_time: clock(end), station_id: stationId };
+      if (newMin !== oldMin && stationId && !booking.pass_id) {
+        const price = await stationPriceForMinutes(stationId, newMin);
+        if (price !== null) {
+          const base = String(addon.label).split(" · ")[0];
+          Object.assign(patch, {
+            unit_price: price,
+            line_total: price,
+            quantity: 1,
+            extra_hours: 0,
+            extra_hour_price: 0,
+            label: `${base} · ${durationLabel(newMin)}`,
+          });
+        }
+      }
+      await supabaseAdmin.from("booking_items").update(patch).eq("id", addon.id);
+      await recomputeBookingTotals(data.bookingId);
+      return { ok: true };
+    }
+
     // A longer or shorter session is repriced off the branch rate card, then the
     // bill (and with it the ledger and every report) is rebuilt.
-    const { extensionPrice, recomputeBookingTotals } = await import("@/lib/booking-admin.server");
     const oldMinutes =
       booking.start_time && booking.end_time
         ? toMinutes(String(booking.end_time)) - toMinutes(String(booking.start_time))
@@ -219,11 +259,12 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
     if (oldMinutes > 0 && newMinutes > 0 && newMinutes !== oldMinutes && !booking.pass_id) {
       const players = Number(booking.players ?? 1);
       const branch = String(booking.branch_id);
+      const slab = data.stationId ? await stationPriceForMinutes(data.stationId, newMinutes) : null;
       const delta =
         newMinutes > oldMinutes
           ? await extensionPrice(branch, players, oldMinutes, (newMinutes - oldMinutes) / 60)
           : -(await extensionPrice(branch, players, newMinutes, (oldMinutes - newMinutes) / 60));
-      const next = Math.max(0, Math.round(Number(booking.session_amount ?? 0) + delta));
+      const next = slab ?? Math.max(0, Math.round(Number(booking.session_amount ?? 0) + delta));
       await supabaseAdmin.from("bookings").update({ session_amount: next }).eq("id", data.bookingId);
     }
     await recomputeBookingTotals(data.bookingId);
