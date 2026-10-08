@@ -157,3 +157,35 @@ export function PaymentModeChart({
     </ResponsiveContainer>
   );
 }
+
+export function CashflowChart({ data }: { data: { label: string; deposits: number; expenses: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={data} margin={{ left: -12, right: 8, top: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="label" tick={axis} tickLine={false} axisLine={false} minTickGap={16} />
+        <YAxis tick={axis} tickLine={false} axisLine={false} width={64} />
+        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₹${Number(v).toLocaleString("en-IN")}`} />
+        <Legend wrapperStyle={{ fontSize: 11 }} />
+        <Bar name="Deposits" dataKey="deposits" fill="var(--cyan)" radius={[6, 6, 0, 0]} />
+        <Bar name="Expenses" dataKey="expenses" fill="var(--pink)" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function SplitBars({ data }: { data: { name: string; deposits: number; expenses: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+        <XAxis type="number" tick={axis} tickLine={false} axisLine={false} />
+        <YAxis type="category" dataKey="name" tick={axis} tickLine={false} axisLine={false} width={96} />
+        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₹${Number(v).toLocaleString("en-IN")}`} />
+        <Legend wrapperStyle={{ fontSize: 11 }} />
+        <Bar name="Deposits" dataKey="deposits" fill="var(--cyan)" radius={[0, 6, 6, 0]} />
+        <Bar name="Expenses" dataKey="expenses" fill="var(--pink)" radius={[0, 6, 6, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}

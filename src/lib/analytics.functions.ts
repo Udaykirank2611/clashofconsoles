@@ -50,3 +50,12 @@ export const getTodayOverview = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<TodayOverview | null> =>
     loadTodayOverview(context.supabase, context.userId, data.branchId),
   );
+
+/** Historical slot data for Smart Pricing Insights (read-only; never changes prices). */
+export const getSmartPricing = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ branchId: z.string().uuid().nullable() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { loadSmartPricing } = await import("./analytics/load.server");
+    return loadSmartPricing(context.supabase, context.userId, data.branchId);
+  });
