@@ -337,3 +337,49 @@ export async function loadTodayOverview(
     todaysBookings: live.filter(hasGaming).length,
   };
 }
+
+/** Read-only booking slot history (last 365 days) for Smart Pricing Insights. */
+export async function loadSmartPricing(
+  supabase: Client,
+  userId: string,
+  branchId: string | null,
+): Promise<import("./smart-pricing").SmartPricingData | null> {
+  const scope = await resolveScope(supabase, userId, branchId);
+  if (!scope) return null;
+  const ist = new Date(Date.now() + 330 * 60_000);
+  const today = ist.toISOString().slice(0, 10);
+  const from = new Date(ist.getTime() - 365 * 86_400_000).toISOString().slice(0, 10);
+  const { data: stations } = await supabase
+    .from("gaming_stations")
+    .select("id, station_type, status")
+    .in("branch_id", scope.ids);
+  const typeOf = new Map((stations ?? []).map((s) => [s.id, String(s.station_type)]));
+  const capacity: Record<string, number> = {};
+  for (const s of stations ?? []) capacity[s.station_type] = (capacity[s.station_type] ?? 0) + 1;
+
+  const m = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const slots: import("./smart-pricing").SlotRecord[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("id, booking_date, station_id, start_time, end_time, session_amount, status, booking_items(kind, station_id, start_time, end_time, line_total)")
+      .in("branch_id", scope.ids)
+      .in("status", ["confirmed", "completed"])
+      .gte("booking_date", from)
+      .lte("booking_date", today)
+      .order("id")
+      .range(offset, offset + 999);
+    if (error) throw new Error("Unable to load booking history");
+    for (const b of data ?? []) {
+      if (b.station_id && b.start_time && b.end_time) {
+        slots.push({ date: b.booking_date, start: m(b.start_time), end: m(b.end_time), type: typeOf.get(b.station_id) ?? "console", revenue: Number(b.session_amount ?? 0) });
+      }
+      for (const i of b.booking_items ?? []) {
+        if (i.kind !== "addon" || !i.station_id || !i.start_time || !i.end_time) continue;
+        slots.push({ date: b.booking_date, start: m(i.start_time), end: m(i.end_time), type: typeOf.get(i.station_id) ?? "console", revenue: Number(i.line_total ?? 0) });
+      }
+    }
+    if ((data ?? []).length < 1000) break;
+  }
+  return { today, nowMinutes: ist.getUTCHours() * 60 + ist.getUTCMinutes(), slots, capacity };
+}
