@@ -208,3 +208,51 @@ export async function extensionOption(
   return null;
 }
 
+
+/**
+ * Rate-card price for a slab-priced station (VR, cockpit, snooker, …) at a given
+ * length. Returns null for consoles or stations without a rate card, so callers
+ * fall back to the PS5 hourly pricing.
+ */
+export async function stationPriceForMinutes(stationId: string, minutes: number): Promise<number | null> {
+  const [{ data: station }, { data: rates }] = await Promise.all([
+    supabaseAdmin.from("gaming_stations").select("station_type").eq("id", stationId).maybeSingle(),
+    supabaseAdmin
+      .from("station_rates")
+      .select("duration_minutes, price, is_extra_hour")
+      .eq("station_id", stationId)
+      .eq("is_active", true),
+  ]);
+  if (!station || station.station_type === "console") return null;
+  const ladder = new Map<number, number>();
+  let extraHour: number | null = null;
+  for (const r of rates ?? []) {
+    const p = Number(r.price);
+    if (r.is_extra_hour) {
+      extraHour = extraHour === null ? p : Math.min(extraHour, p);
+      continue;
+    }
+    const d = Number(r.duration_minutes);
+    if (!ladder.has(d) || p < (ladder.get(d) ?? 0)) ladder.set(d, p);
+  }
+  const steps = [...ladder.entries()].sort((a, b) => a[0] - b[0]);
+  if (!steps.length) return null;
+  const exact = ladder.get(minutes);
+  if (exact !== undefined) return exact;
+  const top = steps[steps.length - 1];
+  if (minutes > top[0]) {
+    const perHour = extraHour ?? (top[1] / top[0]) * 60;
+    return Math.round(top[1] + ((minutes - top[0]) / 60) * perHour);
+  }
+  // Between two slabs: charge the next slab up.
+  const up = steps.find(([d]) => d >= minutes);
+  return up ? up[1] : top[1];
+}
+
+export const durationLabel = (m: number) => {
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  const hp = h ? `${h} Hour${h > 1 ? "s" : ""}` : "";
+  const mp = r ? `${r} Minutes` : "";
+  return [hp, mp].filter(Boolean).join(" ");
+};
