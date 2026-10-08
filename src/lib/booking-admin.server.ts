@@ -240,6 +240,7 @@ export async function stationPriceForMinutes(stationId: string, minutes: number)
   const exact = ladder.get(minutes);
   if (exact !== undefined) return exact;
   const top = steps[steps.length - 1];
+  if (!top) return null;
   if (minutes > top[0]) {
     const perHour = extraHour ?? (top[1] / top[0]) * 60;
     return Math.round(top[1] + ((minutes - top[0]) / 60) * perHour);

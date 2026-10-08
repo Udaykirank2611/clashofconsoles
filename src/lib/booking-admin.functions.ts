@@ -229,7 +229,7 @@ export const updateBookingDetails = createServerFn({ method: "POST" })
       const oldMin = toMinutes(String(addon.end_time)) - toMinutes(String(addon.start_time));
       const newMin = end - start;
       const stationId = data.stationId ?? addon.station_id;
-      const patch: Record<string, unknown> = { start_time: clock(start), end_time: clock(end), station_id: stationId };
+      const patch: { start_time: string; end_time: string; station_id: string | null; unit_price?: number; line_total?: number; quantity?: number; extra_hours?: number; extra_hour_price?: number; label?: string } = { start_time: clock(start), end_time: clock(end), station_id: stationId };
       if (newMin !== oldMin && stationId && !booking.pass_id) {
         const price = await stationPriceForMinutes(stationId, newMin);
         if (price !== null) {

@@ -46,19 +46,21 @@ const BUCKET_WEIGHTS = [0.6, 0.3, 0.1];
 
 /** Weighted mean of values grouped by age bucket; empty buckets are dropped and weights renormalised. */
 export function weightedAverage(samples: { ageDays: number; value: number }[]) {
-  const sums = [0, 0, 0];
-  const counts = [0, 0, 0];
+  const sums: number[] = [0, 0, 0];
+  const counts: number[] = [0, 0, 0];
   for (const s of samples) {
     const b = ageBucket(s.ageDays);
-    sums[b] += s.value;
-    counts[b] += 1;
+    sums[b] = (sums[b] ?? 0) + s.value;
+    counts[b] = (counts[b] ?? 0) + 1;
   }
   let w = 0;
   let total = 0;
   for (let i = 0; i < 3; i += 1) {
-    if (!counts[i]) continue;
-    total += BUCKET_WEIGHTS[i] * (sums[i] / counts[i]);
-    w += BUCKET_WEIGHTS[i];
+    const c = counts[i] ?? 0;
+    if (!c) continue;
+    const bw = BUCKET_WEIGHTS[i] ?? 0;
+    total += bw * ((sums[i] ?? 0) / c);
+    w += bw;
   }
   return w ? total / w : 0;
 }
@@ -195,7 +197,8 @@ export function computeSmartPricing(data: SmartPricingData, filters: Filters) {
   const dist = [0, 0, 0, 0];
   for (const d of dates) for (const h of HOURS) {
     const o = occ(d, h);
-    dist[o < 0.25 ? 0 : o < 0.5 ? 1 : o < 0.75 ? 2 : 3] += 1;
+    const k = o < 0.25 ? 0 : o < 0.5 ? 1 : o < 0.75 ? 2 : 3;
+    dist[k] = (dist[k] ?? 0) + 1;
   }
   const distribution = ["Under 25%", "25–50%", "50–75%", "75%+"].map((name, i) => ({ name, value: dist[i] }));
 
