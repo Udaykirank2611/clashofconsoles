@@ -5,7 +5,8 @@ import { getAnalytics } from "@/lib/analytics.functions";
 import { Panel, StatCard, money } from "../primitives";
 import { ScopeBar } from "./ScopeBar";
 import { useAnalyticsScope } from "./scope";
-import { BookingTrendChart, PaymentModeChart, RevenueChart, SplitPie, groupSeries } from "./charts";
+import { BookingTrendChart, CashflowChart, PaymentModeChart, RevenueChart, SplitBars, SplitPie, groupSeries } from "./charts";
+import { groupCashflowSeries } from "@/lib/analytics/cashflow";
 import { DrilldownDialog, type Drilldown } from "./DrilldownDialog";
 import { ScrollTable } from "./TodayPanel";
 import { cn } from "@/lib/utils";
@@ -208,6 +209,28 @@ export function AnalyticsView({
               unrecorded={data.paymentModes.unrecorded.revenue}
             />
           </Panel>
+
+          {data.cashflow ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard label="Total deposits" value={money(data.cashflow.totalDeposits)} tone="good" hint={`${data.cashflow.depositCount} entries · not sales revenue`} />
+                <StatCard label="Total expenses" value={money(data.cashflow.totalExpenses)} tone="bad" hint={`${data.cashflow.expenseCount} entries`} />
+                <StatCard label="Net (deposits − expenses)" value={money(data.cashflow.totalDeposits - data.cashflow.totalExpenses)} />
+                <StatCard label="Avg daily expenses" value={money(data.cashflow.avgDailyExpenses)} tone="warn" />
+              </div>
+              <Panel title="Deposits vs expenses">
+                <CashflowChart data={groupCashflowSeries(data.cashflow.series, granularity)} />
+              </Panel>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <Panel title="By account (cash / bank)">
+                  <SplitBars data={data.cashflow.accounts.map((a) => ({ name: a.account, deposits: a.deposits, expenses: a.expenses }))} />
+                </Panel>
+                <Panel title="By branch">
+                  <SplitBars data={data.cashflow.branches.map((b) => ({ name: b.branch, deposits: b.deposits, expenses: b.expenses }))} />
+                </Panel>
+              </div>
+            </>
+          ) : null}
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Panel title="Food analytics" className="min-w-0 overflow-hidden">
