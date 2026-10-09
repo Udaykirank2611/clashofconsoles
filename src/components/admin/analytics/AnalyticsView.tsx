@@ -398,7 +398,7 @@ function DrillHint() {
   return <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">Click to drill down</span>;
 }
 
-function Bars({
+export function Bars({
   rows,
   empty,
 }: {

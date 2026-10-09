@@ -383,3 +383,53 @@ export async function loadSmartPricing(
   }
   return { today, nowMinutes: ist.getUTCHours() * 60 + ist.getUTCMinutes(), slots, capacity };
 }
+
+/** Estimated lost revenue for the last 30 days (IST), scoped to the admin's branches. */
+export async function loadLostRevenue(
+  supabase: Client,
+  userId: string,
+  branchId: string | null,
+): Promise<import("./lost-revenue").LostRevenueResult | null> {
+  const scope = await resolveScope(supabase, userId, branchId);
+  if (!scope) return null;
+  const { computeLostRevenue, timeToMinutes } = await import("./lost-revenue");
+  const { nowInIst } = await import("@/lib/availability");
+  const { date: today, minutes: nowMinutes } = nowInIst();
+  const days = 30;
+  const from = new Date(new Date(`${today}T00:00:00Z`).getTime() - (days - 1) * 86_400_000).toISOString().slice(0, 10);
+  const [stationsRes, holidaysRes] = await Promise.all([
+    supabase.from("gaming_stations").select("id, branch_id, station_type, status, hourly_price").in("branch_id", scope.ids),
+    supabase.from("branch_holidays").select("branch_id, holiday_date, start_time").in("branch_id", scope.ids).gte("holiday_date", from).lte("holiday_date", today),
+  ]);
+  const bookings: import("./lost-revenue").LostInput["bookings"] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("id, branch_id, booking_date, status, total_amount, station_id, start_time, end_time, booking_items(kind, station_id, start_time, end_time)")
+      .in("branch_id", scope.ids)
+      .gte("booking_date", from)
+      .lte("booking_date", today)
+      .order("id")
+      .range(offset, offset + 999);
+    if (error) throw new Error("Unable to load booking history");
+    for (const b of data ?? []) {
+      const slots: { stationId: string | null; start: number; end: number }[] = [];
+      if (b.start_time && b.end_time) slots.push({ stationId: b.station_id, start: timeToMinutes(b.start_time), end: timeToMinutes(b.end_time) });
+      for (const i of b.booking_items ?? []) {
+        if (i.kind === "addon" && i.station_id && i.start_time && i.end_time) slots.push({ stationId: i.station_id, start: timeToMinutes(i.start_time), end: timeToMinutes(i.end_time) });
+      }
+      for (const s of slots) if (s.end <= s.start) s.end += 24 * 60;
+      bookings.push({ branch_id: b.branch_id, date: b.booking_date, status: String(b.status), amount: Number(b.total_amount ?? 0), slots });
+    }
+    if ((data ?? []).length < 1000) break;
+  }
+  return computeLostRevenue({
+    today,
+    nowMinutes,
+    days,
+    branches: scope.branches,
+    stations: (stationsRes.data ?? []).map((s) => ({ ...s, station_type: String(s.station_type), status: String(s.status), hourly_price: Number(s.hourly_price) })),
+    bookings,
+    holidays: (holidaysRes.data ?? []).filter((h) => !h.start_time).map((h) => ({ branch_id: h.branch_id, date: h.holiday_date })),
+  });
+}
