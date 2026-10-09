@@ -59,3 +59,12 @@ export const getSmartPricing = createServerFn({ method: "POST" })
     const { loadSmartPricing } = await import("./analytics/load.server");
     return loadSmartPricing(context.supabase, context.userId, data.branchId);
   });
+
+/** Estimated lost revenue (cancellations, no-shows, idle capacity, maintenance). */
+export const getLostRevenue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ branchId: z.string().uuid().nullable() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { loadLostRevenue } = await import("./analytics/load.server");
+    return loadLostRevenue(context.supabase, context.userId, data.branchId);
+  });

@@ -10,6 +10,8 @@ import { groupCashflowSeries } from "@/lib/analytics/cashflow";
 import { DrilldownDialog, type Drilldown } from "./DrilldownDialog";
 import { ScrollTable } from "./TodayPanel";
 import { cn } from "@/lib/utils";
+import { LostRevenuePanel } from "./LostRevenuePanel";
+import { SmartPricingPanel } from "./SmartPricingPanel";
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 const hourLabel = (h: number) =>
@@ -384,6 +386,10 @@ export function AnalyticsView({
         </>
       )}
 
+      <LostRevenuePanel branchId={scope.branchId} />
+      <SmartPricingPanel branchId={scope.branchId} />
+
+
       <DrilldownDialog
         drilldown={drilldown}
         branchId={scope.branchId}
@@ -398,7 +404,7 @@ function DrillHint() {
   return <span className="text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground">Click to drill down</span>;
 }
 
-function Bars({
+export function Bars({
   rows,
   empty,
 }: {
