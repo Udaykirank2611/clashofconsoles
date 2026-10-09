@@ -387,6 +387,7 @@ export function AnalyticsView({
       )}
 
       <LostRevenuePanel branchId={scope.branchId} />
+      <SmartPricingPanel branchId={scope.branchId} />
 
 
       <DrilldownDialog
