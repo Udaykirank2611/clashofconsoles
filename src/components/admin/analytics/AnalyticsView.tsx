@@ -10,6 +10,8 @@ import { groupCashflowSeries } from "@/lib/analytics/cashflow";
 import { DrilldownDialog, type Drilldown } from "./DrilldownDialog";
 import { ScrollTable } from "./TodayPanel";
 import { cn } from "@/lib/utils";
+import { LostRevenuePanel } from "./LostRevenuePanel";
+import { SmartPricingPanel } from "./SmartPricingPanel";
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 const hourLabel = (h: number) =>
@@ -383,6 +385,9 @@ export function AnalyticsView({
           ) : null}
         </>
       )}
+
+      <LostRevenuePanel branchId={scope.branchId} />
+
 
       <DrilldownDialog
         drilldown={drilldown}
