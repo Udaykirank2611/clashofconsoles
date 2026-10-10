@@ -28,6 +28,7 @@ import { LogOut } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { AnalyticsView } from "./analytics/AnalyticsView";
 import { ReportsView } from "./analytics/ReportsView";
+import { AIInsightsView } from "./analytics/AIInsightsView";
 import { TodayPanel } from "./analytics/TodayPanel";
 import { BookingCalendar } from "./calendar/BookingCalendar";
 import { DailyClosingView } from "./closing/DailyClosingView";
@@ -43,6 +44,7 @@ const MORE_TABS = [
   "Memberships",
   "Daily Closing",
   "Analytics",
+  "AI Insights",
   "Reports",
   "Stations",
   "Games",
@@ -326,6 +328,8 @@ export function AdminDashboard() {
         {tab === "Analytics" ? (
           <AnalyticsView branches={branches} isOwner={isOwner} defaultBranchId={branch.id} />
         ) : null}
+
+        {tab === "AI Insights" ? <AIInsightsView branches={branches} defaultBranchId={branch.id} /> : null}
 
         {tab === "Reports" ? (
           <ReportsView branches={branches} isOwner={isOwner} defaultBranchId={branch.id} />
