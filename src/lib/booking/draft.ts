@@ -83,6 +83,12 @@ export function readDraft(): BookingDraft | null {
       clearDraft();
       return null;
     }
+    // A draft for a day that has already passed must not bring that date back.
+    const todayIst = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+    if (parsed.date && parsed.date < todayIst) {
+      clearDraft();
+      return null;
+    }
     return parsed;
   } catch {
     return null;

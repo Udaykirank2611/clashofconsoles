@@ -496,6 +496,11 @@ export const createBooking = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<{ ok: boolean; reference?: string; message?: string }> => {
     const { adminClient, makeReference } = await import("@/lib/booking/repository.server");
+    // Never accept a booking for a day that is already over (India time).
+    const todayIst = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+    if (String(data.date) < todayIst) {
+      return { ok: false, message: "That date has already passed. Please pick today or a future date." };
+    }
     const db = await adminClient();
     await db.rpc("expire_stale_bookings");
 
