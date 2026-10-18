@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS menu_items_branch_sort_idx ON public.menu_items USING btree (branch_id, sort_order);
