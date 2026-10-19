@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { computeOpening } from "./opening.server";
+import { readAllPages } from "./pages";
 import type { ReconciliationPayload, ReconciliationIssue } from "./types";
 
 type Client = SupabaseClient<Database>;
@@ -19,59 +20,48 @@ export async function loadReconciliation(
   let bq = supabase
     .from("bookings")
     .select(
-      "id, reference, booking_date, branch_id, customer_name, total_amount, payment_mode, status, station_id, branches(name)",
+      "id, reference, booking_date, branch_id, customer_name, total_amount, payment_mode, status, station_id, start_time, end_time, branches(name), booking_items(kind, start_time, end_time), booking_transactions(booking_id, cash_amount, upi_amount, transaction_status)",
     )
     .gte("booking_date", input.from)
     .lte("booking_date", input.to)
-    .or("status.eq.completed,and(status.eq.confirmed,station_id.is.null)")
+    .in("status", ["completed", "confirmed"])
     .order("booking_date", { ascending: true })
-    .limit(5000);
+    .order("id", { ascending: true });
   if (input.branchId) bq = bq.eq("branch_id", input.branchId);
 
   let eq_ = supabase
     .from("daily_expenses")
     .select("amount, paid_from")
     .gte("expense_date", input.from)
-    .lte("expense_date", input.to);
+    .lte("expense_date", input.to)
+    .order("id", { ascending: true });
   if (input.branchId) eq_ = eq_.eq("branch_id", input.branchId);
 
   let dq = supabase
     .from("cash_deposits")
     .select("amount, deposit_to")
     .gte("deposit_date", input.from)
-    .lte("deposit_date", input.to);
+    .lte("deposit_date", input.to)
+    .order("id", { ascending: true });
   if (input.branchId) dq = dq.eq("branch_id", input.branchId);
 
-  // Page through the whole ledger: the default 1000-row cap silently drops
-  // rows and produces false "missing ledger" discrepancies.
-  const fetchAllTransactions = async () => {
-    const all: Record<string, unknown>[] = [];
-    for (let from = 0; ; from += 1000) {
-      const { data } = await supabase
-        .from("booking_transactions")
-        .select("*")
-        .order("created_at", { ascending: true })
-        .range(from, from + 999);
-      all.push(...((data ?? []) as Record<string, unknown>[]));
-      if (!data || data.length < 1000) break;
-    }
-    return all;
-  };
-
-  const [bookingsRes, txRows, expensesRes, depositsRes, opening] = await Promise.all([
-    bq,
-    fetchAllTransactions(),
-    eq_,
-    dq,
+  // Read each booking with its own ledger row; never match against a separate,
+  // potentially incomplete global ledger fetch. RLS still applies to both.
+  const [bookingRows, expenseRows, depositRows, opening] = await Promise.all([
+    readAllPages((from, to) => bq.range(from, to)),
+    readAllPages((from, to) => eq_.range(from, to)),
+    readAllPages((from, to) => dq.range(from, to)),
     computeOpening(supabase, { branchId: input.branchId, from: input.from }),
   ]);
 
-  const bookings = (bookingsRes.data ?? []) as unknown as (Record<string, unknown> & {
+  const bookings = (bookingRows as unknown as (Record<string, unknown> & {
     branches: { name: string } | null;
-  })[];
-  const txByBooking = new Map(
-    txRows.map((t) => [String(t['booking_id']), t]),
-  );
+    booking_items: { kind: string; start_time: string | null; end_time: string | null }[] | null;
+    booking_transactions: Record<string, unknown>[] | Record<string, unknown> | null;
+  })[]).filter((b) => b['status'] === "completed" || !(
+    (b['start_time'] && b['end_time']) ||
+    b.booking_items?.some((i) => i.kind === "addon" && i.start_time && i.end_time)
+  ));
 
   const issues: ReconciliationIssue[] = [];
   let bookingsTotal = 0;
@@ -84,7 +74,7 @@ export async function loadReconciliation(
   for (const b of bookings) {
     const id = String(b['id']);
     const total = num(b['total_amount']);
-    const tx = txByBooking.get(id);
+    const tx = Array.isArray(b.booking_transactions) ? b.booking_transactions[0] : b.booking_transactions;
     bookingsTotal += total;
 
     const base = {
@@ -145,7 +135,7 @@ export async function loadReconciliation(
     matched += 1;
   }
 
-  const expenses = (expensesRes.data ?? []) as { amount: number; paid_from: string }[];
+  const expenses = expenseRows as { amount: number; paid_from: string }[];
   const expensesCash = expenses
     .filter((e) => e.paid_from !== "bank")
     .reduce((s, e) => s + num(e.amount), 0);
@@ -153,7 +143,6 @@ export async function loadReconciliation(
     .filter((e) => e.paid_from === "bank")
     .reduce((s, e) => s + num(e.amount), 0);
 
-  const depositRows = (depositsRes.data ?? []) as { amount: number; deposit_to: string }[];
   const depositsCash = depositRows
     .filter((d) => d.deposit_to !== "bank")
     .reduce((s, d) => s + num(d.amount), 0);

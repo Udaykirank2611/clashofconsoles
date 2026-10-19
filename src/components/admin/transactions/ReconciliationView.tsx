@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
 import { getReconciliation } from "@/lib/transactions.functions";
@@ -35,16 +35,28 @@ export function ReconciliationView({
   const [kind, setKind] = useState<"all" | ReconciliationIssueKind>("all");
   const [data, setData] = useState<ReconciliationPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
 
   const fetchData = useServerFn(getReconciliation);
 
   const load = useCallback(async () => {
+    const id = ++requestId.current;
     setLoading(true);
-    const res = await fetchData({
-      data: { branchId: branchId === "all" ? null : branchId, from, to },
-    });
-    setData(res);
-    setLoading(false);
+    setError(null);
+    try {
+      const res = await fetchData({
+        data: { branchId: branchId === "all" ? null : branchId, from, to },
+      });
+      if (id === requestId.current) setData(res);
+    } catch {
+      if (id === requestId.current) {
+        setData(null);
+        setError("Could not load the complete ledger. Please refresh to try again.");
+      }
+    } finally {
+      if (id === requestId.current) setLoading(false);
+    }
   }, [branchId, from, to, fetchData]);
 
   useEffect(() => {
@@ -92,6 +104,7 @@ export function ReconciliationView({
         </div>
       </Panel>
 
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {loading ? (
         <p className="py-16 text-center text-sm text-muted-foreground">Reconciling…</p>
       ) : !t || !c ? null : (

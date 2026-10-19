@@ -34,3 +34,5 @@
 33. [x] Move Transactions search into its card and default Bookings to All
 34. [x] Add Security dropdown filters and coupon search
 - [ ] Add branch/date-scoped deposit and expense analytics with graphs and verify totals
+
+- [x] Fix remaining missing-ledger reconciliation errors and verify branch totals
