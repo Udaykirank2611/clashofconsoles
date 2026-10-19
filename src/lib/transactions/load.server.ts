@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { computeOpening } from "./opening.server";
+import { readAllPages } from "./pages";
 import type {
   CashBankSummary,
   DepositRow,
@@ -36,14 +37,14 @@ export async function loadTransactions(
   let q = supabase
     .from("bookings")
     .select(
-      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, coupon_code, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name, station_type))",
+      "id, reference, booking_date, branch_id, customer_name, customer_phone, players, booking_type, start_time, end_time, station_id, pass_id, coupon_id, coupon_code, session_amount, addons_amount, food_amount, student_discount_amount, gaming_discount_amount, food_discount_amount, bill_discount_amount, total_amount, payment_mode, status, special_instructions, branches(name), gaming_stations(name, station_type), booking_items(kind, label, station_id, start_time, end_time, gaming_stations(name, station_type)), booking_transactions(*)",
     )
     .gte("booking_date", input.from)
     .lte("booking_date", input.to)
     .in("status", ["confirmed", "completed", "cancelled"])
     .order("booking_date", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(2000);
+    .order("id", { ascending: true });
   if (input.branchId) q = q.eq("branch_id", input.branchId);
 
   let ex = supabase
@@ -64,26 +65,9 @@ export async function loadTransactions(
     .order("paid_at", { ascending: true });
   if (input.branchId) dp = dp.eq("branch_id", input.branchId);
 
-  // Fetch every ledger row in 1000-row pages: the default cap silently drops
-  // rows once a branch passes 1000 transactions, which corrupts the totals.
-  const fetchAllTransactions = async () => {
-    const all: Record<string, unknown>[] = [];
-    for (let from = 0; ; from += 1000) {
-      const { data } = await supabase
-        .from("booking_transactions")
-        .select("*")
-        .order("created_at", { ascending: true })
-        .range(from, from + 999);
-      all.push(...((data ?? []) as Record<string, unknown>[]));
-      if (!data || data.length < 1000) break;
-    }
-    return all;
-  };
-
-  const [bookingsRes, txRows, expensesRes, depositsRes, opening, customersRes, redemptionsRes] =
+  const [bookingRows, expensesRes, depositsRes, opening, customersRes, redemptionsRes] =
     await Promise.all([
-      q,
-      fetchAllTransactions(),
+      readAllPages((from, to) => q.range(from, to)),
       ex,
       dp,
       computeOpening(supabase, { branchId: input.branchId, from: input.from }),
@@ -98,7 +82,8 @@ export async function loadTransactions(
     ]),
   );
 
-  const bookings = ((bookingsRes.data ?? []) as unknown[]) as unknown as (Record<string, unknown> & {
+  const bookings = bookingRows as unknown as (Record<string, unknown> & {
+    booking_transactions: Record<string, unknown>[] | Record<string, unknown> | null;
     branches: { name: string } | null;
     gaming_stations: { name: string; station_type: string } | null;
     booking_items:
@@ -113,9 +98,6 @@ export async function loadTransactions(
       | null;
   })[];
 
-  const txByBooking = new Map(
-    txRows.map((t) => [String(t['booking_id']), t]),
-  );
   const visits = new Map(
     ((customersRes.data ?? []) as { phone: string; total_visits: number }[]).map((c) => [
       c.phone,
@@ -124,7 +106,7 @@ export async function loadTransactions(
   );
 
   const rows: TransactionRow[] = bookings.flatMap((b) => {
-    const tx = txByBooking.get(String(b['id']));
+    const tx = Array.isArray(b.booking_transactions) ? b.booking_transactions[0] : b.booking_transactions;
     const gaming = num(b['session_amount']) + num(b['addons_amount']);
     const food = num(b['food_amount']);
     // Coupon and admin (last-minute) discounts share the same booking columns, so
@@ -152,10 +134,10 @@ export async function loadTransactions(
     const station = b.gaming_stations ?? addons[0]?.gaming_stations ?? null;
     const start = b['start_time']
       ? String(b['start_time'])
-      : (timed.map((i) => i.start_time!).sort()[0] ?? null);
+      : (timed.flatMap((i) => i.start_time ? [i.start_time] : []).sort()[0] ?? null);
     const end = b['end_time']
       ? String(b['end_time'])
-      : (timed.map((i) => i.end_time!).sort().at(-1) ?? null);
+      : (timed.flatMap((i) => i.end_time ? [i.end_time] : []).sort().at(-1) ?? null);
 
     // A confirmed session is only money once staff mark it completed; passes and
     // food-only sales have no slot to wait for, so they land in the ledger at once.
