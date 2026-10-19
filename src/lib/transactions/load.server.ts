@@ -114,7 +114,7 @@ export async function loadTransactions(
   })[];
 
   const txByBooking = new Map(
-    ((txRes.data ?? []) as Record<string, unknown>[]).map((t) => [String(t['booking_id']), t]),
+    txRows.map((t) => [String(t['booking_id']), t]),
   );
   const visits = new Map(
     ((customersRes.data ?? []) as { phone: string; total_visits: number }[]).map((c) => [

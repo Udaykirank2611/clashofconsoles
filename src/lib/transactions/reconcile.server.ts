@@ -42,9 +42,25 @@ export async function loadReconciliation(
     .lte("deposit_date", input.to);
   if (input.branchId) dq = dq.eq("branch_id", input.branchId);
 
-  const [bookingsRes, txRes, expensesRes, depositsRes, opening] = await Promise.all([
+  // Page through the whole ledger: the default 1000-row cap silently drops
+  // rows and produces false "missing ledger" discrepancies.
+  const fetchAllTransactions = async () => {
+    const all: Record<string, unknown>[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data } = await supabase
+        .from("booking_transactions")
+        .select("*")
+        .order("created_at", { ascending: true })
+        .range(from, from + 999);
+      all.push(...((data ?? []) as Record<string, unknown>[]));
+      if (!data || data.length < 1000) break;
+    }
+    return all;
+  };
+
+  const [bookingsRes, txRows, expensesRes, depositsRes, opening] = await Promise.all([
     bq,
-    supabase.from("booking_transactions").select("*"),
+    fetchAllTransactions(),
     eq_,
     dq,
     computeOpening(supabase, { branchId: input.branchId, from: input.from }),
