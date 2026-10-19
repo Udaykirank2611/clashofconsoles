@@ -64,10 +64,26 @@ export async function loadTransactions(
     .order("paid_at", { ascending: true });
   if (input.branchId) dp = dp.eq("branch_id", input.branchId);
 
-  const [bookingsRes, txRes, expensesRes, depositsRes, opening, customersRes, redemptionsRes] =
+  // Fetch every ledger row in 1000-row pages: the default cap silently drops
+  // rows once a branch passes 1000 transactions, which corrupts the totals.
+  const fetchAllTransactions = async () => {
+    const all: Record<string, unknown>[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data } = await supabase
+        .from("booking_transactions")
+        .select("*")
+        .order("created_at", { ascending: true })
+        .range(from, from + 999);
+      all.push(...((data ?? []) as Record<string, unknown>[]));
+      if (!data || data.length < 1000) break;
+    }
+    return all;
+  };
+
+  const [bookingsRes, txRows, expensesRes, depositsRes, opening, customersRes, redemptionsRes] =
     await Promise.all([
       q,
-      supabase.from("booking_transactions").select("*"),
+      fetchAllTransactions(),
       ex,
       dp,
       computeOpening(supabase, { branchId: input.branchId, from: input.from }),
@@ -98,7 +114,7 @@ export async function loadTransactions(
   })[];
 
   const txByBooking = new Map(
-    ((txRes.data ?? []) as Record<string, unknown>[]).map((t) => [String(t['booking_id']), t]),
+    txRows.map((t) => [String(t['booking_id']), t]),
   );
   const visits = new Map(
     ((customersRes.data ?? []) as { phone: string; total_visits: number }[]).map((c) => [
