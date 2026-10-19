@@ -70,7 +70,7 @@ export async function loadReconciliation(
     branches: { name: string } | null;
   })[];
   const txByBooking = new Map(
-    ((txRes.data ?? []) as Record<string, unknown>[]).map((t) => [String(t['booking_id']), t]),
+    txRows.map((t) => [String(t['booking_id']), t]),
   );
 
   const issues: ReconciliationIssue[] = [];
