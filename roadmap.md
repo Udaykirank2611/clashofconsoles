@@ -36,3 +36,5 @@
 - [ ] Add branch/date-scoped deposit and expense analytics with graphs and verify totals
 
 - [x] Fix remaining missing-ledger reconciliation errors and verify branch totals
+- [x] Reprice extensions crossing 4 PM at full regular rates and test the cutoff
+- [ ] Correct Suraj booking COC-92WZRZTSRFQG and verify its ledger — blocked: current database is inaccessible; authenticated preview verification also unavailable

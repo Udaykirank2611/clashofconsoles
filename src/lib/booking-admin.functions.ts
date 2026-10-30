@@ -522,7 +522,7 @@ export const extendBookingSession = createServerFn({ method: "POST" })
     // total time the guest has already bought (rate-card slabs).
     const { data: timedItems } = await supabaseAdmin
       .from("booking_items")
-      .select("id, station_id, start_time, end_time")
+      .select("id, station_id, start_time, end_time, line_total")
       .eq("booking_id", data.bookingId)
       .not("end_time", "is", null)
       .order("end_time", { ascending: false });
@@ -547,12 +547,14 @@ export const extendBookingSession = createServerFn({ method: "POST" })
         0,
       );
 
-    const { extensionOption } = await import("@/lib/booking-admin.server");
-    const option = await extensionOption(
+    const { pricedExtensionOption } = await import("@/lib/booking-admin.server");
+    const option = await pricedExtensionOption(
       String(booking.branch_id),
       baseStation,
       Number(booking.players ?? 1),
       currentMinutes,
+      { date: String(booking.booking_date), endTime: String(endTime),
+        currentAmount: Number(booking.session_amount ?? 0) + (timedItems ?? []).reduce((sum, item) => sum + Number(item.line_total ?? 0), 0) },
     );
     if (!option) return { ok: false, message: "This session is already at its maximum length." };
 
@@ -725,13 +727,13 @@ export const quoteExtension = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: booking } = await supabaseAdmin
         .from("bookings")
-        .select("branch_id, players, station_id, start_time, end_time, total_amount, pass_id")
+        .select("branch_id, booking_date, players, station_id, start_time, end_time, session_amount, total_amount, pass_id")
         .eq("id", data.bookingId)
         .maybeSingle();
       if (!booking) return none;
       const { data: items } = await supabaseAdmin
         .from("booking_items")
-        .select("station_id, start_time, end_time")
+        .select("station_id, start_time, end_time, line_total")
         .eq("booking_id", data.bookingId)
         .not("end_time", "is", null)
         .order("end_time", { ascending: false });
@@ -745,12 +747,16 @@ export const quoteExtension = createServerFn({ method: "POST" })
           0,
         );
       const station = (booking.station_id as string | null) ?? (items ?? [])[0]?.station_id ?? null;
-      const { extensionOption } = await import("@/lib/booking-admin.server");
-      const option = await extensionOption(
+      const endTime = booking.end_time ?? (items ?? [])[0]?.end_time;
+      if (!endTime) return none;
+      const { pricedExtensionOption } = await import("@/lib/booking-admin.server");
+      const option = await pricedExtensionOption(
         String(booking.branch_id),
         station,
         Number(booking.players ?? 1),
         current,
+        { date: String(booking.booking_date), endTime: String(endTime),
+          currentAmount: Number(booking.session_amount ?? 0) + (items ?? []).reduce((sum, item) => sum + Number(item.line_total ?? 0), 0) },
       );
       if (!option) return none;
 
