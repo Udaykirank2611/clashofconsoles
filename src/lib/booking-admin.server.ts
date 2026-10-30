@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { dussehraExtensionCharge } from "./booking/dussehra-offer";
 
 export interface BookingTotals {
   gross: number;
@@ -138,6 +139,28 @@ export interface ExtensionOption {
   minutes: number;
   price: number;
   label: string;
+}
+
+/** Shared by extension preview and mutation; passes bypass the cash quote in callers. */
+export async function pricedExtensionOption(
+  branchId: string,
+  stationId: string | null,
+  players: number,
+  currentMinutes: number,
+  pricing: { date: string; endTime: string; currentAmount: number },
+): Promise<ExtensionOption | null> {
+  const option = await extensionOption(branchId, stationId, players, currentMinutes);
+  if (!option) return null;
+  const newMinutes = currentMinutes + option.minutes;
+  const regularTotal = (stationId ? await stationPriceForMinutes(stationId, newMinutes) : null) ??
+    await priceForMinutes(branchId, players, newMinutes);
+  return { ...option, price: dussehraExtensionCharge({
+    ...pricing,
+    currentMinutes,
+    addedMinutes: option.minutes,
+    regularTotal,
+    standardCharge: option.price,
+  }) };
 }
 
 /** Human label for a minute step ("15 minutes", "1 hour"). */

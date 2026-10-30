@@ -68,6 +68,27 @@ export function isDussehraOfferSlot(date: string, startTime: string, durationMin
   );
 }
 
+/** Crossing the offer cutoff reprices the entire session, not just the added time. */
+export function dussehraExtensionCharge(input: {
+  date: string;
+  endTime: string;
+  currentMinutes: number;
+  addedMinutes: number;
+  currentAmount: number;
+  regularTotal: number;
+  standardCharge: number;
+}) {
+  const end = minutesFromTime(input.endTime);
+  const start = end - input.currentMinutes;
+  const crossesCutoff = isDussehraOfferDate(input.date) &&
+    start >= DUSSEHRA_OFFER_START_MINUTES &&
+    start < DUSSEHRA_OFFER_END_MINUTES &&
+    end + input.addedMinutes > DUSSEHRA_OFFER_END_MINUTES;
+  return crossesCutoff
+    ? Math.max(0, input.regularTotal - input.currentAmount)
+    : input.standardCharge;
+}
+
 export function dussehraPs5Price(
   date: string,
   startTime: string,
