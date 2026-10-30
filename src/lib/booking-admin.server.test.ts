@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { mock, test, expect } from "bun:test";
 
 mock.module("@/integrations/supabase/client.server", () => ({
